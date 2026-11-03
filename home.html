@@ -3,17 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WoordenLijst — 2 talen + overhoor</title>
+  <title>🦛 Hippo Woorden — 2 talen + overhoor</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="bubbles" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
   <div class="container">
-    <h1>📚 WoordenLijst</h1>
-    <p class="subtitle">Maak lijsten in 2 talen en overhoor jezelf er meteen mee.</p>
+    <header class="hippo-header">
+      <div class="hippo-face" aria-hidden="true">🦛</div>
+      <div>
+        <h1>Hippo Woorden</h1>
+        <p class="subtitle">Duik in je woordenlijst in 2 talen en overhoor jezelf! 🌊</p>
+      </div>
+    </header>
 
     <div class="tabs">
-      <button class="tab active" data-tab="list">📝 Mijn lijst</button>
-      <button class="tab" data-tab="quiz-mc">✅ Meerkeuze</button>
+      <button class="tab active" data-tab="list">🌿 Mijn lijst</button>
+      <button class="tab" data-tab="quiz-mc">🫧 Meerkeuze</button>
       <button class="tab" data-tab="quiz-type">⌨️ Typen</button>
       <button class="tab" data-tab="flash">🃏 Flashcards</button>
     </div>
@@ -23,7 +32,7 @@
       <div class="list-header">
         <input type="text" id="col1name" placeholder="Naam taal 1 (bv. Nederlands)" value="Nederlands">
         <input type="text" id="col2name" placeholder="Naam taal 2 (bv. Engels)" value="Engels">
-        <button class="btn" id="addRow">+ Rij toevoegen</button>
+        <button class="btn" id="addRow">+ Woord toevoegen</button>
         <button class="btn secondary" id="clearList">Lijst legen</button>
       </div>
       <table>
@@ -32,7 +41,7 @@
         </thead>
         <tbody id="listBody"></tbody>
       </table>
-      <p class="empty" id="emptyMsg">Nog geen woorden. Voeg hierboven je eerste rij toe! 👆</p>
+      <p class="empty" id="emptyMsg">De poel is nog leeg… voeg hierboven je eerste woord toe! 🦛</p>
     </div>
 
     <!-- MEERKEUZE -->
@@ -84,7 +93,7 @@
       <div class="score-bar"><span id="flashCount">Kaart 0/0</span></div>
       <div class="flashcard" id="flashCard">
         <div class="flashcard-inner">
-          <div class="face front" id="flashFront">…</div>
+          <div class="face front" id="flashFront">🦛</div>
           <div class="face back" id="flashBack">…</div>
         </div>
       </div>
@@ -94,6 +103,12 @@
         <button class="btn" id="flashNext">Volgende →</button>
       </div>
     </div>
+  </div>
+
+  <div class="water" aria-hidden="true">
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path d="M0,60 C240,110 480,10 720,60 C960,110 1200,10 1440,60 L1440,120 L0,120 Z"></path>
+    </svg>
   </div>
 
   <script src="script.js" defer></script>
