@@ -1,32 +1,19 @@
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+
+// VUL IN vanuit jouw Supabase project (Settings → API):
+const SUPABASE_URL = "https://JOUW-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = "JOUW-ANON-PUBLIC-KEY";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 (function () {
   "use strict";
 
   const $ = (id) => document.getElementById(id);
-  const ACCOUNTS_KEY = "hippo-accounts-v1";
-  const SESSION_KEY = "hippo-session-v1";
 
-  let currentUser = null;
-  let words = [];
+  let words = []; // [{ id, a, b }]
 
-  // ---------- Accounts (demo: lokaal in browser, niet echt beveiligd) ----------
-  function getAccounts() {
-    try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || {}; }
-    catch (e) { return {}; }
-  }
-  function setAccounts(acc) {
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(acc));
-  }
-  async function hashPassword(password, salt) {
-    if (crypto.subtle) {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + password));
-      return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-    }
-    // fallback voor niet-beveiligde context (bijv. file://)
-    let h = 5381;
-    const s = salt + password;
-    for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
-    return h.toString(16);
-  }
+  // ---------- Auth ----------
   function authMsg(text, ok) {
     const el = $("authMsg");
     el.textContent = text;
@@ -34,79 +21,77 @@
   }
 
   $("btnRegister").addEventListener("click", async () => {
-    const user = $("authUser").value.trim();
+    const email = $("authEmail").value.trim();
     const pass = $("authPass").value;
     const pass2 = $("authPass2").value;
-    if (!/^[a-zA-Z0-9_]{3,20}$/.test(user)) return authMsg("Username: 3-20 letters, numbers or _");
-    if (pass.length < 4) return authMsg("Password: at least 4 characters");
+    if (!email.includes("@")) return authMsg("Enter a valid email address");
+    if (pass.length < 6) return authMsg("Password: at least 6 characters");
     if (pass !== pass2) return authMsg("Passwords do not match");
-    const acc = getAccounts();
-    if (acc[user]) return authMsg("That username already exists");
-    const salt = Math.random().toString(36).slice(2);
-    acc[user] = { salt, hash: await hashPassword(pass, salt) };
-    setAccounts(acc);
-    startSession(user);
+    const { error } = await supabase.auth.signUp({ email, password: pass });
+    if (error) return authMsg(error.message);
+    authMsg("Account created — you are logged in! 🦛", true);
   });
 
   $("btnLogin").addEventListener("click", async () => {
-    const user = $("authUser").value.trim();
-    const pass = $("authPass").value;
-    const acc = getAccounts();
-    if (!acc[user]) return authMsg("Unknown username or wrong password");
-    const hash = await hashPassword(pass, acc[user].salt);
-    if (hash !== acc[user].hash) return authMsg("Unknown username or wrong password");
-    startSession(user);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: $("authEmail").value.trim(),
+      password: $("authPass").value
+    });
+    if (error) return authMsg("Wrong email or password");
   });
 
-  function startSession(user) {
-    currentUser = user;
-    localStorage.setItem(SESSION_KEY, user);
-    $("loginScreen").classList.add("hidden");
-    $("app").classList.remove("hidden");
-    $("loggedInUser").textContent = "🦛 " + user;
-    loadColNames();
-    loadWords();
-    renderList();
-  }
-
-  $("btnLogout").addEventListener("click", () => {
-    localStorage.removeItem(SESSION_KEY);
-    currentUser = null;
-    words = [];
-    $("app").classList.add("hidden");
-    $("loginScreen").classList.remove("hidden");
-    $("authPass").value = "";
-    $("authPass2").value = "";
-    authMsg("", false);
+  $("btnLogout").addEventListener("click", async () => {
+    await supabase.auth.signOut();
   });
 
-  // ---------- Data per gebruiker ----------
-  function wordsKey() { return "hippo-words-" + currentUser; }
-  function colnamesKey() { return "hippo-colnames-" + currentUser; }
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session) {
+      $("loginScreen").classList.add("hidden");
+      $("app").classList.remove("hidden");
+      $("loggedInUser").textContent = "🦛 " + session.user.email;
+      await loadColNames();
+      await loadWords();
+      renderList();
+    } else {
+      words = [];
+      $("app").classList.add("hidden");
+      $("loginScreen").classList.remove("hidden");
+      $("authPass").value = "";
+      $("authPass2").value = "";
+      authMsg("", false);
+    }
+  });
 
-  function loadWords() {
-    try {
-      const raw = localStorage.getItem(wordsKey());
-      words = raw ? JSON.parse(raw) : [];
-    } catch (e) { words = []; }
+  // ---------- Data (Supabase) ----------
+  async function loadWords() {
+    const { data, error } = await supabase
+      .from("words")
+      .select("id, lang1, lang2")
+      .order("created_at", { ascending: true });
+    if (error) { console.error(error); return; }
+    words = data.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2 }));
   }
-  function save() { localStorage.setItem(wordsKey(), JSON.stringify(words)); }
-  function saveColNames() {
-    localStorage.setItem(colnamesKey(), JSON.stringify({
-      c1: $("col1name").value, c2: $("col2name").value
-    }));
-  }
-  function loadColNames() {
-    try {
-      const raw = localStorage.getItem(colnamesKey());
-      if (raw) {
-        const n = JSON.parse(raw);
-        $("col1name").value = n.c1 || "Language 1";
-        $("col2name").value = n.c2 || "Language 2";
-      }
-    } catch (e) {}
+
+  async function loadColNames() {
+    const { data } = await supabase
+      .from("user_settings")
+      .select("col1, col2")
+      .maybeSingle();
+    $("col1name").value = (data && data.col1) || "Language 1";
+    $("col2name").value = (data && data.col2) || "Language 2";
     updateHeaders();
   }
+
+  async function saveColNames() {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+    await supabase.from("user_settings").upsert({
+      user_id: user.user.id,
+      col1: $("col1name").value,
+      col2: $("col2name").value
+    });
+  }
+
   function updateHeaders() {
     $("th1").textContent = $("col1name").value || "Language 1";
     $("th2").textContent = $("col2name").value || "Language 2";
@@ -135,12 +120,22 @@
       const in2 = document.createElement("input");
       in1.type = "text"; in1.value = w.a; in1.placeholder = "word in language 1";
       in2.type = "text"; in2.value = w.b; in2.placeholder = "word in language 2";
-      in1.addEventListener("input", () => { words[i].a = in1.value; save(); });
-      in2.addEventListener("input", () => { words[i].b = in2.value; save(); });
+      in1.addEventListener("input", async () => {
+        words[i].a = in1.value;
+        await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
+      });
+      in2.addEventListener("input", async () => {
+        words[i].b = in2.value;
+        await supabase.from("words").update({ lang2: in2.value }).eq("id", w.id);
+      });
       const del = document.createElement("button");
       del.className = "btn danger";
       del.textContent = "✕";
-      del.addEventListener("click", () => { words.splice(i, 1); save(); renderList(); });
+      del.addEventListener("click", async () => {
+        await supabase.from("words").delete().eq("id", w.id);
+        words.splice(i, 1);
+        renderList();
+      });
       td1.appendChild(in1); td2.appendChild(in2); tdDel.appendChild(del);
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(tdDel);
       body.appendChild(tr);
@@ -148,21 +143,31 @@
     $("emptyMsg").style.display = words.length ? "none" : "block";
   }
 
-  $("addRow").addEventListener("click", () => {
-    words.push({ a: "", b: "" });
-    save(); renderList();
+  $("addRow").addEventListener("click", async () => {
+    const { data, error } = await supabase
+      .from("words")
+      .insert({ lang1: "", lang2: "" })
+      .select("id, lang1, lang2")
+      .single();
+    if (error) { console.error(error); return; }
+    words.push({ id: data.id, a: data.lang1, b: data.lang2 });
+    renderList();
     const inputs = $("listBody").querySelectorAll("tr:last-child input");
     if (inputs[0]) inputs[0].focus();
   });
-  $("clearList").addEventListener("click", () => {
+
+  $("clearList").addEventListener("click", async () => {
     if (words.length && confirm("Are you sure you want to clear the whole pool? 🦛")) {
-      words = []; save(); renderList();
+      await supabase.from("words").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      words = [];
+      renderList();
     }
   });
+
   $("col1name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
   $("col2name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
 
-  // ---------- Quiz helpers ----------
+  // ---------- Quiz helpers (ongewijzigd) ----------
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -183,7 +188,7 @@
     progressEl.style.width = total ? (done / total * 100) + "%" : "0%";
   }
 
-  // ---------- Multiple choice ----------
+  // ---------- Multiple choice (ongewijzigd) ----------
   let mc = { queue: [], idx: 0, score: 0, locked: false };
   function mcStart() {
     const dir = $("mcDirection").value;
@@ -242,7 +247,7 @@
   }
   $("mcStart").addEventListener("click", mcStart);
 
-  // ---------- Typing ----------
+  // ---------- Typing (ongewijzigd) ----------
   let ty = { queue: [], idx: 0, score: 0 };
   function typeStart() {
     const dir = $("typeDirection").value;
@@ -291,7 +296,7 @@
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
 
-  // ---------- Flashcards ----------
+  // ---------- Flashcards (ongewijzigd) ----------
   let fl = { queue: [], idx: 0 };
   function flashStart() {
     let pool = getPairs("1to2");
@@ -315,12 +320,4 @@
     if (fl.queue.length) { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
   });
   $("flashStart").addEventListener("click", flashStart);
-
-  // ---------- Init: sessie herstellen of login tonen ----------
-  const session = localStorage.getItem(SESSION_KEY);
-  if (session && getAccounts()[session]) {
-    startSession(session);
-  } else {
-    loadColNames(); // alleen om defaults te tonen achter login
-  }
 })();
