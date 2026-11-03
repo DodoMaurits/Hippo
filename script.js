@@ -1,8 +1,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
 
 // VUL IN vanuit jouw Supabase project (Settings → API):
-const SUPABASE_URL = "https://JOUW-PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "JOUW-ANON-PUBLIC-KEY";
+const SUPABASE_URL = "https://mftdqmdnkzpttyoiehqj.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_DTosIGRbW2TOBrButJxndQ_N_Typi0a";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
