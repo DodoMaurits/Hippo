@@ -1,2 +1,0 @@
-# Hippo
-Language learning
