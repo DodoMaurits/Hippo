@@ -13,9 +13,7 @@
       return raw ? JSON.parse(raw) : [];
     } catch (e) { return []; }
   }
-  function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
-  }
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(words)); }
   function saveColNames() {
     localStorage.setItem(COLNAMES_KEY, JSON.stringify({
       c1: $("col1name").value, c2: $("col2name").value
@@ -37,7 +35,6 @@
     $("th2").textContent = $("col2name").value || "Taal 2";
   }
 
-  // ---------- Tabs ----------
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
@@ -47,7 +44,6 @@
     });
   });
 
-  // ---------- Lijst ----------
   function renderList() {
     const body = $("listBody");
     body.innerHTML = "";
@@ -80,14 +76,13 @@
     if (inputs[0]) inputs[0].focus();
   });
   $("clearList").addEventListener("click", () => {
-    if (words.length && confirm("Weet je zeker dat je de hele lijst wilt legen?")) {
+    if (words.length && confirm("Weet je zeker dat je de hele poel wilt legen? 🦛")) {
       words = []; save(); renderList();
     }
   });
   $("col1name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
   $("col2name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
 
-  // ---------- Hulpfuncties quiz ----------
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -96,26 +91,23 @@
     }
     return a;
   }
-  function normalize(s) {
-    return s.trim().toLowerCase().replace(/\s+/g, " ");
-  }
+  function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g, " "); }
   function getPairs(direction) {
     return words
       .filter((w) => w.a.trim() && w.b.trim())
       .map((w) => direction === "2to1" ? { prompt: w.b, answer: w.a } : { prompt: w.a, answer: w.b });
   }
-  function updateScore(progressEl, scoreEl, countEl, total, done) {
+  function updateScore(progressEl, scoreEl, countEl, total, done, score) {
     scoreEl.textContent = "Score: " + score + "/" + done;
     countEl.textContent = done + "/" + total;
     progressEl.style.width = total ? (done / total * 100) + "%" : "0%";
   }
 
-  // ---------- Meerkeuze ----------
   let mc = { queue: [], idx: 0, score: 0, locked: false };
   function mcStart() {
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
-    if (!pool.length) { $("mcPrompt").textContent = "Voeg eerst woorden toe in ‘Mijn lijst’!"; return; }
+    if (!pool.length) { $("mcPrompt").textContent = "🦛 De poel is leeg! Voeg eerst woorden toe."; return; }
     if ($("mcShuffle").checked) pool = shuffle(pool);
     mc = { queue: pool, idx: 0, score: 0, locked: false };
     mcNext();
@@ -125,18 +117,17 @@
     $("mcFeedback").className = "feedback";
     if (mc.idx >= mc.queue.length) {
       const pct = mc.queue.length ? Math.round(mc.score / mc.queue.length * 100) : 0;
-      $("mcPrompt").textContent = "🎉 Klaar! Je score: " + mc.score + "/" + mc.queue.length + " (" + pct + "%)";
-      $("mcHint").textContent = pct >= 80 ? "Top! 🌟" : pct >= 50 ? "Goed bezig, nog even oefenen 💪" : "Tip: oefen de flashcards eerst 🃏";
+      $("mcPrompt").textContent = "🦛🎉 Klaar! Je score: " + mc.score + "/" + mc.queue.length + " (" + pct + "%)";
+      $("mcHint").textContent = pct >= 80 ? "Spattend goed! 🌟" : pct >= 50 ? "Goed bezig, ga zo door! 💪" : "Tip: dobber eerst door de flashcards 🃏";
       $("mcChoices").innerHTML = "";
-      updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.queue.length);
+      updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.queue.length, mc.score);
       return;
     }
     mc.locked = false;
     const item = mc.queue[mc.idx];
     $("mcPrompt").textContent = item.prompt;
     $("mcHint").textContent = "Kies de juiste vertaling";
-    const wrong = shuffle(mc.queue.filter((x) => x.answer !== item.answer)).slice(0, 3)
-      .map((x) => x.answer);
+    const wrong = shuffle(mc.queue.filter((x) => x.answer !== item.answer)).slice(0, 3).map((x) => x.answer);
     const options = shuffle([item.answer, ...wrong]);
     const box = $("mcChoices");
     box.innerHTML = "";
@@ -150,32 +141,31 @@
         if (normalize(opt) === normalize(item.answer)) {
           btn.classList.add("correct");
           mc.score++;
-          $("mcFeedback").textContent = "✔ Goed!";
+          $("mcFeedback").textContent = "✔ Spattend goed!";
           $("mcFeedback").classList.add("good");
         } else {
           btn.classList.add("wrong");
-          $("mcFeedback").textContent = "✘ Nee, het juiste antwoord was: " + item.answer;
+          $("mcFeedback").textContent = "✘ Oeps! Het was: " + item.answer;
           $("mcFeedback").classList.add("bad");
           box.querySelectorAll(".choice").forEach((b) => {
             if (normalize(b.textContent) === normalize(item.answer)) b.classList.add("correct");
           });
         }
-        updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.idx + 1);
+        updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.idx + 1, mc.score);
         mc.idx++;
         setTimeout(mcNext, 1200);
       });
       box.appendChild(btn);
     });
-    updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.idx);
+    updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.idx, mc.score);
   }
   $("mcStart").addEventListener("click", mcStart);
 
-  // ---------- Typen ----------
   let ty = { queue: [], idx: 0, score: 0 };
   function typeStart() {
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
-    if (!pool.length) { $("typePrompt").textContent = "Voeg eerst woorden toe in ‘Mijn lijst’!"; return; }
+    if (!pool.length) { $("typePrompt").textContent = "🦛 De poel is leeg! Voeg eerst woorden toe."; return; }
     if ($("typeShuffle").checked) pool = shuffle(pool);
     ty = { queue: pool, idx: 0, score: 0 };
     typeNext();
@@ -186,17 +176,17 @@
     $("typeInput").value = "";
     if (ty.idx >= ty.queue.length) {
       const pct = ty.queue.length ? Math.round(ty.score / ty.queue.length * 100) : 0;
-      $("typePrompt").textContent = "🎉 Klaar! Je score: " + ty.score + "/" + ty.queue.length + " (" + pct + "%)";
+      $("typePrompt").textContent = "🦛🎉 Klaar! Je score: " + ty.score + "/" + ty.queue.length + " (" + pct + "%)";
       $("typeHint").textContent = "";
       $("typeInput").style.display = "none";
-      updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.queue.length);
+      updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.queue.length, ty.score);
       return;
     }
     $("typeInput").style.display = "inline-block";
     const item = ty.queue[ty.idx];
     $("typePrompt").textContent = item.prompt;
     $("typeHint").textContent = "Typ de vertaling en druk op Enter";
-    updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx);
+    updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
   }
   function typeCheck() {
@@ -206,24 +196,23 @@
     if (!given.trim()) return;
     if (normalize(given) === normalize(item.answer)) {
       ty.score++;
-      $("typeFeedback").textContent = "✔ Goed!";
+      $("typeFeedback").textContent = "✔ Spattend goed!";
       $("typeFeedback").classList.add("good");
     } else {
       $("typeFeedback").textContent = "✘ Bijna! Het was: " + item.answer;
       $("typeFeedback").classList.add("bad");
     }
     ty.idx++;
-    updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx);
+    updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     setTimeout(typeNext, 1200);
   }
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
 
-  // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0 };
   function flashStart() {
     let pool = getPairs("1to2");
-    if (!pool.length) { $("flashFront").textContent = "Voeg eerst woorden toe!"; return; }
+    if (!pool.length) { $("flashFront").textContent = "🦛 Voeg eerst woorden toe!"; return; }
     if ($("flashShuffle").checked) pool = shuffle(pool);
     fl = { queue: pool, idx: 0 };
     flashShow();
@@ -231,7 +220,7 @@
   function flashShow() {
     $("flashCard").classList.remove("flipped");
     const item = fl.queue[fl.idx];
-    $("flashFront").textContent = item ? item.prompt : "…";
+    $("flashFront").textContent = item ? item.prompt : "🦛";
     $("flashBack").textContent = item ? item.answer : "…";
     $("flashCount").textContent = "Kaart " + (fl.idx + 1) + "/" + fl.queue.length;
   }
@@ -244,7 +233,6 @@
   });
   $("flashStart").addEventListener("click", flashStart);
 
-  // ---------- Init ----------
   loadColNames();
   renderList();
 })();
