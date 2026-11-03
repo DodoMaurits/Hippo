@@ -26,10 +26,49 @@ body {
   overflow-x: hidden;
 }
 
+.hidden { display: none !important; }
 .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 2; }
 
-/* Hippo header */
-.hippo-header { display: flex; align-items: center; gap: 18px; margin-bottom: 24px; }
+/* ---------- Login ---------- */
+.login-screen {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 70vh;
+}
+.login-card {
+  background: var(--panel);
+  border: 3px solid var(--border);
+  border-radius: 24px;
+  padding: 36px 32px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  width: 100%;
+  max-width: 380px;
+}
+.login-card input {
+  width: 100%;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid var(--border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 1rem;
+  outline: none;
+  font-family: inherit;
+}
+.login-card input:focus { border-color: var(--sand); }
+.login-card input::placeholder { color: rgba(255, 255, 255, 0.55); }
+.login-card h1 { font-size: 2rem; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.2); margin: 10px 0 4px; }
+.login-card .subtitle { color: #eafcff; opacity: .9; margin-bottom: 10px; }
+.hippo-face.big { font-size: 3.4rem; width: 80px; height: 80px; margin: 0 auto; }
+.auth-msg { min-height: 1.4rem; margin-top: 12px; font-weight: 700; color: var(--bad); }
+.auth-msg.ok { color: var(--good); }
+.auth-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
+
+/* ---------- Header ---------- */
+.hippo-header { display: flex; align-items: center; gap: 18px; margin-bottom: 24px; flex-wrap: wrap; }
 .hippo-face {
   font-size: 4.2rem;
   background: var(--hippo);
@@ -44,10 +83,18 @@ body {
   0%, 100% { transform: translateY(0) rotate(-3deg); }
   50% { transform: translateY(-10px) rotate(3deg); }
 }
+.header-text { flex: 1; min-width: 200px; }
 h1 { font-size: 2.2rem; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.2); letter-spacing: 1px; }
 .subtitle { color: #eafcff; opacity: .9; font-size: 1.05rem; }
+.user-chip {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid var(--border);
+  padding: 8px 12px; border-radius: 999px;
+  font-weight: 700;
+}
 
-/* Tabs */
+/* ---------- Tabs & panels ---------- */
 .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .tab {
   padding: 12px 20px; border-radius: 999px;
@@ -59,7 +106,6 @@ h1 { font-size: 2.2rem; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.2); letter
 .tab:hover { transform: translateY(-2px); }
 .tab.active { background: var(--sand); color: #5c3d00; border-color: var(--sand-dark); box-shadow: 0 5px 0 var(--sand-dark); }
 
-/* Panelen */
 .panel {
   display: none; background: var(--panel);
   border: 3px solid var(--border); border-radius: 24px;
@@ -68,7 +114,7 @@ h1 { font-size: 2.2rem; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.2); letter
 }
 .panel.active { display: block; }
 
-/* Lijst */
+/* ---------- List ---------- */
 .list-header { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
 input[type="text"], select {
   background: rgba(255,255,255,.14); border: 2px solid var(--border);
@@ -95,7 +141,7 @@ td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 td input { width: 100%; }
 .empty { color: var(--muted); text-align: center; padding: 32px 0; font-size: 1.05rem; }
 
-/* Overhoor */
+/* ---------- Quiz ---------- */
 .quiz-controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
 .quiz-controls label { font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .quiz-box { text-align: center; padding: 26px 10px; }
@@ -120,7 +166,7 @@ td input { width: 100%; }
 .progress { height: 12px; background: rgba(255,255,255,.15); border-radius: 99px; overflow: hidden; margin-bottom: 20px; border: 2px solid var(--border); }
 .progress > div { height: 100%; background: linear-gradient(90deg, var(--sand), var(--coral)); width: 0%; transition: width .3s; border-radius: 99px; }
 
-/* Flashcards */
+/* ---------- Flashcards ---------- */
 .flashcard { max-width: 480px; margin: 20px auto; perspective: 1000px; cursor: pointer; }
 .flashcard-inner { position: relative; height: 220px; transition: transform .5s; transform-style: preserve-3d; }
 .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
@@ -134,7 +180,7 @@ td input { width: 100%; }
 .face.back { transform: rotateY(180deg); border-color: var(--coral); background: #0d3d51; }
 .flash-nav { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
 
-/* Bubbles & water */
+/* ---------- Bubbles & water ---------- */
 .bubbles span {
   position: fixed; bottom: -60px;
   background: rgba(255,255,255,.35); border-radius: 50%;
