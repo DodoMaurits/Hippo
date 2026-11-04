@@ -543,7 +543,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeInput").value = quizOpts.help === "hint" && item.answer ? item.answer[0] : "";
     $("typePrompt").style.fontSize = "";
     $("typePrompt").textContent = item.prompt;
-    $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "🔀 " + shuffleLetters(item.answer) : "";
+    $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
   }
