@@ -360,7 +360,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   // ---------- Quiz helpers ----------
   function gradeFeedback(grade) {
     if (grade < 5.5) return "Keep going — don't give up! 💪";
-    if (grade < 7.5) return "Well done — you are on the right path! 🌱";
+    if (grade < 7.5) return "Splashing great! You are on the right path! 🌱";
     if (grade < 9.5) return "Awesome! One more? Practice makes perfect 🌟";
     return "You nailed it! 🦛👑";
   }
@@ -454,11 +454,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (mc.idx >= mc.queue.length) {
       const pct = mc.total ? Math.round(mc.score / mc.total * 100) : 0;
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (mc.score / mc.total)) * 10) / 10));
-      $("mcPrompt").textContent = "🦛🎉 Done! " + mc.score + "/" + mc.total + " (" + pct + "%) — grade: " 
-        + grade.toFixed(1) + "/10";
+      $("mcPrompt").style.fontSize = "4.5rem";
+      $("mcPrompt").textContent = grade.toFixed(1);
+      $("mcHint").textContent = "Score " + mc.score + "/" + mc.total + " — " + gradeFeedback(grade);
       activeQuiz = null;
-      $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
-        "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
       setQuizChrome("panel-quiz-mc", true);
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
@@ -467,6 +466,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     mc.locked = false;
     const item = mc.queue[mc.idx];
     $("mcPrompt").textContent = item.prompt;
+    $("mcPrompt").style.fontSize = "";
     $("mcHint").textContent = "Pick the correct translation";
     const wrong = shuffle(mc.queue.filter((x) => x.answer !== item.answer)).slice(0, 3).map((x) => x.answer);
     const options = shuffle([item.answer, ...wrong]);
@@ -529,10 +529,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (ty.idx >= ty.queue.length) {
       const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
-      $("typePrompt").textContent = "🦛🎉 Done! " + ty.score + "/" + ty.total + " (" + pct + "%) — grade: " 
-        + grade.toFixed(1) + "/10";
+      $("typePrompt").style.fontSize = "4.5rem";
+      $("typePrompt").textContent = grade.toFixed(1);
+      $("typeHint").textContent = "Score " + ty.score + "/" + ty.total + " — " + gradeFeedback(grade);
       activeQuiz = null;
-      $("typeHint").textContent = "";
       $("typeInput").classList.add("hidden");
       setQuizChrome("panel-quiz-type", true);
       updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.total, ty.total, ty.score);
@@ -541,6 +541,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeInput").classList.remove("hidden");
     const item = ty.queue[ty.idx];
     $("typeInput").value = quizOpts.help === "hint" && item.answer ? item.answer[0] : "";
+    $("typePrompt").style.fontSize = "";
     $("typePrompt").textContent = item.prompt;
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "🔀 " + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
