@@ -185,7 +185,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const del = document.createElement("button");
       del.className = "btn danger";
       del.textContent = "✕";
-      del.addEventListener("click", () => {
+      del.addEventListener("click", async () => {
         const ok = await showModal({ title: "🗑️ Delete list", 
         text: "Delete list “" + l.name + "” and all its words?", okText: "Delete" }); 
         if (!ok) return;
