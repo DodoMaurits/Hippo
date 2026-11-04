@@ -18,6 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let words = []; // [{ id, a, b }]
   let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal" };
+  let activeQuiz = null; // "mc" | "ty" | "fl" | null
 
   // ---------- Auth ----------
   function authMsg(text, ok) {
@@ -160,14 +161,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
+      if (activeQuiz && tab.dataset.tab !== "quiz-" + activeQuiz) {
+        if (!(await confirmLeaveQuiz())) return;
+      }
       activateTab(tab.dataset.tab);
     });
   });
 
-  $("backToOverview").addEventListener("click", () => { renderOverview(); activateTab("overview"); });
-
+  $("backToOverview").addEventListener("click", async () => {
+    if (activeQuiz && !(await confirmLeaveQuiz())) return;
+    renderOverview(); activateTab("overview");
+  });
+  
   async function loadLists() {
     if (GUEST) {
       try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; }
@@ -351,6 +358,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("col2name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
 
   // ---------- Quiz helpers ----------
+  async function confirmLeaveQuiz() {
+    if (!activeQuiz) return true;
+    const ok = await showModal({
+      title: "🦛 Leave quiz?",
+      text: "Are you sure you want to leave? Next time a brand-new quiz will start.",
+      okText: "Yes"
+    });
+    if (ok) { activeQuiz = null; return true; }
+    activateTab("quiz-" + activeQuiz);
+    return false;
+  }
   function setQuizChrome(panelId, show) {
     const p = $(panelId);
     p.querySelector(".quiz-controls").classList.toggle("hidden", !show);
@@ -421,6 +439,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
     setQuizChrome("panel-quiz-mc", false);
+    activeQuiz = "mc"; // resp. "ty" / "fl"
     mcNext();
   }
   function mcNext() {
@@ -431,6 +450,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (mc.score / mc.total)) * 10) / 10));
       $("mcPrompt").textContent = "🦛🎉 Done! " + mc.score + "/" + mc.total + " (" + pct + "%) — grade: " 
         + grade.toFixed(1) + "/10";
+      activeQuiz = null;
       $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
         "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
@@ -494,6 +514,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
     setQuizChrome("panel-quiz-type", false);
+    activeQuiz = "mc"; // resp. "ty" / "fl"
     typeNext();
   }
   function typeNext() {
@@ -504,6 +525,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
       $("typePrompt").textContent = "🦛🎉 Done! " + ty.score + "/" + ty.total + " (" + pct + "%) — grade: " 
         + grade.toFixed(1) + "/10";
+      activeQuiz = null;
       $("typeHint").textContent = "";
       $("typeInput").classList.add("hidden");
       setQuizChrome("panel-quiz-type", true);
@@ -555,6 +577,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
     setQuizChrome("panel-flash", false);
+    activeQuiz = "mc"; // resp. "ty" / "fl"
     flashShow();
   }
   function flashShow() {
