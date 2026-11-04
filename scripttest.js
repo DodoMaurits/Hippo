@@ -251,6 +251,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
     await loadWords();
     renderList();
+    $("mcMax").value = words.length;
+    $("typeMax").value = words.length;
+    $("flashMax").value = words.length;
     activateTab("list");
     setQuizTabs(true);
   }
@@ -372,8 +375,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let pool = getPairs(dir);
     if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
     if ($("mcShuffle").checked) pool = shuffle(pool);
-    const max = parseInt($("mcMax").value, 10);
-    if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
+    const max = parseInt($("mcMax").value, 10) || pool.length;
+    pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
     mcNext();
   }
@@ -441,8 +444,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let pool = getPairs(dir);
     if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
     if ($("typeShuffle").checked) pool = shuffle(pool);
-    const max = parseInt($("typeMax").value, 10);
-    if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
+    const max = parseInt($("typeMax").value, 10) || pool.length;
+    pool = pool.slice(0, Math.min(max, pool.length));
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
     typeNext();
   }
@@ -497,8 +500,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let pool = getPairs("1to2");
     if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
     if ($("flashShuffle").checked) pool = shuffle(pool);
-    const max = parseInt($("flashMax").value, 10);
-    if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
+    const max = parseInt($("flashMax").value, 10) || pool.length;
+    pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
     flashShow();
   }
