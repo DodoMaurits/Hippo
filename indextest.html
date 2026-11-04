@@ -66,7 +66,6 @@
         <button class="btn secondary" id="backToOverview">← All lists</button>
         <input type="text" id="col1name" placeholder="Language 1 name (e.g. English)" value="Language 1">
         <input type="text" id="col2name" placeholder="Language 2 name (e.g. Spanish)" value="Language 2">
-        <option value="both">Both directions</option>
         <button class="btn" id="addRow">+ Add word</button>
         <button class="btn secondary" id="clearList">Clear list</button>
         <button class="btn secondary" id="importBtn">📥 Import</button>
@@ -87,6 +86,7 @@
         <select id="mcDirection">
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
+          <option value="both">Both directions</option>
         </select>
         <button class="btn" id="mcStart">▶ Start quiz</button>
       </div>
@@ -94,10 +94,11 @@
       <div class="progress"><div id="mcProgress"></div></div>
       <div class="quiz-box">
         <div class="quiz-options">
-          <label class="opt-pill"><input type="checkbox" id="mcShuffle" checked> 🔀 Shuffle</label>
+          <label class="opt-pill"><input type="checkbox" id="mcShuffle" checked> Shuffle</label>
           <label class="opt-pill">Max <input type="number" id="mcMax" min="1" class="opt-max"></label>
         </div>
         <div class="prompt" id="mcPrompt">Press “Start quiz”</div>
+        <button class="btn quiz-start2" id="mcStart2">▶ Start quiz</button>
         <div class="hint" id="mcHint"></div>
         <div class="choices" id="mcChoices"></div>
         <div class="feedback" id="mcFeedback"></div>
@@ -110,6 +111,7 @@
         <select id="typeDirection">
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
+          <option value="both">Both directions</option>
         </select>
         <button class="btn" id="typeStart">▶ Start quiz</button>
       </div>
@@ -128,6 +130,7 @@
           </div>
         </div>
         <div class="prompt" id="typePrompt">Press “Start quiz”</div>
+        <button class="btn quiz-start2" id="mcStart2">▶ Start quiz</button>
         <div class="hint" id="typeHint"></div>
         <input type="text" class="answer-input hidden" id="typeInput" placeholder="Type the translation…" autocomplete="off">
         <div class="feedback" id="typeFeedback"></div>
@@ -142,7 +145,7 @@
       <div class="score-bar"><span id="flashCount">Card 0/0</span></div>
       <div class="quiz-box">
         <div class="quiz-options">
-          <label class="opt-pill"><input type="checkbox" id="flashShuffle" checked> 🔀 Shuffle</label>
+          <label class="opt-pill"><input type="checkbox" id="flashShuffle" checked> Shuffle</label>
           <label class="opt-pill">Max <input type="number" id="flashMax" min="1" class="opt-max"></label>
         </div>
       </div>
