@@ -215,6 +215,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       row.appendChild(del);
       box.appendChild(row);
     });
+    setQuizTabs(!!currentList);
   }
 
   async function newList() {
@@ -246,6 +247,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadWords();
     renderList();
     activateTab("list");
+    setQuizTabs(true);
+  }
+
+  function setQuizTabs(show) {
+    document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"]')
+      .forEach((t) => t.classList.toggle("hidden", !show));
   }
   
   // ---------- List ----------
@@ -543,10 +550,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("app").classList.remove("hidden");
     $("loggedInUser").textContent = "🦛 Guest (local only)";
     await loadLists();
-    if (!currentList && lists.length) currentList = lists[0];
     loadColNames();
     renderOverview();
     activateTab("overview");
+    setQuizTabs(false);
   }
 
   if (GUEST) {
@@ -558,10 +565,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         $("app").classList.remove("hidden");
         $("loggedInUser").textContent = "🦛 " + session.user.email;
         await loadLists();
-        if (!currentList && lists.length) currentList = lists[0];
         loadColNames();
         renderOverview();
         activateTab("overview");
+        setQuizTabs(false);
       } else {
         words = [];
         $("app").classList.add("hidden");
