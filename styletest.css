@@ -108,7 +108,7 @@ h1 { font-size: 2.2rem; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.2); letter
   transition: all .15s; backdrop-filter: blur(4px);
 }
 .tab:hover { transform: translateY(-2px); }
-.tab.active { background: var(--sand); color: #5c3d00; border-color: var(--sand-dark); box-shadow: 0 5px 0 var(--sand-dark); }
+.tab.active { background: #0d3d51; color: #fff; border-color: var(--sand); box-shadow: 0 5px 0 rgba(0, 0, 0, 0.3); }
 
 .panel {
   display: none; background: var(--panel);
