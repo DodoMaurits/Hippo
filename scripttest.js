@@ -186,7 +186,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       del.className = "btn danger";
       del.textContent = "✕";
       del.addEventListener("click", () => {
-        if (!confirm("Delete list “" + l.name + "” and all its words? 🦛")) return;
+        const ok = await showModal({ title: "🗑️ Delete list", 
+        text: "Delete list “" + l.name + "” and all its words?", okText: "Delete" }); 
+        if (!ok) return;
         if (GUEST) {
           const w = (JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]")).filter((x) => x.listId !== l.id);
           localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(w));
@@ -210,8 +212,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   async function newList() {
-    const name = prompt("Name of the new list:", "New list");
-    if (!name || !name.trim()) return;
+    const name = await showModal({ title: "➕ New list", text: "Name of the new list:", 
+      inputPlaceholder: "New list", okText: "Create" }); 
+    if (!name) return;
     if (GUEST) {
       const l = { id: "g" + Date.now(), name: name.trim(), col1: "Language 1", col2: "Language 2" };
       lists.push(l);
@@ -299,7 +302,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 
   $("clearList").addEventListener("click", async () => {
-    if (words.length && confirm("Clear this list? 🦛")) {
+    const ok = await showModal({ title: "🧹 Clear list", text: "Remove all words from this list?", okText: "Clear" }); 
+    if (words.length && ok) {
       if (GUEST) {
         const all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]");
         localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all.filter((w) => w.listId !== currentList.id)));
