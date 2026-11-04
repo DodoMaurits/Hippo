@@ -477,6 +477,53 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
   $("flashStart").addEventListener("click", flashStart);
 
+  // ---------- Importeren ----------
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+
+  $("importFile").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!currentList) {
+      await showModal({ title: "📥 Import", text: "Open a list first (🗂️ My lists)", okText: "OK" });
+      return;
+    }
+    let rows = [];
+    try {
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        const text = await file.text();
+        rows = text.split(/\r?\n/).map((l) => l.split(/[;,\t]/));
+      } else {
+        const XLSX = await import("https://cdn.sheetjs.com/xlsx-0.20.4/package/dist/xlsx.full.min.js");
+        const wb = XLSX.read(await file.arrayBuffer());
+        rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+      }
+    } catch (err) {
+      console.error(err);
+      await showModal({ title: "📥 Import failed", text: "Could not read that file. Use .csv or .xlsx with columns A and B.", okText: "OK" });
+      return;
+    }
+    const clean = rows
+      .map((r) => [String(r[0] ?? "").trim(), String(r[1] ?? "").trim()])
+      .filter((r) => r[0] || r[1]);
+    if (!clean.length) {
+      await showModal({ title: "📥 Import", text: "No words found in columns A and B.", okText: "OK" });
+      return;
+    }
+    if (GUEST) {
+      const all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]");
+      clean.forEach((r, i) => all.push({ id: "g" + Date.now() + "_" + i, listId: currentList.id, a: r[0], b: r[1] }));
+      localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all));
+    } else {
+      await supabase.from("words").insert(
+        clean.map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }))
+      );
+    }
+    await loadWords();
+    renderList();
+    await showModal({ title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" });
+  });
+  
   // ---------- Init ----------
   async function startGuest() {
     $("loginScreen").classList.add("hidden");
