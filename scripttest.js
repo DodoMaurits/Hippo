@@ -361,8 +361,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   async function confirmLeaveQuiz() {
     if (!activeQuiz) return true;
     const ok = await showModal({
-      title: "🦛 Leave quiz?",
-      text: "Are you sure you want to leave? Next time a brand-new quiz will start.",
+      title: "Warning!",
+      text: "Are you sure you want to leave? Progress will not be saved.",
       okText: "Yes"
     });
     if (ok) { activeQuiz = null; return true; }
