@@ -494,8 +494,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const text = await file.text();
         rows = text.split(/\r?\n/).map((l) => l.split(/[;,\t]/));
       } else {
-        const mod = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");
-        const XLSX = mod.default || mod;
+        const XLSX = (await import("https://esm.run/xlsx@0.18.5")).default;
         const wb = XLSX.read(await file.arrayBuffer());
         rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
       }
