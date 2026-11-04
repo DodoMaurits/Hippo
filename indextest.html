@@ -87,7 +87,11 @@
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
         </select>
-        <label><input type="checkbox" id="mcShuffle" checked> Shuffle order</label>
+        <label>Max <input type="number" id="mcMax" min="1" style="width:70px"></label>
+        <select id="mcOrder">
+          <option value="shuffle">🔀 Shuffle</option>
+          <option value="ordered">🔢 In order</option>
+        </select>
         <button class="btn" id="mcStart">▶ Start quiz</button>
       </div>
       <div class="score-bar"><span id="mcScore">Score: 0/0</span><span id="mcCount"></span></div>
@@ -107,7 +111,12 @@
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
         </select>
-        <label><input type="checkbox" id="typeShuffle" checked> Shuffle order</label>
+        <label>Max <input type="number" id="typeMax" min="1" style="width:70px"></label>
+        <select id="typeOrder">
+          <option value="shuffle">🔀 Shuffle</option>
+          <option value="ordered">🔢 In order</option>
+        </select>
+        <label><input type="checkbox" id="typeCase"> Aa Case sensitive</label>
         <button class="btn" id="typeStart">▶ Start quiz</button>
       </div>
       <div class="score-bar"><span id="typeScore">Score: 0/0</span><span id="typeCount"></span></div>
@@ -123,7 +132,11 @@
     <!-- FLASHCARDS -->
     <div class="panel" id="panel-flash">
       <div class="quiz-controls">
-        <label><input type="checkbox" id="flashShuffle" checked> Shuffle order</label>
+        <label>Max <input type="number" id="flashMax" min="1" style="width:70px"></label>
+        <select id="flashOrder">
+          <option value="shuffle">🔀 Shuffle</option>
+          <option value="ordered">🔢 In order</option>
+        </select>
         <button class="btn" id="flashStart">▶ Start flashcards</button>
       </div>
       <div class="score-bar"><span id="flashCount">Card 0/0</span></div>
