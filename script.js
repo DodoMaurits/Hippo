@@ -34,7 +34,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       authMsg("Account created — you are logged in! 🦛", true);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) return authMsg("Wrong email or password");
+      if (error) {
+        const { data: exists } = await supabase.rpc("email_exists", { p_email: email });
+        if (exists) return authMsg("Wrong password");
+        return authMsg("No account with this email yet — use Create account");
+      }
     }
   }
 
