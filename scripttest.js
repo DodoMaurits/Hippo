@@ -493,7 +493,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const max = parseInt($("typeMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
-    $("panel-quiz-type").querySelector(".quiz-controls").classList.add("hidden");
+    setQuizChrome("panel-quiz-type", false);
     typeNext();
   }
   function typeNext() {
