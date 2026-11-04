@@ -125,7 +125,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("th2").textContent = c2;
     document.querySelectorAll("#mcDirection option, #typeDirection option").forEach((o) => {
       if (o.value === "1to2") o.textContent = c1 + " → " + c2;
-      else o.textContent = c2 + " → " + c1;
+      else if (o.value === "2to1") o.textContent = c2 + " → " + c1;
     });
   }
 
