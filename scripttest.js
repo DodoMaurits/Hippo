@@ -370,21 +370,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if ($("mcOrder").value === "shuffle") pool = shuffle(pool);
     const max = parseInt($("mcMax").value, 10);
     if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
-    mc = { queue: pool, idx: 0, score: 0, locked: false };
+    mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
     mcNext();
   }
   function mcNext() {
     $("mcFeedback").textContent = "";
     $("mcFeedback").className = "feedback";
     if (mc.idx >= mc.queue.length) {
-      const pct = mc.queue.length ? Math.round(mc.score / mc.queue.length * 100) : 0;
-      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (mc.score / mc.queue.length)) * 10) / 10));
-      $("mcPrompt").textContent = "🦛🎉 Done! " + mc.score + "/" + mc.queue.length + " (" + pct + "%) — grade: " 
+      const pct = mc.total ? Math.round(mc.score / mc.total * 100) : 0;
+      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (mc.score / mc.total)) * 10) / 10));
+      $("mcPrompt").textContent = "🦛🎉 Done! " + mc.score + "/" + mc.total + " (" + pct + "%) — grade: " 
         + grade.toFixed(1) + "/10";
       $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
         "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
-      updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.queue.length, mc.score);
+      updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
       return;
     }
     mc.locked = false;
@@ -404,11 +404,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         mc.locked = true;
         if (normalize(opt) === normalize(item.answer)) {
           btn.classList.add("correct");
-          mc.score++;
+          if (!item.missed) mc.score++;
           $("mcFeedback").textContent = "✔ Correct!";
           $("mcFeedback").classList.add("good");
         } else {
           btn.classList.add("wrong");
+          item.missed = true;
+          const back = 2 + Math.floor(Math.random() * 3); // 2, 3 of 4
+          mc.queue.splice(Math.min(mc.idx + back, mc.queue.length), 0, item);
           $("mcFeedback").textContent = "✘ Oops! It was: " + item.answer;
           $("mcFeedback").classList.add("bad");
           box.querySelectorAll(".choice").forEach((b) => {
@@ -436,7 +439,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if ($("typeOrder").value === "shuffle") pool = shuffle(pool);
     const max = parseInt($("typeMax").value, 10);
     if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
-    ty = { queue: pool, idx: 0, score: 0 };
+    ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
     typeNext();
   }
   function typeNext() {
@@ -444,13 +447,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeFeedback").className = "feedback";
     $("typeInput").value = "";
     if (ty.idx >= ty.queue.length) {
-      const pct = ty.queue.length ? Math.round(ty.score / ty.queue.length * 100) : 0;
-      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.queue.length)) * 10) / 10));
-      $("typePrompt").textContent = "🦛🎉 Done! " + ty.score + "/" + ty.queue.length + " (" + pct + "%) — grade: " 
+      const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
+      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
+      $("typePrompt").textContent = "🦛🎉 Done! " + ty.score + "/" + ty.total + " (" + pct + "%) — grade: " 
         + grade.toFixed(1) + "/10";
       $("typeHint").textContent = "";
       $("typeInput").style.display = "none";
-      updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.queue.length, ty.score);
+      updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.total, ty.total, ty.score);
       return;
     }
     $("typeInput").style.display = "inline-block";
@@ -466,10 +469,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const given = $("typeInput").value;
     if (!given.trim()) return;
     if (acceptedAnswers(item.answer).includes(quizOpts.caseSensitive ? given.trim() : normalize(given))) {
-      ty.score++;
+      if (!item.missed) ty.score++;
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
     } else {
+      item.missed = true;
+      const back = 2 + Math.floor(Math.random() * 3);
+      ty.queue.splice(Math.min(ty.idx + back, ty.queue.length), 0, item);
       $("typeFeedback").textContent = "✘ Almost! It was: " + item.answer;
       $("typeFeedback").classList.add("bad");
     }
