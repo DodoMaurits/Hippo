@@ -6,7 +6,9 @@ const SUPABASE_ANON_KEY = "sb_publishable_DTosIGRbW2TOBrButJxndQ_N_Typi0a";
 const GUEST = new URLSearchParams(location.search).get("guest") === "1";
 const GUEST_WORDS_KEY = "hippo-guest-words";
 const GUEST_COLNAMES_KEY = "hippo-guest-colnames";
-
+let lists = [];
+let currentList = null;
+const GUEST_LISTS_KEY = "hippo-guest-lists";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 (function () {
@@ -71,54 +73,35 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   
   async function loadWords() {
     if (GUEST) {
-      try {
-        const raw = localStorage.getItem(GUEST_WORDS_KEY);
-        words = raw ? JSON.parse(raw) : [];
-      } catch (e) { words = []; }
-      words = words.map((w, i) => ({ id: w.id || "g" + i, a: w.a || "", b: w.b || "" }));
+      let raw = null;
+      try { raw = localStorage.getItem(GUEST_WORDS_KEY); } catch (e) {}
+      words = (raw ? JSON.parse(raw) : [])
+        .filter((w) => !currentList || w.listId === currentList.id)
+        .map((w, i) => ({ id: w.id || "g" + i, listId: w.listId, a: w.a || "", b: w.b || "" }));
       return;
     }
     const { data, error } = await supabase
       .from("words")
       .select("id, lang1, lang2")
+      .eq("list_id", currentList.id)
       .order("created_at", { ascending: true });
     if (error) { console.error(error); return; }
     words = data.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2 }));
   }
 
-  async function loadColNames() {
-    if (GUEST) {
-      try {
-        const n = JSON.parse(localStorage.getItem(GUEST_COLNAMES_KEY)) || {};
-        $("col1name").value = n.c1 || "Language 1";
-        $("col2name").value = n.c2 || "Language 2";
-      } catch (e) {}
-      updateHeaders();
-      return;
+  function loadColNames() {
+    if (currentList) {
+      $("col1name").value = currentList.col1 || "Language 1";
+      $("col2name").value = currentList.col2 || "Language 2";
     }
-    const { data } = await supabase
-      .from("user_settings")
-      .select("col1, col2")
-      .maybeSingle();
-    $("col1name").value = (data && data.col1) || "Language 1";
-    $("col2name").value = (data && data.col2) || "Language 2";
     updateHeaders();
   }
-
   async function saveColNames() {
-    if (GUEST) {
-      localStorage.setItem(GUEST_COLNAMES_KEY, JSON.stringify({
-        c1: $("col1name").value, c2: $("col2name").value
-      }));
-      return;
-    }
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) return;
-    await supabase.from("user_settings").upsert({
-      user_id: user.user.id,
-      col1: $("col1name").value,
-      col2: $("col2name").value
-    });
+    if (!currentList) return;
+    currentList.col1 = $("col1name").value;
+    currentList.col2 = $("col2name").value;
+    if (GUEST) { saveListsGuest(); return; }
+    await supabase.from("lists").update({ col1: currentList.col1, col2: currentList.col2 }).eq("id", currentList.id);
   }
 
   function updateHeaders() {
@@ -126,16 +109,139 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("th2").textContent = $("col2name").value || "Language 2";
   }
 
+  function showModal({ title, text, inputPlaceholder, okText }) {
+    return new Promise((resolve) => {
+      const ov = $("modalOverlay");
+      $("modalTitle").textContent = title;
+      $("modalText").textContent = text || "";
+      const inp = $("modalInput");
+      if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
+      else { inp.classList.add("hidden"); }
+      $("modalMsg").textContent = "";
+      $("modalOk").textContent = okText || "OK";
+      ov.classList.remove("hidden");
+      const done = (val) => { ov.classList.add("hidden"); resolve(val); };
+      $("modalOk").onclick = () => {
+        if (inputPlaceholder && !inp.value.trim()) { $("modalMsg").textContent = "Please enter a name"; return; }
+        done(inputPlaceholder ? inp.value.trim() : true);
+      };
+      $("modalCancel").onclick = () => done(null);
+      ov.onclick = (e) => { if (e.target === ov) done(null); };
+      if (inputPlaceholder) inp.focus(); else $("modalOk").focus();
+    });
+  }
+  
   // ---------- Tabs ----------
+  function activateTab(name) {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+    document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+    const panel = $("panel-" + name);
+    if (panel) panel.classList.add("active");
+  }
+
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-      document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
-      tab.classList.add("active");
-      $("panel-" + tab.dataset.tab).classList.add("active");
+      if (tab.dataset.tab === "newlist") { newList(); return; }
+      activateTab(tab.dataset.tab);
     });
   });
 
+  $("backToOverview").addEventListener("click", () => { renderOverview(); activateTab("overview"); });
+
+  async function loadLists() {
+    if (GUEST) {
+      try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; }
+      catch (e) { lists = []; }
+      if (!lists.length) {
+        lists = [{ id: "g1", name: "My list", col1: "Language 1", col2: "Language 2" }];
+        localStorage.setItem(GUEST_LISTS_KEY, JSON.stringify(lists));
+      }
+      return;
+    }
+    const { data, error } = await supabase
+      .from("lists").select("id, name, col1, col2").order("created_at", { ascending: true });
+    if (error) { console.error(error); return; }
+    lists = data || [];
+  }
+
+  function saveListsGuest() {
+    localStorage.setItem(GUEST_LISTS_KEY, JSON.stringify(lists));
+  }
+
+  function renderOverview() {
+    const box = $("listsOverview");
+    box.innerHTML = "";
+    if (!lists.length) {
+      box.innerHTML = '<p class="empty">No lists yet — create one with ➕ New list! 🦛</p>';
+      return;
+    }
+    lists.forEach((l) => {
+      const row = document.createElement("div");
+      row.className = "list-item";
+      const nameBtn = document.createElement("button");
+      nameBtn.className = "list-name";
+      nameBtn.textContent = "🗂️ " + l.name;
+      nameBtn.addEventListener("click", () => openList(l.id));
+      const del = document.createElement("button");
+      del.className = "btn danger";
+      del.textContent = "✕";
+      del.addEventListener("click", async () => {
+        const ok = await showModal({ title: "🗑️ Delete list", 
+        text: "Delete list “" + l.name + "” and all its words?", okText: "Delete" }); 
+        if (!ok) return;
+        if (GUEST) {
+          const w = (JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]")).filter((x) => x.listId !== l.id);
+          localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(w));
+          lists = lists.filter((x) => x.id !== l.id);
+          saveListsGuest();
+        } else {
+          supabase.from("words").delete().eq("list_id", l.id).then(() =>
+            supabase.from("lists").delete().eq("id", l.id).then(() => {
+              lists = lists.filter((x) => x.id !== l.id);
+              renderOverview();
+            })
+          );
+        }
+        if (currentList && currentList.id === l.id) currentList = null;
+        if (GUEST) renderOverview();
+      });
+      row.appendChild(nameBtn);
+      row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  async function newList() {
+    const name = await showModal({ title: "➕ New list", text: "Name of the new list:", 
+      inputPlaceholder: "New list", okText: "Create" }); 
+    if (!name) return;
+    if (GUEST) {
+      const l = { id: "g" + Date.now(), name: name.trim(), col1: "Language 1", col2: "Language 2" };
+      lists.push(l);
+      saveListsGuest();
+      renderOverview();
+      openList(l.id);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("lists").insert({ name: name.trim() }).select("id, name, col1, col2").single();
+    if (error) { console.error(error); return; }
+    lists.push(data);
+    renderOverview();
+    openList(data.id);
+  }
+
+  async function openList(id) {
+    currentList = lists.find((l) => l.id === id) || null;
+    if (!currentList) return;
+    $("col1name").value = currentList.col1 || "Language 1";
+    $("col2name").value = currentList.col2 || "Language 2";
+    updateHeaders();
+    await loadWords();
+    renderList();
+    activateTab("list");
+  }
+  
   // ---------- List ----------
   function renderList() {
     const body = $("listBody");
@@ -177,7 +283,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   $("addRow").addEventListener("click", async () => {
     if (GUEST) {
-      words.push({ id: "g" + Date.now(), a: "", b: "" });
+      words.push({ id: "g" + Date.now(), listId: currentList.id, a: "", b: "" });
       save(); renderList();
       const inputs = $("listBody").querySelectorAll("tr:last-child input");
       if (inputs[0]) inputs[0].focus();
@@ -185,7 +291,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     const { data, error } = await supabase
       .from("words")
-      .insert({ lang1: "", lang2: "" })
+      .insert({ lang1: "", lang2: "", list_id: currentList.id })
       .select("id, lang1, lang2")
       .single();
     if (error) { console.error(error); return; }
@@ -196,9 +302,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 
   $("clearList").addEventListener("click", async () => {
-    if (words.length && confirm("Are you sure you want to clear the whole pool? 🦛")) {
-      if (GUEST) { words = []; save(); renderList(); return; }
-      await supabase.from("words").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    const ok = await showModal({ title: "🧹 Clear list", text: "Remove all words from this list?", okText: "Clear" }); 
+    if (words.length && ok) {
+      if (GUEST) {
+        const all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]");
+        localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all.filter((w) => w.listId !== currentList.id)));
+        words = [];
+        renderList();
+        return;
+      }
+      await supabase.from("words").delete().eq("list_id", currentList.id);
       words = [];
       renderList();
     }
@@ -231,6 +344,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   // ---------- Multiple choice (ongewijzigd) ----------
   let mc = { queue: [], idx: 0, score: 0, locked: false };
   function mcStart() {
+    if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
@@ -290,6 +404,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   // ---------- Typing (ongewijzigd) ----------
   let ty = { queue: [], idx: 0, score: 0 };
   function typeStart() {
+    if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
@@ -339,6 +454,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   // ---------- Flashcards (ongewijzigd) ----------
   let fl = { queue: [], idx: 0 };
   function flashStart() {
+    if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs("1to2");
     if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
     if ($("flashShuffle").checked) pool = shuffle(pool);
@@ -361,14 +477,67 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
   $("flashStart").addEventListener("click", flashStart);
 
+  // ---------- Importeren ----------
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+
+  $("importFile").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!currentList) {
+      await showModal({ title: "📥 Import", text: "Open a list first (🗂️ My lists)", okText: "OK" });
+      return;
+    }
+    let rows = [];
+    try {
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        const text = await file.text();
+        rows = text.split(/\r?\n/).map((l) => l.split(/[;,\t]/));
+      } else {
+        const mod = await import("https://esm.sh/xlsx@0.18.5");
+        const XLSX = mod.default || mod.XLSX || mod;
+        const wb = XLSX.read(await file.arrayBuffer());
+        rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+      }
+    } catch (err) {
+      console.error(err);
+      await showModal({ title: "📥 Import failed", text: "Could not read that file. Use .csv or .xlsx with columns A and B.", okText: "OK" });
+      return;
+    }
+    const clean = rows
+      .map((r) => [String(r[0] ?? "").trim(), String(r[1] ?? "").trim()])
+      .filter((r) => r[0] || r[1]);
+    if (!clean.length) {
+      await showModal({ title: "📥 Import", text: "No words found in columns A and B.", okText: "OK" });
+      return;
+    }
+    if (GUEST) {
+      const all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]");
+      clean.forEach((r, i) => all.push({ id: "g" + Date.now() + "_" + i, listId: currentList.id, a: r[0], b: r[1] }));
+      localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all));
+    } else {
+      for (let i = 0; i < clean.length; i += 500) {
+        const batch = clean.slice(i, i + 500)
+          .map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }));
+        const { error } = await supabase.from("words").insert(batch);
+        if (error) { console.error(error); }
+      }
+    }
+    await loadWords();
+    renderList();
+    await showModal({ title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" });
+  });
+  
   // ---------- Init ----------
   async function startGuest() {
     $("loginScreen").classList.add("hidden");
     $("app").classList.remove("hidden");
     $("loggedInUser").textContent = "🦛 Guest (local only)";
-    await loadColNames();
-    await loadWords();
-    renderList();
+    await loadLists();
+    if (!currentList && lists.length) currentList = lists[0];
+    loadColNames();
+    renderOverview();
+    activateTab("overview");
   }
 
   if (GUEST) {
@@ -379,9 +548,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         $("loginScreen").classList.add("hidden");
         $("app").classList.remove("hidden");
         $("loggedInUser").textContent = "🦛 " + session.user.email;
-        await loadColNames();
-        await loadWords();
-        renderList();
+        await loadLists();
+        if (!currentList && lists.length) currentList = lists[0];
+        loadColNames();
+        renderOverview();
+        activateTab("overview");
       } else {
         words = [];
         $("app").classList.add("hidden");
