@@ -381,7 +381,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       setQuizChrome("panel-flash", true);
       $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
       $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
-      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = "";
+      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
       $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
       return true;
     }
