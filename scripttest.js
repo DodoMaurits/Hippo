@@ -39,7 +39,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (error) return authMsg(error.message);
       if (!data.session) {
         await showModal({
-          title: "📧 Check your inbox",
+          title: "Check your inbox",
           text: "A confirmation e-mail has been sent to " + email + ". Click the link in it to activate your account, then log in.",
           okText: "OK"
         });
