@@ -414,7 +414,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const max = parseInt($("mcMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
-    $("panel-quiz-mc").querySelector(".quiz-controls").classList.remove("hidden");
+    $("panel-quiz-mc").querySelector(".quiz-controls").classList.add("hidden");
     mcNext();
   }
   function mcNext() {
@@ -428,7 +428,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
         "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
-      $("panel-quiz-mc").querySelector(".quiz-controls").classList.add("hidden");
+      $("panel-quiz-mc").querySelector(".quiz-controls").classList.remove("hidden");
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
       return;
     }
