@@ -378,7 +378,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("mcFeedback").className = "feedback";
     if (mc.idx >= mc.queue.length) {
       const pct = mc.queue.length ? Math.round(mc.score / mc.queue.length * 100) : 0;
-      const pct = mc.queue.length ? Math.round(mc.score / mc.queue.length * 100) : 0;
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (mc.score / mc.queue.length)) * 10) / 10));
       $("mcPrompt").textContent = "🦛🎉 Done! " + mc.score + "/" + mc.queue.length + " (" + pct + "%) — grade: " 
         + grade.toFixed(1) + "/10";
