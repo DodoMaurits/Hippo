@@ -270,3 +270,7 @@ td input { width: 100%; }
   background: rgba(255,255,255,.14); 
   color: var(--text); font: inherit; 
 }
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
