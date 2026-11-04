@@ -475,7 +475,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let ty = { queue: [], idx: 0, score: 0 };
   function typeStart() {
     if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
-    $("typeStart2").classList.add("hidden");
     quizOpts.caseSensitive = $("typeCase").checked;
     quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
     quizOpts.fuzzy = $("typeFuzzy").checked;
@@ -503,7 +502,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       return;
     }
     $("typeInput").classList.remove("hidden");
-    $("typeStart2").classList.remove("hidden");
     const item = ty.queue[ty.idx];
     $("typePrompt").textContent = quizOpts.help === "scrambled" ? shuffleLetters(item.prompt) : item.prompt;
     $("typeHint").textContent = quizOpts.help === "hint" && item.answer
@@ -537,7 +535,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
-  $("typeStart2").addEventListener("click", typeStart);
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0 };
