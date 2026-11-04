@@ -388,7 +388,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function getPairs(direction) {
     return words
       .filter((w) => w.a.trim() && w.b.trim())
-      .map((w) => direction === "2to1" ? { prompt: w.b, answer: w.a } : { prompt: w.a, answer: w.b });
+      .map((w) => {
+        if (direction === "both") {
+          return Math.random() < 0.5
+            ? { prompt: w.a, answer: w.b }
+            : { prompt: w.b, answer: w.a };
+        }
+        return direction === "2to1" ? { prompt: w.b, answer: w.a } : { prompt: w.a, answer: w.b };
+      });
   }
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
     scoreEl.textContent = "Score: " + score + "/" + done;
