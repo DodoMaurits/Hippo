@@ -108,7 +108,7 @@ h1 { font-size: 2.2rem; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.2); letter
   transition: all .15s; backdrop-filter: blur(4px);
 }
 .tab:hover { transform: translateY(-2px); }
-.tab.active { background: var(--sand); color: #5c3d00; border-color: var(--sand-dark); box-shadow: 0 5px 0 var(--sand-dark); }
+.tab.active { background: #0d3d51; color: #fff; border-color: var(--sand); box-shadow: 0 5px 0 rgba(0, 0, 0, 0.3); }
 
 .panel {
   display: none; background: var(--panel);
@@ -162,8 +162,7 @@ td input { width: 100%; }
 .choice:hover { border-color: var(--sand); transform: scale(1.03); }
 .choice.correct { border-color: var(--good); background: rgba(126,231,135,.25); }
 .choice.wrong { border-color: var(--bad); background: rgba(255,123,123,.25); }
-.answer-input { font-size: 1.3rem; text-align: center; max-width: 420px; padding: 12px; border-radius: 16px !important; }
-.feedback { min-height: 1.6rem; margin-top: 16px; font-weight: 800; font-size: 1.15rem; }
+.answer-input { font-size: 1.3rem; text-align: center; width: 90%; max-width: 640px; padding: 12px; border-radius: 16px !important; }.feedback { min-height: 1.6rem; margin-top: 16px; font-weight: 800; font-size: 1.15rem; }
 .feedback.good { color: var(--good); }
 .feedback.bad { color: var(--bad); }
 .score-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; color: var(--muted); font-weight: 700; font-size: .95rem; }
@@ -246,3 +245,28 @@ td input { width: 100%; }
   font-size: 1rem; outline: none; font-family: inherit;
 }
 .modal-card input:focus { border-color: var(--sand); }
+
+.quiz-options { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+.opt-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  border: 2px solid var(--border); background: rgba(11,50,68,.55);
+  color: var(--text); font-weight: 700; font-size: .9rem;
+}
+.opt-pill:has(input:checked) {
+  background: var(--water-light);
+  color: #fff;
+  border-color: #7ec8e3;
+}
+.opt-max { 
+  width: 64px; 
+  padding: 4px 8px; 
+  border-radius: 8px; 
+  border: 2px solid var(--border); 
+  background: rgba(255,255,255,.14); 
+  color: var(--text); font: inherit; 
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
