@@ -123,7 +123,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const c2 = $("col2name").value || "Language 2";
     $("th1").textContent = c1;
     $("th2").textContent = c2;
-    document.querySelectorAll("#mcDirection option, #typeDirection option").forEach((o) => {
+    document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option").forEach((o) => {
       if (o.value === "1to2") o.textContent = c1 + " → " + c2;
       else if (o.value === "2to1") o.textContent = c2 + " → " + c1;
     });
@@ -544,7 +544,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let fl = { queue: [], idx: 0 };
   function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
-    let pool = getPairs("1to2");
+    let pool = getPairs($("flashDirection").value);
     if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
     if ($("flashShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("flashMax").value, 10) || pool.length;
