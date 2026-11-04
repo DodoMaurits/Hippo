@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🦛 Hippo Knows</title>
+  <title>🦛 Hippo Words — 2 languages + quiz</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,8 +15,8 @@
   <div class="login-screen" id="loginScreen">
     <div class="login-card">
       <div class="hippo-face big" aria-hidden="true">🦛</div>
-      <h1>Hippo Knows</h1>
-      <p class="subtitle">Build your own lists and fill your hippo! 🌊</p>
+      <h1>Hippo Words</h1>
+      <p class="subtitle">Learn words in 2 languages and quiz yourself! 🌊</p>
       <form id="authForm">
         <input type="email" id="authEmail" placeholder="Email" autocomplete="username" required>
         <input type="password" id="authPass" placeholder="Password" autocomplete="current-password" required>
@@ -30,9 +30,103 @@
     </div>
   </div>
 
-  <!-- APP (identiek aan je huidige versie, alleen script-tag onderaan wijzigt) -->
+  <!-- APP -->
   <div class="container hidden" id="app">
-    <!-- ... hier staat jouw bestaande header/tabs/panelen ongewijzigd ... -->
+    <header class="hippo-header">
+      <div class="hippo-face" aria-hidden="true">🦛</div>
+      <div class="header-text">
+        <h1>Hippo Words</h1>
+        <p class="subtitle">Dive into your 2-language word list and quiz yourself! 🌊</p>
+      </div>
+      <div class="user-chip">
+        <span id="loggedInUser"></span>
+        <button class="btn secondary" id="btnLogout">Log out</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="list">🌿 My list</button>
+      <button class="tab" data-tab="quiz-mc">🫧 Multiple choice</button>
+      <button class="tab" data-tab="quiz-type">⌨️ Typing</button>
+      <button class="tab" data-tab="flash">🃏 Flashcards</button>
+    </div>
+
+    <!-- LIST -->
+    <div class="panel active" id="panel-list">
+      <div class="list-header">
+        <input type="text" id="col1name" placeholder="Language 1 name (e.g. English)" value="Language 1">
+        <input type="text" id="col2name" placeholder="Language 2 name (e.g. Spanish)" value="Language 2">
+        <button class="btn" id="addRow">+ Add word</button>
+        <button class="btn secondary" id="clearList">Clear list</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th id="th1">Language 1</th><th id="th2">Language 2</th><th></th></tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+      <p class="empty" id="emptyMsg">The pool is empty… add your first word above! 🦛</p>
+    </div>
+
+    <!-- MULTIPLE CHOICE -->
+    <div class="panel" id="panel-quiz-mc">
+      <div class="quiz-controls">
+        <select id="mcDirection">
+          <option value="1to2">Language 1 → Language 2</option>
+          <option value="2to1">Language 2 → Language 1</option>
+        </select>
+        <label><input type="checkbox" id="mcShuffle" checked> Shuffle order</label>
+        <button class="btn" id="mcStart">▶ Start quiz</button>
+      </div>
+      <div class="score-bar"><span id="mcScore">Score: 0/0</span><span id="mcCount"></span></div>
+      <div class="progress"><div id="mcProgress"></div></div>
+      <div class="quiz-box">
+        <div class="prompt" id="mcPrompt">Press “Start quiz”</div>
+        <div class="hint" id="mcHint"></div>
+        <div class="choices" id="mcChoices"></div>
+        <div class="feedback" id="mcFeedback"></div>
+      </div>
+    </div>
+
+    <!-- TYPING -->
+    <div class="panel" id="panel-quiz-type">
+      <div class="quiz-controls">
+        <select id="typeDirection">
+          <option value="1to2">Language 1 → Language 2</option>
+          <option value="2to1">Language 2 → Language 1</option>
+        </select>
+        <label><input type="checkbox" id="typeShuffle" checked> Shuffle order</label>
+        <button class="btn" id="typeStart">▶ Start quiz</button>
+      </div>
+      <div class="score-bar"><span id="typeScore">Score: 0/0</span><span id="typeCount"></span></div>
+      <div class="progress"><div id="typeProgress"></div></div>
+      <div class="quiz-box">
+        <div class="prompt" id="typePrompt">Press “Start quiz”</div>
+        <div class="hint" id="typeHint"></div>
+        <input type="text" class="answer-input" id="typeInput" placeholder="Type the translation…" autocomplete="off">
+        <div class="feedback" id="typeFeedback"></div>
+      </div>
+    </div>
+
+    <!-- FLASHCARDS -->
+    <div class="panel" id="panel-flash">
+      <div class="quiz-controls">
+        <label><input type="checkbox" id="flashShuffle" checked> Shuffle order</label>
+        <button class="btn" id="flashStart">▶ Start flashcards</button>
+      </div>
+      <div class="score-bar"><span id="flashCount">Card 0/0</span></div>
+      <div class="flashcard" id="flashCard">
+        <div class="flashcard-inner">
+          <div class="face front" id="flashFront">🦛</div>
+          <div class="face back" id="flashBack">…</div>
+        </div>
+      </div>
+      <p class="hint" style="text-align:center">Click the card to flip it</p>
+      <div class="flash-nav">
+        <button class="btn secondary" id="flashPrev">← Previous</button>
+        <button class="btn" id="flashNext">Next →</button>
+      </div>
+    </div>
   </div>
 
   <div class="water" aria-hidden="true">
