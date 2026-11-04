@@ -1,4 +1,4 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/module/index.js";
+import { createClient } from "https://esm.run/@supabase/supabase-js@2";
 
 // VUL IN vanuit jouw Supabase project (Settings → API):
 const SUPABASE_URL = "https://mftdqmdnkzpttyoiehqj.supabase.co";
