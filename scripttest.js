@@ -37,7 +37,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (pass !== pass2Field.value) return authMsg("Passwords do not match");
       const { data, error } = await supabase.auth.signUp({ email, password: pass });
       if (error) return authMsg(error.message);
-      if (!data.session) return authMsg("Account created — confirm it via the email we sent 📧", true);
+      if (!data.session) {
+        await showModal({
+          title: "📧 Check your inbox",
+          text: "A confirmation e-mail has been sent to " + email + ". Click the link in it to activate your account, then log in.",
+          okText: "OK"
+        });
+        return;
+      }
       authMsg("Account created — you are logged in! 🦛", true);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
