@@ -499,7 +499,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function typeNext() {
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
-    $("typeInput").value = "";
     if (ty.idx >= ty.queue.length) {
       const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
@@ -513,10 +512,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     $("typeInput").classList.remove("hidden");
     const item = ty.queue[ty.idx];
+    $("typeInput").value = quizOpts.help === "hint" && item.answer ? item.answer[0] : "";
     $("typePrompt").textContent = quizOpts.help === "scrambled" ? shuffleLetters(item.prompt) : item.prompt;
-    $("typeHint").textContent = quizOpts.help === "hint" && item.answer
-      ? "Hint: starts with “" + item.answer[0] + "”…"
-      : "Type the translation and press Enter";
+    $("typeHint").textContent = "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
   }
