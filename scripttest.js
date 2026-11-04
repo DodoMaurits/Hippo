@@ -245,6 +245,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("col1name").value = currentList.col1 || "Language 1";
     $("col2name").value = currentList.col2 || "Language 2";
     updateHeaders();
+    document.querySelectorAll("#mcDirection option, #typeDirection option").forEach((o) => {
+      if (o.value === "1to2") o.textContent = (currentList.col1 || "Language 1") + " → " + (currentList.col2 || "Language 2");
+      else o.textContent = (currentList.col2 || "Language 2") + " → " + (currentList.col1 || "Language 1");
+    });
     await loadWords();
     renderList();
     activateTab("list");
