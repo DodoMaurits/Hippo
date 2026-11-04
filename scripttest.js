@@ -494,7 +494,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const text = await file.text();
         rows = text.split(/\r?\n/).map((l) => l.split(/[;,\t]/));
       } else {
-        const XLSX = await import("https://cdn.sheetjs.com/xlsx-0.20.4/package/dist/xlsx.full.min.js");
+        const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");
         const wb = XLSX.read(await file.arrayBuffer());
         rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
       }
@@ -515,9 +515,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       clean.forEach((r, i) => all.push({ id: "g" + Date.now() + "_" + i, listId: currentList.id, a: r[0], b: r[1] }));
       localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all));
     } else {
-      await supabase.from("words").insert(
-        clean.map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }))
-      );
+      for (let i = 0; i < clean.length; i += 500) {
+        const batch = clean.slice(i, i + 500)
+          .map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }));
+        const { error } = await supabase.from("words").insert(batch);
+        if (error) { console.error(error); }
+      }
     }
     await loadWords();
     renderList();
