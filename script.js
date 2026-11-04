@@ -80,13 +80,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         .map((w, i) => ({ id: w.id || "g" + i, listId: w.listId, a: w.a || "", b: w.b || "" }));
       return;
     }
-    const { data, error } = await supabase
-      .from("words")
-      .select("id, lang1, lang2")
-      .eq("list_id", currentList.id)
-      .order("created_at", { ascending: true });
-    if (error) { console.error(error); return; }
-    words = data.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2 }));
+    let all = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase
+        .from("words")
+        .select("id, lang1, lang2")
+        .eq("list_id", currentList.id)
+        .order("created_at", { ascending: true })
+        .range(from, from + 999);
+      if (error) { console.error(error); break; }
+      all = all.concat(data || []);
+      if (!data || data.length < 1000) break;
+    }
+    words = all.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2 }));
   }
 
   function loadColNames() {
