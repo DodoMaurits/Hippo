@@ -371,7 +371,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       text: "Are you sure you want to leave? Progress will not be saved.",
       okText: "Yes"
     });
-    if (ok) { activeQuiz = null; return true; }
+    if (ok) {
+      activeQuiz = null;
+      mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
+      ty = { queue: [], total: 0, idx: 0, score: 0 };
+      fl = { queue: [], idx: 0 };
+      $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
+      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = "";
+      $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
+      return true;
+    }
     activateTab("quiz-" + activeQuiz);
     return false;
   }
