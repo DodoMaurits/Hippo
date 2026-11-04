@@ -48,9 +48,9 @@
     <div class="tabs">
       <button class="tab active" data-tab="overview">🗂️ My lists</button>
       <button class="tab" data-tab="newlist">➕ New list</button>
-      <button class="tab" data-tab="quiz-mc">🫧 Multiple choice</button>
-      <button class="tab" data-tab="quiz-type">⌨️ Typing</button>
-      <button class="tab" data-tab="flash">🃏 Flashcards</button>
+      <button class="tab hidden" data-tab="quiz-mc">🫧 Multiple choice</button>
+      <button class="tab hidden" data-tab="quiz-type">⌨️ Typing</button>
+      <button class="tab hidden" data-tab="flash">🃏 Flashcards</button>
     </div>
 
     <!-- OVERVIEW -->
@@ -86,14 +86,18 @@
         <select id="mcDirection">
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
+          <option value="both">Both directions</option>
         </select>
-        <label><input type="checkbox" id="mcShuffle" checked> Shuffle order</label>
         <button class="btn" id="mcStart">▶ Start quiz</button>
       </div>
       <div class="score-bar"><span id="mcScore">Score: 0/0</span><span id="mcCount"></span></div>
       <div class="progress"><div id="mcProgress"></div></div>
       <div class="quiz-box">
-        <div class="prompt" id="mcPrompt">Press “Start quiz”</div>
+        <div class="quiz-options">
+          <label class="opt-pill"><input type="checkbox" id="mcShuffle" checked> Shuffle</label>
+          <label class="opt-pill">Max <input type="number" id="mcMax" min="1" class="opt-max"></label>
+        </div>
+        <div class="prompt" id="mcPrompt"></div>
         <div class="hint" id="mcHint"></div>
         <div class="choices" id="mcChoices"></div>
         <div class="feedback" id="mcFeedback"></div>
@@ -106,16 +110,27 @@
         <select id="typeDirection">
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
+          <option value="both">Both directions</option>
         </select>
-        <label><input type="checkbox" id="typeShuffle" checked> Shuffle order</label>
         <button class="btn" id="typeStart">▶ Start quiz</button>
       </div>
       <div class="score-bar"><span id="typeScore">Score: 0/0</span><span id="typeCount"></span></div>
       <div class="progress"><div id="typeProgress"></div></div>
       <div class="quiz-box">
-        <div class="prompt" id="typePrompt">Press “Start quiz”</div>
+        <div class="quiz-options">
+          <label class="opt-pill"><input type="checkbox" id="typeShuffle" checked> Shuffle</label>
+          <label class="opt-pill">Max <input type="number" id="typeMax" min="1" class="opt-max"></label>
+          <label class="opt-pill"><input type="checkbox" id="typeCase"> Case sensitive</label>
+          <label class="opt-pill"><input type="checkbox" id="typeFuzzy"> Allow one typo</label>
+          <div class="opt-row">
+            <label class="opt-pill"><input type="radio" name="typeHelp" value="normal" checked> Normal</label>
+            <label class="opt-pill"><input type="radio" name="typeHelp" value="hint"> Show first letter</label>
+            <label class="opt-pill"><input type="radio" name="typeHelp" value="scrambled"> Scrambled</label>
+          </div>
+        </div>
+        <div class="prompt" id="typePrompt"></div>
         <div class="hint" id="typeHint"></div>
-        <input type="text" class="answer-input" id="typeInput" placeholder="Type the translation…" autocomplete="off">
+        <input type="text" class="answer-input hidden" id="typeInput" placeholder="Type the translation…" autocomplete="off">
         <div class="feedback" id="typeFeedback"></div>
       </div>
     </div>
@@ -123,24 +138,34 @@
     <!-- FLASHCARDS -->
     <div class="panel" id="panel-flash">
       <div class="quiz-controls">
-        <label><input type="checkbox" id="flashShuffle" checked> Shuffle order</label>
+          <select id="flashDirection">
+          <option value="1to2">Language 1 → Language 2</option>
+          <option value="2to1">Language 2 → Language 1</option>
+          <option value="both">Both directions</option>
+        </select>
         <button class="btn" id="flashStart">▶ Start flashcards</button>
       </div>
       <div class="score-bar"><span id="flashCount">Card 0/0</span></div>
+      <div class="quiz-box">
+        <div class="quiz-options">
+          <label class="opt-pill"><input type="checkbox" id="flashShuffle" checked> Shuffle</label>
+          <label class="opt-pill">Max <input type="number" id="flashMax" min="1" class="opt-max"></label>
+        </div>
+      </div>
       <div class="flashcard" id="flashCard">
         <div class="flashcard-inner">
           <div class="face front" id="flashFront">🦛</div>
-          <div class="face back" id="flashBack">…</div>
+          <div class="face back" id="flashBack">Hippo</div>
         </div>
       </div>
+      <div class="prompt" id="flashPrompt"></div>
       <p class="hint" style="text-align:center">Click the card to flip it</p>
-      <div class="flash-nav">
+      <div class="flash-nav hidden">
         <button class="btn secondary" id="flashPrev">← Previous</button>
         <button class="btn" id="flashNext">Next →</button>
       </div>
     </div>
-  </div>
-
+    
   <div class="water" aria-hidden="true">
     <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
       <path d="M0,60 C240,110 480,10 720,60 C960,110 1200,10 1440,60 L1440,120 L0,120 Z"></path>
