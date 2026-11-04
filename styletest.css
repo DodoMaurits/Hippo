@@ -19,7 +19,7 @@
 
 body {
   font-family: "Trebuchet MS", system-ui, sans-serif;
-  background: linear-gradient(180deg, #7ec8e3 0%, var(--water-light) 30%, var(--water) 65%, var(--water-deep) 100%);
+  background: linear-gradient(180deg, #14657e 0%, #14657e 40%, #0b3b4f 100%) fixed;
   color: var(--text);
   min-height: 100vh;
   padding: 24px 16px 140px;
