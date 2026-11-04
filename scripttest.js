@@ -483,11 +483,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("typePrompt").textContent = "🦛🎉 Done! " + ty.score + "/" + ty.total + " (" + pct + "%) — grade: " 
         + grade.toFixed(1) + "/10";
       $("typeHint").textContent = "";
-      $("typeInput").style.display = "none";
+      $("typeInput").classList.add("hidden");
       updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.total, ty.total, ty.score);
       return;
     }
-    $("typeInput").style.display = "inline-block";
+    $("typeInput").classList.remove("hidden");
     const item = ty.queue[ty.idx];
     $("typePrompt").textContent = quizOpts.help === "scrambled" ? shuffleLetters(item.prompt) : item.prompt;
     $("typeHint").textContent = quizOpts.help === "hint" && item.answer
