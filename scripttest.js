@@ -17,7 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = (id) => document.getElementById(id);
 
   let words = []; // [{ id, a, b }]
-  let quizOpts = { caseSensitive: false };
+  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal" };
 
   // ---------- Auth ----------
   function authMsg(text, ok) {
@@ -356,6 +356,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       .map((s) => (quizOpts.caseSensitive ? s.trim() : normalize(s)))
       .filter(Boolean);
   }
+  function levenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+    for (let j = 1; j <= n; j++) d[0][j] = j;
+    for (let i = 1; i <= m; i++)
+      for (let j = 1; j <= n; j++)
+        d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    return d[m][n];
+  }
+  function shuffleLetters(text) {
+    return text.split(" ").map((word) => {
+      const arr = word.split("");
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      const s = arr.join("");
+      return (s === word && word.length > 1) ? shuffleLetters(word) : s;
+    }).join(" ");
+  }
   function getPairs(direction) {
     return words
       .filter((w) => w.a.trim() && w.b.trim())
@@ -440,6 +460,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function typeStart() {
     if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     quizOpts.caseSensitive = $("typeCase").checked;
+    quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
+    quizOpts.fuzzy = $("typeFuzzy").checked;
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
@@ -465,8 +487,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     $("typeInput").style.display = "inline-block";
     const item = ty.queue[ty.idx];
-    $("typePrompt").textContent = item.prompt;
-    $("typeHint").textContent = "Type the translation and press Enter";
+    $("typePrompt").textContent = quizOpts.help === "scrambled" ? shuffleLetters(item.prompt) : item.prompt;
+    $("typeHint").textContent = quizOpts.help === "hint" && item.answer
+      ? "Hint: starts with “" + item.answer[0] + "”…"
+      : "Type the translation and press Enter";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
   }
@@ -475,7 +499,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!item) return;
     const given = $("typeInput").value;
     if (!given.trim()) return;
-    if (acceptedAnswers(item.answer).includes(quizOpts.caseSensitive ? given.trim() : normalize(given))) {
+    const givenN = quizOpts.caseSensitive ? given.trim() : normalize(given);
+    const ok = acceptedAnswers(item.answer).includes(givenN)
+      || (quizOpts.fuzzy && acceptedAnswers(item.answer).some((a) => levenshtein(givenN, a) <= 1));
+    if (ok) {
       if (!item.missed) ty.score++;
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
