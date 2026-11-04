@@ -17,6 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = (id) => document.getElementById(id);
 
   let words = []; // [{ id, a, b }]
+  let quizOpts = { caseSensitive: false };
 
   // ---------- Auth ----------
   function authMsg(text, ok) {
@@ -344,7 +345,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g, " "); }
   function acceptedAnswers(answer) {
-    return answer.split(";").map((s) => normalize(s)).filter(Boolean);
+    return answer.split(";")
+      .map((s) => (quizOpts.caseSensitive ? s.trim() : normalize(s)))
+      .filter(Boolean);
   }
   function getPairs(direction) {
     return words
@@ -364,7 +367,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
-    if ($("mcShuffle").checked) pool = shuffle(pool);
+    if ($("mcOrder").value === "shuffle") pool = shuffle(pool);
+    const max = parseInt($("mcMax").value, 10);
+    if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, idx: 0, score: 0, locked: false };
     mcNext();
   }
@@ -421,10 +426,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let ty = { queue: [], idx: 0, score: 0 };
   function typeStart() {
     if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
+    quizOpts.caseSensitive = $("typeCase").checked;
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
-    if ($("typeShuffle").checked) pool = shuffle(pool);
+    if ($("typeOrder").value === "shuffle") pool = shuffle(pool);
+    const max = parseInt($("typeMax").value, 10);
+    if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
     ty = { queue: pool, idx: 0, score: 0 };
     typeNext();
   }
@@ -452,7 +460,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!item) return;
     const given = $("typeInput").value;
     if (!given.trim()) return;
-    if (acceptedAnswers(item.answer).includes(normalize(given))) {
+    if (acceptedAnswers(item.answer).includes(quizOpts.caseSensitive ? given.trim() : normalize(given))) {
       ty.score++;
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
@@ -473,7 +481,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs("1to2");
     if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
-    if ($("flashShuffle").checked) pool = shuffle(pool);
+    if ($("flashOrder").value === "shuffle") pool = shuffle(pool);
+    const max = parseInt($("flashMax").value, 10);
+    if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
     flashShow();
   }
