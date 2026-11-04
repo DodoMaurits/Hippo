@@ -17,6 +17,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = (id) => document.getElementById(id);
 
   let words = []; // [{ id, a, b }]
+  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal" };
+  let activeQuiz = null; // "mc" | "ty" | "fl" | null
 
   // ---------- Auth ----------
   function authMsg(text, ok) {
@@ -36,7 +38,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (pass !== pass2Field.value) return authMsg("Passwords do not match");
       const { data, error } = await supabase.auth.signUp({ email, password: pass });
       if (error) return authMsg(error.message);
-      if (!data.session) return authMsg("Account created — confirm it via the email we sent 📧", true);
+      if (!data.session) {
+        await showModal({
+          title: "Check your inbox",
+          text: "A confirmation e-mail has been sent to " + email + ". Click the link in it to activate your account, then log in.",
+          okText: "OK"
+        });
+        return;
+      }
       authMsg("Account created — you are logged in! 🦛", true);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
@@ -111,8 +120,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   function updateHeaders() {
-    $("th1").textContent = $("col1name").value || "Language 1";
-    $("th2").textContent = $("col2name").value || "Language 2";
+    const c1 = $("col1name").value || "Language 1";
+    const c2 = $("col2name").value || "Language 2";
+    $("th1").textContent = c1;
+    $("th2").textContent = c2;
+    document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option").forEach((o) => {
+      if (o.value === "1to2") o.textContent = c1 + " → " + c2;
+      else if (o.value === "2to1") o.textContent = c2 + " → " + c1;
+    });
   }
 
   function showModal({ title, text, inputPlaceholder, okText }) {
@@ -146,14 +161,22 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
+      if (activeQuiz && tab.dataset.tab !== "quiz-" + activeQuiz) {
+        if (!(await confirmLeaveQuiz())) return;
+      }
+      if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
       activateTab(tab.dataset.tab);
     });
   });
 
-  $("backToOverview").addEventListener("click", () => { renderOverview(); activateTab("overview"); });
-
+  $("backToOverview").addEventListener("click", async () => {
+    if (activeQuiz && !(await confirmLeaveQuiz())) return;
+    currentList = null;
+    renderOverview(); activateTab("overview");
+  });
+  
   async function loadLists() {
     if (GUEST) {
       try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; }
@@ -215,6 +238,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       row.appendChild(del);
       box.appendChild(row);
     });
+    setQuizTabs(!!currentList);
   }
 
   async function newList() {
@@ -245,7 +269,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateHeaders();
     await loadWords();
     renderList();
+    $("mcMax").value = words.length;
+    $("typeMax").value = words.length;
+    $("flashMax").value = words.length;
     activateTab("list");
+    setQuizTabs(true);
+  }
+
+  function setQuizTabs(show) {
+    document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"]')
+      .forEach((t) => t.classList.toggle("hidden", !show));
   }
   
   // ---------- List ----------
@@ -326,7 +359,43 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("col1name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
   $("col2name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
 
-  // ---------- Quiz helpers (ongewijzigd) ----------
+  // ---------- Quiz helpers ----------
+  function gradeFeedback(grade) {
+    if (grade < 5.5) return "Keep going — don't give up! 💪";
+    if (grade < 7.5) return "Splashing great! You are on the right path! 🌱";
+    if (grade < 9.5) return "Awesome! One more? Practice makes perfect 🌟";
+    return "You nailed it! 🦛👑";
+  }
+  async function confirmLeaveQuiz() {
+    if (!activeQuiz) return true;
+    const ok = await showModal({
+      title: "Warning!",
+      text: "Are you sure you want to leave? Progress will not be saved.",
+      okText: "Yes"
+    });
+    if (ok) {
+      activeQuiz = null;
+      mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
+      ty = { queue: [], total: 0, idx: 0, score: 0 };
+      fl = { queue: [], idx: 0 };
+      setQuizChrome("panel-quiz-mc", true);
+      setQuizChrome("panel-quiz-type", true);
+      setQuizChrome("panel-flash", true);
+      $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
+      $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
+      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+      $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
+      return true;
+    }
+    activateTab("quiz-" + activeQuiz);
+    return false;
+  }
+  function setQuizChrome(panelId, show) {
+    const p = $(panelId);
+    p.querySelector(".quiz-controls").classList.toggle("hidden", !show);
+    const o = p.querySelector(".quiz-options");
+    if (o) o.classList.toggle("hidden", !show);
+  }
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -337,12 +406,41 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g, " "); }
   function acceptedAnswers(answer) {
-    return answer.split(";").map((s) => normalize(s)).filter(Boolean);
+    return answer.split(";")
+      .map((s) => (quizOpts.caseSensitive ? s.trim() : normalize(s)))
+      .filter(Boolean);
+  }
+  function levenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+    for (let j = 1; j <= n; j++) d[0][j] = j;
+    for (let i = 1; i <= m; i++)
+      for (let j = 1; j <= n; j++)
+        d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    return d[m][n];
+  }
+  function shuffleLetters(text) {
+    return text.split(" ").map((word) => {
+      const arr = word.split("");
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      const s = arr.join("");
+      return (s === word && word.length > 1) ? shuffleLetters(word) : s;
+    }).join(" ");
   }
   function getPairs(direction) {
     return words
       .filter((w) => w.a.trim() && w.b.trim())
-      .map((w) => direction === "2to1" ? { prompt: w.b, answer: w.a } : { prompt: w.a, answer: w.b });
+      .map((w) => {
+        if (direction === "both") {
+          return Math.random() < 0.5
+            ? { prompt: w.a, answer: w.b }
+            : { prompt: w.b, answer: w.a };
+        }
+        return direction === "2to1" ? { prompt: w.b, answer: w.a } : { prompt: w.a, answer: w.b };
+      });
   }
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
     scoreEl.textContent = "Score: " + score + "/" + done;
@@ -358,23 +456,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let pool = getPairs(dir);
     if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
     if ($("mcShuffle").checked) pool = shuffle(pool);
-    mc = { queue: pool, idx: 0, score: 0, locked: false };
+    const max = parseInt($("mcMax").value, 10) || pool.length;
+    pool = pool.slice(0, Math.min(max, pool.length));
+    mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
+    setQuizChrome("panel-quiz-mc", false);
+    activeQuiz = "mc";
     mcNext();
   }
   function mcNext() {
     $("mcFeedback").textContent = "";
     $("mcFeedback").className = "feedback";
     if (mc.idx >= mc.queue.length) {
-      const pct = mc.queue.length ? Math.round(mc.score / mc.queue.length * 100) : 0;
-      $("mcPrompt").textContent = "🦛🎉 Done! Your score: " + mc.score + "/" + mc.queue.length + " (" + pct + "%)";
-      $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : "Tip: flip through the flashcards first 🃏";
+      const pct = mc.total ? Math.round(mc.score / mc.total * 100) : 0;
+      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (mc.score / mc.total)) * 10) / 10));
+      $("mcPrompt").style.fontSize = "4.5rem";
+      $("mcPrompt").textContent = grade.toFixed(1);
+      $("mcHint").textContent = "Score " + mc.score + "/" + mc.total + " — " + gradeFeedback(grade);
+      activeQuiz = null;
       $("mcChoices").innerHTML = "";
-      updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.queue.length, mc.score);
+      setQuizChrome("panel-quiz-mc", true);
+      updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
       return;
     }
     mc.locked = false;
     const item = mc.queue[mc.idx];
     $("mcPrompt").textContent = item.prompt;
+    $("mcPrompt").style.fontSize = "";
     $("mcHint").textContent = "Pick the correct translation";
     const wrong = shuffle(mc.queue.filter((x) => x.answer !== item.answer)).slice(0, 3).map((x) => x.answer);
     const options = shuffle([item.answer, ...wrong]);
@@ -389,11 +496,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         mc.locked = true;
         if (normalize(opt) === normalize(item.answer)) {
           btn.classList.add("correct");
-          mc.score++;
+          if (!item.missed) mc.score++;
           $("mcFeedback").textContent = "✔ Correct!";
           $("mcFeedback").classList.add("good");
         } else {
           btn.classList.add("wrong");
+          item.missed = true;
+          const back = 2 + Math.floor(Math.random() * 3); // 2, 3 of 4
+          mc.queue.splice(Math.min(mc.idx + back, mc.queue.length), 0, item);
           $("mcFeedback").textContent = "✘ Oops! It was: " + item.answer;
           $("mcFeedback").classList.add("bad");
           box.querySelectorAll(".choice").forEach((b) => {
@@ -414,29 +524,41 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let ty = { queue: [], idx: 0, score: 0 };
   function typeStart() {
     if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
+    quizOpts.caseSensitive = $("typeCase").checked;
+    quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
+    quizOpts.fuzzy = $("typeFuzzy").checked;
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
     if ($("typeShuffle").checked) pool = shuffle(pool);
-    ty = { queue: pool, idx: 0, score: 0 };
+    const max = parseInt($("typeMax").value, 10) || pool.length;
+    pool = pool.slice(0, Math.min(max, pool.length));
+    ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
+    setQuizChrome("panel-quiz-type", false);
+    activeQuiz = "ty";
     typeNext();
   }
   function typeNext() {
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
-    $("typeInput").value = "";
     if (ty.idx >= ty.queue.length) {
-      const pct = ty.queue.length ? Math.round(ty.score / ty.queue.length * 100) : 0;
-      $("typePrompt").textContent = "🦛🎉 Done! Your score: " + ty.score + "/" + ty.queue.length + " (" + pct + "%)";
-      $("typeHint").textContent = "";
-      $("typeInput").style.display = "none";
-      updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.queue.length, ty.score);
+      const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
+      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
+      $("typePrompt").style.fontSize = "4.5rem";
+      $("typePrompt").textContent = grade.toFixed(1);
+      $("typeHint").textContent = "Score " + ty.score + "/" + ty.total + " — " + gradeFeedback(grade);
+      activeQuiz = null;
+      $("typeInput").classList.add("hidden");
+      setQuizChrome("panel-quiz-type", true);
+      updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.total, ty.total, ty.score);
       return;
     }
-    $("typeInput").style.display = "inline-block";
+    $("typeInput").classList.remove("hidden");
     const item = ty.queue[ty.idx];
+    $("typeInput").value = quizOpts.help === "hint" && item.answer ? item.answer[0] : "";
+    $("typePrompt").style.fontSize = "";
     $("typePrompt").textContent = item.prompt;
-    $("typeHint").textContent = "Type the translation and press Enter";
+    $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
   }
@@ -445,11 +567,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!item) return;
     const given = $("typeInput").value;
     if (!given.trim()) return;
-    if (acceptedAnswers(item.answer).includes(normalize(given))) {
-      ty.score++;
+    const givenN = quizOpts.caseSensitive ? given.trim() : normalize(given);
+    const ok = acceptedAnswers(item.answer).includes(givenN)
+      || (quizOpts.fuzzy && acceptedAnswers(item.answer).some((a) => levenshtein(givenN, a) <= 1));
+    if (ok) {
+      if (!item.missed) ty.score++;
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
     } else {
+      item.missed = true;
+      const back = 2 + Math.floor(Math.random() * 3);
+      ty.queue.splice(Math.min(ty.idx + back, ty.queue.length), 0, item);
       $("typeFeedback").textContent = "✘ Almost! It was: " + item.answer;
       $("typeFeedback").classList.add("bad");
     }
@@ -460,14 +588,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
 
-  // ---------- Flashcards (ongewijzigd) ----------
+  // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0 };
   function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
-    let pool = getPairs("1to2");
+    let pool = getPairs($("flashDirection").value);
     if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
     if ($("flashShuffle").checked) pool = shuffle(pool);
+    const max = parseInt($("flashMax").value, 10) || pool.length;
+    pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
+    setQuizChrome("panel-flash", false);
+    activeQuiz = "fl";
+    $("panel-flash").querySelector(".flash-nav").classList.remove("hidden");
     flashShow();
   }
   function flashShow() {
@@ -543,10 +676,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("app").classList.remove("hidden");
     $("loggedInUser").textContent = "🦛 Guest (local only)";
     await loadLists();
-    if (!currentList && lists.length) currentList = lists[0];
     loadColNames();
     renderOverview();
     activateTab("overview");
+    setQuizTabs(false);
   }
 
   if (GUEST) {
@@ -558,10 +691,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         $("app").classList.remove("hidden");
         $("loggedInUser").textContent = "🦛 " + session.user.email;
         await loadLists();
-        if (!currentList && lists.length) currentList = lists[0];
         loadColNames();
         renderOverview();
         activateTab("overview");
+        setQuizTabs(false);
       } else {
         words = [];
         $("app").classList.add("hidden");
