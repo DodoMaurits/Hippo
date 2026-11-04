@@ -358,6 +358,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("col2name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
 
   // ---------- Quiz helpers ----------
+  function gradeFeedback(grade) {
+    if (grade < 5.5) return "Keep going — don't give up! 💪";
+    if (grade < 7.5) return "Well done — you are on the right path! 🌱";
+    if (grade < 9.5) return "Awesome! One more? Practice makes perfect 🌟";
+    return "You nailed it! 🦛👑";
+  }
   async function confirmLeaveQuiz() {
     if (!activeQuiz) return true;
     const ok = await showModal({
