@@ -605,7 +605,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("flashFront").textContent = item ? item.prompt : "🦛";
     $("flashBack").textContent = item ? item.answer : "…";
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
-    setQuizChrome("panel-flash", true);
   }
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
