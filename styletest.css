@@ -247,4 +247,26 @@ td input { width: 100%; }
 }
 .modal-card input:focus { border-color: var(--sand); }
 
-
+.quiz-options { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+.opt-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  border: 2px solid var(--border); background: rgba(11,50,68,.55);
+  color: var(--text); font-weight: 700; font-size: .9rem;
+}
+.opt-pill:has(input:checked) { 
+  background: var(--sand); 
+  color: #5c3d00; 
+  border-color: var(--sand-dark); 
+}
+.opt-pill input[type="radio"], .opt-pill input[type="checkbox"] { 
+  accent-color: var(--sand-dark); 
+}
+.opt-max { 
+  width: 64px; 
+  padding: 4px 8px; 
+  border-radius: 8px; 
+  border: 2px solid var(--border); 
+  background: rgba(255,255,255,.14); 
+  color: var(--text); font: inherit; 
+}
