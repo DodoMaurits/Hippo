@@ -29,8 +29,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (pass.length < 6) return authMsg("Password: at least 6 characters");
     if (mode === "register") {
       if (pass !== pass2Field.value) return authMsg("Passwords do not match");
-      const { error } = await supabase.auth.signUp({ email, password: pass });
+      const { data, error } = await supabase.auth.signUp({ email, password: pass });
       if (error) return authMsg(error.message);
+      if (!data.session) return authMsg("Account created — confirm it via the email we sent 📧", true);
       authMsg("Account created — you are logged in! 🦛", true);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
