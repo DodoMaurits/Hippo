@@ -330,6 +330,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return a;
   }
   function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g, " "); }
+  function acceptedAnswers(answer) {
+    return answer.split(";").map((s) => normalize(s)).filter(Boolean);
+  }
   function getPairs(direction) {
     return words
       .filter((w) => w.a.trim() && w.b.trim())
@@ -436,7 +439,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!item) return;
     const given = $("typeInput").value;
     if (!given.trim()) return;
-    if (normalize(given) === normalize(item.answer)) {
+    if (acceptedAnswers(item.answer).includes(normalize(given))) {
       ty.score++;
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
