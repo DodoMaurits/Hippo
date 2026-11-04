@@ -166,6 +166,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (activeQuiz && tab.dataset.tab !== "quiz-" + activeQuiz) {
         if (!(await confirmLeaveQuiz())) return;
       }
+      if (tab.dataset.tab === "overview") currentList = null;
       activateTab(tab.dataset.tab);
     });
   });
