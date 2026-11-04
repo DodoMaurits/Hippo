@@ -38,8 +38,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
   }
 
-  $("btnLogin").addEventListener("click", () => handleAuth("login"));
-  $("btnRegister").addEventListener("click", () => handleAuth("register"));
+  $("btnLogin").addEventListener("click", () => {
+    pass2Field.classList.add("hidden");
+    handleAuth("login");
+  });
+  $("btnRegister").addEventListener("click", () => {
+    pass2Field.classList.remove("hidden");
+    pass2Field.focus();
+    handleAuth("register");
+  });
 
   $("btnLogout").addEventListener("click", async () => {
     await supabase.auth.signOut();
@@ -59,6 +66,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("loginScreen").classList.remove("hidden");
       $("authPass").value = "";
       pass2Field.value = "";
+      pass2Field.classList.add("hidden");
       authMsg("", false);
     }
   });
