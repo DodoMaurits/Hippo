@@ -17,14 +17,14 @@
       <div class="hippo-face big" aria-hidden="true">🦛</div>
       <h1>Hippo Words</h1>
       <p class="subtitle">Learn words in 2 languages and quiz yourself! 🌊</p>
-      <input type="email" id="authEmail" placeholder="Email" autocomplete="username">
-      <input type="password" id="authPass" placeholder="Password" autocomplete="current-password">
-      <input type="password" id="authPass2" placeholder="Repeat password (only when creating an account)">
-      <p class="auth-msg" id="authMsg"></p>
-      <div class="auth-buttons">
-        <button class="btn" id="btnLogin">Log in</button>
-        <button class="btn secondary" id="btnRegister">Create account</button>
-      </div>
+      <form id="authForm">
+        <input type="email" id="authEmail" placeholder="Email" autocomplete="username" required>
+        <input type="password" id="authPass" placeholder="Password" autocomplete="current-password" required>
+        <input type="password" id="authPass2" placeholder="Repeat password" class="hidden">
+        <p class="auth-msg" id="authMsg"></p>
+        <button type="submit" class="btn btn-full" id="btnSubmit">Log in</button>
+      </form>
+      <p class="auth-switch"><a href="#" id="authToggle">No account yet? Create one</a></p>
     </div>
   </div>
 
