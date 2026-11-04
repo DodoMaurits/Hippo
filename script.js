@@ -47,6 +47,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         return authMsg(error.message);
       }
     }
+  }
 
   $("btnLogin").addEventListener("click", () => {
     pass2Field.classList.add("hidden");
