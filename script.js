@@ -20,24 +20,33 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     el.classList.toggle("ok", !!ok);
   }
 
-  $("btnRegister").addEventListener("click", async () => {
-    const email = $("authEmail").value.trim();
-    const pass = $("authPass").value;
-    const pass2 = $("authPass2").value;
-    if (!email.includes("@")) return authMsg("Enter a valid email address");
-    if (pass.length < 6) return authMsg("Password: at least 6 characters");
-    if (pass !== pass2) return authMsg("Passwords do not match");
-    const { error } = await supabase.auth.signUp({ email, password: pass });
-    if (error) return authMsg(error.message);
-    authMsg("Account created — you are logged in! 🦛", true);
+  let authMode = "login";
+  const pass2Field = $("authPass2");
+
+  $("authToggle").addEventListener("click", (e) => {
+    e.preventDefault();
+    authMode = authMode === "login" ? "register" : "login";
+    pass2Field.classList.toggle("hidden", authMode === "login");
+    $("btnSubmit").textContent = authMode === "login" ? "Log in" : "Create account";
+    $("authToggle").textContent = authMode === "login" ? "No account yet? Create one" : "Already have an account? Log in";
+    authMsg("", false);
   });
 
-  $("btnLogin").addEventListener("click", async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: $("authEmail").value.trim(),
-      password: $("authPass").value
-    });
-    if (error) return authMsg("Wrong email or password");
+  $("authForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("authEmail").value.trim();
+    const pass = $("authPass").value;
+    if (!email.includes("@")) return authMsg("Enter a valid email address");
+    if (pass.length < 6) return authMsg("Password: at least 6 characters");
+    if (authMode === "register") {
+      if (pass !== pass2Field.value) return authMsg("Passwords do not match");
+      const { error } = await supabase.auth.signUp({ email, password: pass });
+      if (error) return authMsg(error.message);
+      authMsg("Account created — you are logged in! 🦛", true);
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      if (error) return authMsg("Wrong email or password");
+    }
   });
 
   $("btnLogout").addEventListener("click", async () => {
