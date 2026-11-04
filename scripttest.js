@@ -371,7 +371,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
-    if ($("mcOrder").value === "shuffle") pool = shuffle(pool);
+    if (document.querySelector('input[name="mcOrder"]:checked').value === "shuffle") pool = shuffle(pool);
     const max = parseInt($("mcMax").value, 10);
     if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
@@ -440,7 +440,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
-    if ($("typeOrder").value === "shuffle") pool = shuffle(pool);
+    if (document.querySelector('input[name="typeOrder"]:checked').value === "shuffle") pool = shuffle(pool);    
     const max = parseInt($("typeMax").value, 10);
     if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
@@ -496,7 +496,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs("1to2");
     if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
-    if ($("flashOrder").value === "shuffle") pool = shuffle(pool);
+    if (document.querySelector('input[name="flashOrder"]:checked').value === "shuffle") pool = shuffle(pool);
     const max = parseInt($("flashMax").value, 10);
     if (max >= 1) pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
