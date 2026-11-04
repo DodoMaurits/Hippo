@@ -207,3 +207,14 @@ td input { width: 100%; }
 .btn-full { width: 100%; margin-top: 6px; }
 .auth-switch { margin-top: 14px; font-size: 0.9rem; text-align: center; }
 .auth-switch a { color: var(--sand); font-weight: 700; }
+
+.list-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; margin-bottom: 10px;
+  background: rgba(255,255,255,.1);
+  border: 2px solid var(--border); border-radius: 16px;
+  cursor: pointer; font-weight: 700; font-size: 1.05rem;
+}
+.list-item:hover { border-color: var(--sand); transform: translateY(-1px); }
+.list-item .spacer { flex: 1; }
+.list-item .count { color: var(--muted); font-weight: 600; font-size: .85rem; }
