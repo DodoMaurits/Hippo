@@ -6,7 +6,7 @@
   --sand-dark: #e0a93e;
   --coral: #ff8fa3;
   --hippo: #b8b0c8;
-  --panel: rgba(255, 255, 255, 0.08);
+  --panel: #0d3d51;
   --panel-solid: #10485e;
   --text: #eaf6fa;
   --muted: #a8ccd8;
@@ -19,7 +19,7 @@
 
 body {
   font-family: "Trebuchet MS", system-ui, sans-serif;
-  background: linear-gradient(180deg, #7ec8e3 0%, var(--water-light) 30%, var(--water) 65%, var(--water-deep) 100%);
+  background: linear-gradient(180deg, #14657e 0%, #14657e 40%, #0b3b4f 100%) fixed;
   color: var(--text);
   min-height: 100vh;
   padding: 24px 16px 140px;
