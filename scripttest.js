@@ -407,7 +407,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let mc = { queue: [], idx: 0, score: 0, locked: false };
   function mcStart() {
     if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
-    $("mcStart2").classList.add("hidden");
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
@@ -428,7 +427,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
         "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
-      $("mcStart2").classList.remove("hidden");
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
       return;
     }
@@ -472,7 +470,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.idx, mc.score);
   }
   $("mcStart").addEventListener("click", mcStart);
-  $("mcStart2").addEventListener("click", mcStart);
 
   // ---------- Typing (ongewijzigd) ----------
   let ty = { queue: [], idx: 0, score: 0 };
