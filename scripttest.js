@@ -428,6 +428,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
         "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
+      $("mcStart2").classList.remove("hidden");
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
       return;
     }
@@ -505,6 +506,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       return;
     }
     $("typeInput").classList.remove("hidden");
+    $("typeStart2").classList.remove("hidden");
     const item = ty.queue[ty.idx];
     $("typePrompt").textContent = quizOpts.help === "scrambled" ? shuffleLetters(item.prompt) : item.prompt;
     $("typeHint").textContent = quizOpts.help === "hint" && item.answer
