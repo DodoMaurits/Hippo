@@ -350,7 +350,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("col1name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
   $("col2name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
 
-  // ---------- Quiz helpers (ongewijzigd) ----------
+  // ---------- Quiz helpers ----------
+  function setQuizChrome(panelId, show) {
+    const p = $(panelId);
+    p.querySelector(".quiz-controls").classList.toggle("hidden", !show);
+    const o = p.querySelector(".quiz-options");
+    if (o) o.classList.toggle("hidden", !show);
+  }
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -414,7 +420,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const max = parseInt($("mcMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
-    $("panel-quiz-mc").querySelector(".quiz-controls").classList.add("hidden");
+    setQuizChrome("panel-quiz-mc", false);
     mcNext();
   }
   function mcNext() {
@@ -428,7 +434,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
         "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
-      $("panel-quiz-mc").querySelector(".quiz-controls").classList.remove("hidden");
+      setQuizChrome("panel-quiz-mc", true);
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
       return;
     }
@@ -501,7 +507,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         + grade.toFixed(1) + "/10";
       $("typeHint").textContent = "";
       $("typeInput").classList.add("hidden");
-      $("panel-quiz-type").querySelector(".quiz-controls").classList.remove("hidden");
+      setQuizChrome("panel-quiz-type", true);
       updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.total, ty.total, ty.score);
       return;
     }
@@ -550,7 +556,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const max = parseInt($("flashMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
-    $("panel-flash").querySelector(".quiz-controls").classList.add("hidden");
+    setQuizChrome("panel-flash", false);
     flashShow();
   }
   function flashShow() {
@@ -559,7 +565,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("flashFront").textContent = item ? item.prompt : "🦛";
     $("flashBack").textContent = item ? item.answer : "…";
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
-    $("panel-flash").querySelector(".quiz-controls").classList.remove("hidden");
+    setQuizChrome("panel-flash", true);
   }
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
