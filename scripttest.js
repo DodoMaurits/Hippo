@@ -535,8 +535,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeInput").classList.remove("hidden");
     const item = ty.queue[ty.idx];
     $("typeInput").value = quizOpts.help === "hint" && item.answer ? item.answer[0] : "";
-    $("typePrompt").textContent = quizOpts.help === "scrambled" ? shuffleLetters(item.prompt) : item.prompt;
-    $("typeHint").textContent = "";
+    $("typePrompt").textContent = item.prompt;
+    $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "🔀 " + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
   }
