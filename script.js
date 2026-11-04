@@ -3,6 +3,9 @@ import { createClient } from "https://esm.run/@supabase/supabase-js@2";
 // VUL IN vanuit jouw Supabase project (Settings → API):
 const SUPABASE_URL = "https://mftdqmdnkzpttyoiehqj.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_DTosIGRbW2TOBrButJxndQ_N_Typi0a";
+const GUEST = new URLSearchParams(location.search).get("guest") === "1";
+const GUEST_WORDS_KEY = "hippo-guest-words";
+const GUEST_COLNAMES_KEY = "hippo-guest-colnames";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -54,30 +57,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 
   $("btnLogout").addEventListener("click", async () => {
+    if (GUEST) { location.href = location.pathname; return; }
     await supabase.auth.signOut();
   });
 
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (session) {
-      $("loginScreen").classList.add("hidden");
-      $("app").classList.remove("hidden");
-      $("loggedInUser").textContent = "🦛 " + session.user.email;
-      await loadColNames();
-      await loadWords();
-      renderList();
-    } else {
-      words = [];
-      $("app").classList.add("hidden");
-      $("loginScreen").classList.remove("hidden");
-      $("authPass").value = "";
-      pass2Field.value = "";
-      pass2Field.classList.add("hidden");
-      authMsg("", false);
-    }
-  });
-
   // ---------- Data (Supabase) ----------
+  function save() {
+    if (GUEST) { localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(words)); return; }
+  }
+  
   async function loadWords() {
+    if (GUEST) {
+      try {
+        const raw = localStorage.getItem(GUEST_WORDS_KEY);
+        words = raw ? JSON.parse(raw) : [];
+      } catch (e) { words = []; }
+      words = words.map((w, i) => ({ id: w.id || "g" + i, a: w.a || "", b: w.b || "" }));
+      return;
+    }
     const { data, error } = await supabase
       .from("words")
       .select("id, lang1, lang2")
@@ -87,6 +84,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   async function loadColNames() {
+    if (GUEST) {
+      try {
+        const n = JSON.parse(localStorage.getItem(GUEST_COLNAMES_KEY)) || {};
+        $("col1name").value = n.c1 || "Language 1";
+        $("col2name").value = n.c2 || "Language 2";
+      } catch (e) {}
+      updateHeaders();
+      return;
+    }
     const { data } = await supabase
       .from("user_settings")
       .select("col1, col2")
@@ -97,6 +103,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   async function saveColNames() {
+    if (GUEST) {
+      localStorage.setItem(GUEST_COLNAMES_KEY, JSON.stringify({
+        c1: $("col1name").value, c2: $("col2name").value
+      }));
+      return;
+    }
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) return;
     await supabase.from("user_settings").upsert({
@@ -136,16 +148,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       in2.type = "text"; in2.value = w.b; in2.placeholder = "word in language 2";
       in1.addEventListener("input", async () => {
         words[i].a = in1.value;
+        if (GUEST) return save();
         await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
       });
       in2.addEventListener("input", async () => {
         words[i].b = in2.value;
+        if (GUEST) return save();
         await supabase.from("words").update({ lang2: in2.value }).eq("id", w.id);
       });
       const del = document.createElement("button");
       del.className = "btn danger";
       del.textContent = "✕";
       del.addEventListener("click", async () => {
+        if (GUEST) { words.splice(i, 1); save(); renderList(); return; }
         await supabase.from("words").delete().eq("id", w.id);
         words.splice(i, 1);
         renderList();
@@ -158,6 +173,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   $("addRow").addEventListener("click", async () => {
+    if (GUEST) {
+      words.push({ id: "g" + Date.now(), a: "", b: "" });
+      save(); renderList();
+      const inputs = $("listBody").querySelectorAll("tr:last-child input");
+      if (inputs[0]) inputs[0].focus();
+      return;
+    }
     const { data, error } = await supabase
       .from("words")
       .insert({ lang1: "", lang2: "" })
@@ -172,6 +194,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   $("clearList").addEventListener("click", async () => {
     if (words.length && confirm("Are you sure you want to clear the whole pool? 🦛")) {
+      if (GUEST) { words = []; save(); renderList(); return; }
       await supabase.from("words").delete().neq("id", "00000000-0000-0000-0000-000000000000");
       words = [];
       renderList();
@@ -334,4 +357,37 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (fl.queue.length) { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
   });
   $("flashStart").addEventListener("click", flashStart);
+
+  // ---------- Init ----------
+  async function startGuest() {
+    $("loginScreen").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    $("loggedInUser").textContent = "🦛 Guest (local only)";
+    await loadColNames();
+    await loadWords();
+    renderList();
+  }
+
+  if (GUEST) {
+    startGuest();
+  } else {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        $("loginScreen").classList.add("hidden");
+        $("app").classList.remove("hidden");
+        $("loggedInUser").textContent = "🦛 " + session.user.email;
+        await loadColNames();
+        await loadWords();
+        renderList();
+      } else {
+        words = [];
+        $("app").classList.add("hidden");
+        $("loginScreen").classList.remove("hidden");
+        $("authPass").value = "";
+        pass2Field.value = "";
+        pass2Field.classList.add("hidden");
+        authMsg("", false);
+      }
+    });
+  }
 })();
