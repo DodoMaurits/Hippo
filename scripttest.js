@@ -379,6 +379,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       setQuizChrome("panel-quiz-mc", true);
       setQuizChrome("panel-quiz-type", true);
       setQuizChrome("panel-flash", true);
+      $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
       $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
       $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = "";
       $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
@@ -597,6 +598,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     fl = { queue: pool, idx: 0 };
     setQuizChrome("panel-flash", false);
     activeQuiz = "fl";
+    $("panel-flash").querySelector(".flash-nav").classList.remove("hidden");
     flashShow();
   }
   function flashShow() {
