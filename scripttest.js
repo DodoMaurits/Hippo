@@ -172,6 +172,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   $("backToOverview").addEventListener("click", async () => {
     if (activeQuiz && !(await confirmLeaveQuiz())) return;
+    currentList = null;
     renderOverview(); activateTab("overview");
   });
   
