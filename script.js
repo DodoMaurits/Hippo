@@ -20,7 +20,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     el.classList.toggle("ok", !!ok);
   }
 
-  let authMode = "login";
   const pass2Field = $("authPass2");
 
   async function handleAuth(mode) {
@@ -41,23 +40,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   $("btnLogin").addEventListener("click", () => handleAuth("login"));
   $("btnRegister").addEventListener("click", () => handleAuth("register"));
-
-  $("authForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = $("authEmail").value.trim();
-    const pass = $("authPass").value;
-    if (!email.includes("@")) return authMsg("Enter a valid email address");
-    if (pass.length < 6) return authMsg("Password: at least 6 characters");
-    if (authMode === "register") {
-      if (pass !== pass2Field.value) return authMsg("Passwords do not match");
-      const { error } = await supabase.auth.signUp({ email, password: pass });
-      if (error) return authMsg(error.message);
-      authMsg("Account created — you are logged in! 🦛", true);
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) return authMsg("Wrong email or password");
-    }
-  });
 
   $("btnLogout").addEventListener("click", async () => {
     await supabase.auth.signOut();
