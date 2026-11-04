@@ -39,12 +39,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
       if (error) {
-        const { data: exists } = await supabase.rpc("email_exists", { p_email: email });
-        if (exists) return authMsg("Wrong password");
-        return authMsg("No account with this email yet — use Create account");
+        if (error.message.toLowerCase().includes("invalid login credentials")) {
+          const { data: exists } = await supabase.rpc("email_exists", { p_email: email });
+          if (exists) return authMsg("Wrong password");
+          return authMsg("No account with this email yet — use Create account");
+        }
+        return authMsg(error.message);
       }
     }
-  }
 
   $("btnLogin").addEventListener("click", () => {
     pass2Field.classList.add("hidden");
