@@ -30,6 +30,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("btnSubmit").textContent = authMode === "login" ? "Log in" : "Create account";
     $("authToggle").textContent = authMode === "login" ? "No account yet? Create one" : "Already have an account? Log in";
     authMsg("", false);
+    authMode = "login";
+    pass2Field.classList.add("hidden");
+    pass2Field.value = "";
+    $("btnSubmit").textContent = "Log in";
+    $("authToggle").textContent = "No account yet? Create one";
   });
 
   $("authForm").addEventListener("submit", async (e) => {
