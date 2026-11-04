@@ -254,10 +254,10 @@ td input { width: 100%; }
   border: 2px solid var(--border); background: rgba(11,50,68,.55);
   color: var(--text); font-weight: 700; font-size: .9rem;
 }
-.opt-pill:has(input:checked) { 
-  background: var(--sand); 
-  color: #5c3d00; 
-  border-color: var(--sand-dark); 
+.opt-pill:has(input:checked) {
+  background: var(--water-light);
+  color: #fff;
+  border-color: #7ec8e3;
 }
 .opt-max { 
   width: 64px; 
