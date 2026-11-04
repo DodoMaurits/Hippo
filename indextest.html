@@ -87,16 +87,16 @@
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
         </select>
-        <label>Max <input type="number" id="mcMax" min="1" style="width:70px"></label>
-        <select id="mcOrder">
-          <option value="shuffle">🔀 Shuffle</option>
-          <option value="ordered">🔢 In order</option>
-        </select>
         <button class="btn" id="mcStart">▶ Start quiz</button>
       </div>
       <div class="score-bar"><span id="mcScore">Score: 0/0</span><span id="mcCount"></span></div>
       <div class="progress"><div id="mcProgress"></div></div>
       <div class="quiz-box">
+        <div class="quiz-options">
+          <label class="opt-pill"><input type="radio" name="mcOrder" value="shuffle" checked> 🔀 Shuffle</label>
+          <label class="opt-pill"><input type="radio" name="mcOrder" value="ordered"> 🔢 In order</label>
+          <label class="opt-pill">Max <input type="number" id="mcMax" min="1" class="opt-max"></label>
+        </div>
         <div class="prompt" id="mcPrompt">Press “Start quiz”</div>
         <div class="hint" id="mcHint"></div>
         <div class="choices" id="mcChoices"></div>
@@ -111,17 +111,17 @@
           <option value="1to2">Language 1 → Language 2</option>
           <option value="2to1">Language 2 → Language 1</option>
         </select>
-        <label>Max <input type="number" id="typeMax" min="1" style="width:70px"></label>
-        <select id="typeOrder">
-          <option value="shuffle">🔀 Shuffle</option>
-          <option value="ordered">🔢 In order</option>
-        </select>
-        <label><input type="checkbox" id="typeCase"> Aa Case sensitive</label>
         <button class="btn" id="typeStart">▶ Start quiz</button>
       </div>
       <div class="score-bar"><span id="typeScore">Score: 0/0</span><span id="typeCount"></span></div>
       <div class="progress"><div id="typeProgress"></div></div>
       <div class="quiz-box">
+        <div class="quiz-options">
+          <label class="opt-pill"><input type="radio" name="typeOrder" value="shuffle" checked> 🔀 Shuffle</label>
+          <label class="opt-pill"><input type="radio" name="typeOrder" value="ordered"> 🔢 In order</label>
+          <label class="opt-pill">Max <input type="number" id="typeMax" min="1" class="opt-max"></label>
+          <label class="opt-pill"><input type="checkbox" id="typeCase"> Aa Case sensitive</label>
+        </div>
         <div class="prompt" id="typePrompt">Press “Start quiz”</div>
         <div class="hint" id="typeHint"></div>
         <input type="text" class="answer-input" id="typeInput" placeholder="Type the translation…" autocomplete="off">
@@ -132,14 +132,16 @@
     <!-- FLASHCARDS -->
     <div class="panel" id="panel-flash">
       <div class="quiz-controls">
-        <label>Max <input type="number" id="flashMax" min="1" style="width:70px"></label>
-        <select id="flashOrder">
-          <option value="shuffle">🔀 Shuffle</option>
-          <option value="ordered">🔢 In order</option>
-        </select>
         <button class="btn" id="flashStart">▶ Start flashcards</button>
       </div>
       <div class="score-bar"><span id="flashCount">Card 0/0</span></div>
+      <div class="quiz-box">
+        <div class="quiz-options">
+          <label class="opt-pill"><input type="radio" name="flashOrder" value="shuffle" checked> 🔀 Shuffle</label>
+          <label class="opt-pill"><input type="radio" name="flashOrder" value="ordered"> 🔢 In order</label>
+          <label class="opt-pill">Max <input type="number" id="flashMax" min="1" class="opt-max"></label>
+        </div>
+      </div>
       <div class="flashcard" id="flashCard">
         <div class="flashcard-inner">
           <div class="face front" id="flashFront">🦛</div>
@@ -152,8 +154,7 @@
         <button class="btn" id="flashNext">Next →</button>
       </div>
     </div>
-  </div>
-
+    
   <div class="water" aria-hidden="true">
     <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
       <path d="M0,60 C240,110 480,10 720,60 C960,110 1200,10 1440,60 L1440,120 L0,120 Z"></path>
