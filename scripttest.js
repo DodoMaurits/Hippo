@@ -109,6 +109,28 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("th2").textContent = $("col2name").value || "Language 2";
   }
 
+  function showModal({ title, text, inputPlaceholder, okText }) {
+    return new Promise((resolve) => {
+      const ov = $("modalOverlay");
+      $("modalTitle").textContent = title;
+      $("modalText").textContent = text || "";
+      const inp = $("modalInput");
+      if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
+      else { inp.classList.add("hidden"); }
+      $("modalMsg").textContent = "";
+      $("modalOk").textContent = okText || "OK";
+      ov.classList.remove("hidden");
+      const done = (val) => { ov.classList.add("hidden"); resolve(val); };
+      $("modalOk").onclick = () => {
+        if (inputPlaceholder && !inp.value.trim()) { $("modalMsg").textContent = "Please enter a name"; return; }
+        done(inputPlaceholder ? inp.value.trim() : true);
+      };
+      $("modalCancel").onclick = () => done(null);
+      ov.onclick = (e) => { if (e.target === ov) done(null); };
+      if (inputPlaceholder) inp.focus(); else $("modalOk").focus();
+    });
+  }
+  
   // ---------- Tabs ----------
   function activateTab(name) {
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
