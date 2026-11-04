@@ -46,10 +46,39 @@
     </header>
 
     <div class="tabs">
-      <button class="tab active" data-tab="list">🌿 My list</button>
+      <button class="tab active" data-tab="lists">📋 My lists</button>
+      <button class="tab" data-tab="list">✏️ Edit list</button>
       <button class="tab" data-tab="quiz-mc">🫧 Multiple choice</button>
       <button class="tab" data-tab="quiz-type">⌨️ Typing</button>
       <button class="tab" data-tab="flash">🃏 Flashcards</button>
+    </div>
+
+    <!-- LISTS OVERVIEW -->
+    <div class="panel active" id="panel-lists">
+      <div class="list-header">
+        <button class="btn" id="addList">➕ New list</button>
+      </div>
+      <div id="listsOverview"></div>
+      <p class="empty" id="listsEmpty">No lists yet — create your first one! 🦛</p>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="panel" id="panel-list">
+      <div class="list-header">
+        <button class="btn secondary" id="backToLists">← All lists</button>
+        <input type="text" id="listName" placeholder="List name" value="New list">
+        <input type="text" id="col1name" placeholder="Language 1 name (e.g. English)" value="Language 1">
+        <input type="text" id="col2name" placeholder="Language 2 name (e.g. Spanish)" value="Language 2">
+        <button class="btn" id="addRow">+ Add word</button>
+        <button class="btn secondary" id="clearList">Clear list</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th id="th1">Language 1</th><th id="th2">Language 2</th><th></th></tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+      <p class="empty" id="emptyMsg">The pool is empty… add your first word above! 🦛</p>
     </div>
 
     <!-- LIST -->
