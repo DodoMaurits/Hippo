@@ -378,8 +378,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("mcFeedback").className = "feedback";
     if (mc.idx >= mc.queue.length) {
       const pct = mc.queue.length ? Math.round(mc.score / mc.queue.length * 100) : 0;
-      $("mcPrompt").textContent = "🦛🎉 Done! Your score: " + mc.score + "/" + mc.queue.length + " (" + pct + "%)";
-      $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : "Tip: flip through the flashcards first 🃏";
+      const pct = mc.queue.length ? Math.round(mc.score / mc.queue.length * 100) : 0;
+      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (mc.score / mc.queue.length)) * 10) / 10));
+      $("mcPrompt").textContent = "🦛🎉 Done! " + mc.score + "/" + mc.queue.length + " (" + pct + "%) — grade: " 
+        + grade.toFixed(1) + "/10";
+      $("mcHint").textContent = pct >= 80 ? "Splashing great! 🌟" : pct >= 50 ? "Good job, keep going! 💪" : 
+        "Tip: flip through the flashcards first 🃏";
       $("mcChoices").innerHTML = "";
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.queue.length, mc.score);
       return;
@@ -442,7 +446,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeInput").value = "";
     if (ty.idx >= ty.queue.length) {
       const pct = ty.queue.length ? Math.round(ty.score / ty.queue.length * 100) : 0;
-      $("typePrompt").textContent = "🦛🎉 Done! Your score: " + ty.score + "/" + ty.queue.length + " (" + pct + "%)";
+      const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.queue.length)) * 10) / 10));
+      $("typePrompt").textContent = "🦛🎉 Done! " + ty.score + "/" + ty.queue.length + " (" + pct + "%) — grade: " 
+        + grade.toFixed(1) + "/10";
       $("typeHint").textContent = "";
       $("typeInput").style.display = "none";
       updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.queue.length, ty.score);
