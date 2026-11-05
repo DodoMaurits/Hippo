@@ -171,7 +171,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
-      if (activeQuiz && tab.dataset.tab !== "quiz-" + activeQuiz) {
+      const aqTab = activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz;
+      if (activeQuiz && tab.dataset.tab !== aqTab) {
         if (!(await confirmLeaveQuiz())) return;
       }
       if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
@@ -399,7 +400,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
     if (res === "save") { saveQuiz(); activeQuiz = null; return true; } 
     if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
-    activateTab("quiz-" + activeQuiz);
+    activateTab(activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz);
     return false;
   }
   function resetQuizUI() {
