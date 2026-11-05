@@ -494,6 +494,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
     setQuizChrome("panel-quiz-mc", false);
+    clearSavedQuiz();
     activeQuiz = "mc";
     mcNext();
   }
@@ -571,6 +572,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
     setQuizChrome("panel-quiz-type", false);
+    clearSavedQuiz();
     activeQuiz = "ty";
     typeNext();
   }
@@ -637,6 +639,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
     setQuizChrome("panel-flash", false);
+    clearSavedQuiz();
     activeQuiz = "fl";
     $("panel-flash").querySelector(".flash-nav").classList.remove("hidden");
     flashShow();
@@ -734,7 +737,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (saved.mode === "mc") { activateTab("quiz-mc"); mcNext(); }
         else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
         else { activateTab("flash"); flashShow(); }
-        setQuizChrome("panel-quiz-" + (saved.mode === "fl" ? "flash" : saved.mode === "mc" ? "quiz-mc" : "quiz-type"), false);
+        setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
       } else {
         clearSavedQuiz();
       }
@@ -769,7 +772,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (saved.mode === "mc") { activateTab("quiz-mc"); mcNext(); }
         else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
         else { activateTab("flash"); flashShow(); }
-        setQuizChrome("panel-quiz-" + (saved.mode === "fl" ? "flash" : saved.mode === "mc" ? "quiz-mc" : "quiz-type"), false);
+        setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
       } else {
         clearSavedQuiz();
       }
