@@ -270,3 +270,13 @@ td input { width: 100%; }
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+.hidden-mobile { display: none; }
+@media (max-width: 560px) {
+  .panel { padding: 14px 10px; }
+  th, td { padding: 6px 4px; }
+  td input { padding: 8px 6px; font-size: 1rem; }
+  td .btn.danger { display: none; }              /* ✕ weg op mobile */
+  .hidden-mobile { display: inline-block !important; }
+  .list-header input[type="text"], .list-header .btn { flex: 1 1 100%; }  /* kolommen/knoppen full-width, zelfde linkerrand */
+}
