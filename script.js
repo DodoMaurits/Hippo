@@ -130,7 +130,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
   }
 
-  function showModal({ title, text, inputPlaceholder, okText, extraButton }) {
+  function showModal({ title, text, inputPlaceholder, okText, extraButton, hideCancel }) {
     return new Promise((resolve) => {
       const ov = $("modalOverlay");
       $("modalTitle").textContent = title;
@@ -139,6 +139,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
       else { inp.classList.add("hidden"); }
       $("modalMsg").textContent = "";
+      $("modalCancel").classList.toggle("hidden", !!hideCancel);
       $("modalOk").textContent = okText || "OK";
       let extra = null;
       if (extraButton) {
@@ -166,14 +167,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
     const panel = $("panel-" + name);
     if (panel) panel.classList.add("active");
+    updateNewlistTab();
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
-      const aqTab = activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz;
-      if (activeQuiz && tab.dataset.tab !== aqTab) {
-        if (!(await confirmLeaveQuiz())) return;
+      const cur = currentQuizMode();
+      if (cur) {
+        if (!(await confirmLeaveQuiz(cur))) return;
       }
       if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
       activateTab(tab.dataset.tab);
@@ -181,7 +183,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 
   $("backToOverview").addEventListener("click", async () => {
-    if (activeQuiz && !(await confirmLeaveQuiz())) return;
+    if (currentQuizMode() && !(await confirmLeaveQuiz(currentQuizMode()))) return;
     currentList = null;
     renderOverview(); activateTab("overview");
   });
@@ -390,30 +392,36 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (grade < 9.5) return "Awesome! One more? Practice makes perfect 🌟";
     return "You nailed it! 🦛👑";
   }
-  async function confirmLeaveQuiz() {
-    if (!activeQuiz) return true;
+  async function confirmLeaveQuiz(mode) {
+    if (!mode) return true;
     const res = await showModal({
       title: "Leave quiz?",
       text: "Are you sure you want to leave?",
       okText: "End Quiz",
       extraButton: { label: "Leave but save", value: "save" }
     });
-    if (res === "save") { saveQuiz(); return true; }
-    if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
-    activateTab(activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz);
+    if (res === "save") { saveQuiz(mode); return true; }
+    if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(mode); return true; }
     return false;
   }
-  function resetQuizUI() {
-    mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
-    ty = { queue: [], total: 0, idx: 0, score: 0 };
-    fl = { queue: [], idx: 0 };
-    setQuizChrome("panel-quiz-mc", true);
-    setQuizChrome("panel-quiz-type", true);
-    setQuizChrome("panel-flash", true);
-    $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
-    $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
-    $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
-    $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
+  function resetQuizUI(mode) {
+    if (mode === "mc") {
+      mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
+      $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
+      setQuizChrome("panel-quiz-mc", true);
+    }
+    if (mode === "ty") {
+      ty = { queue: [], total: 0, idx: 0, score: 0 };
+      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+      setQuizChrome("panel-quiz-type", true);
+    }
+    if (mode === "fl") {
+      fl = { queue: [], idx: 0 };
+      $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
+      $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
+      setQuizChrome("panel-flash", true);
+    }
+    updateNewlistTab();
   }
   function setQuizChrome(panelId, show) {
     const p = $(panelId);
@@ -421,11 +429,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const o = p.querySelector(".quiz-options");
     if (o) o.classList.toggle("hidden", !show);
   }
+  function currentQuizMode() {
+    const t = document.querySelector(".tab.active");
+    if (!t) return null;
+    const tab = t.dataset.tab;
+    if (tab === "quiz-mc" && mc.queue.length > mc.idx) return "mc";
+    if (tab === "quiz-type" && ty.queue.length > ty.idx) return "ty";
+    if (tab === "flash" && fl.queue.length > fl.idx) return "fl";
+    return null;
+  }
+  function updateNewlistTab() {
+    const t = document.querySelector('.tab[data-tab="newlist"]');
+    if (t) t.classList.toggle("hidden", !!currentQuizMode());
+  }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
-  function saveQuiz() {
-    if (!activeQuiz) return;
-    const st = activeQuiz === "mc" ? mc : activeQuiz === "ty" ? ty : fl;
-    localStorage.setItem(QUIZ_SAVE_KEY, JSON.stringify({ mode: activeQuiz, state: st, opts: quizOpts }));
+  function saveQuiz(mode) {
+    if (!mode) return;
+    const st = mode === "mc" ? mc : mode === "ty" ? ty : fl;
+    localStorage.setItem(QUIZ_SAVE_KEY, JSON.stringify({ mode, state: st, opts: quizOpts }));
   }
   function loadSavedQuiz() {
     try { return JSON.parse(localStorage.getItem(QUIZ_SAVE_KEY)); } catch (e) { return null; }
@@ -496,6 +517,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
     setQuizChrome("panel-quiz-mc", false);
     activeQuiz = "mc";
+    updateNewlistTab();
     clearSavedQuiz();
     mcNext();
   }
@@ -510,6 +532,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("mcHint").textContent = "Score " + mc.score + "/" + mc.total + " — " + gradeFeedback(grade);
       clearSavedQuiz();
       activeQuiz = null;
+      updateNewlistTab();
       $("mcChoices").innerHTML = "";
       setQuizChrome("panel-quiz-mc", true);
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
@@ -520,7 +543,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("mcPrompt").textContent = item.prompt;
     $("mcPrompt").style.fontSize = "";
     $("mcHint").textContent = "Pick the correct translation";
-    saveQuiz();
+    saveQuiz("mc");
     const wrong = shuffle(mc.queue.filter((x) => x.answer !== item.answer)).slice(0, 3).map((x) => x.answer);
     const options = shuffle([item.answer, ...wrong]);
     const box = $("mcChoices");
@@ -574,6 +597,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
     setQuizChrome("panel-quiz-type", false);
     activeQuiz = "ty";
+    updateNewlistTab();
     clearSavedQuiz();
     typeNext();
   }
@@ -588,6 +612,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("typeHint").textContent = "Score " + ty.score + "/" + ty.total + " — " + gradeFeedback(grade);
       clearSavedQuiz();
       activeQuiz = null;
+      updateNewlistTab();
       $("typeInput").classList.add("hidden");
       setQuizChrome("panel-quiz-type", true);
       updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.total, ty.total, ty.score);
@@ -601,7 +626,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
-    saveQuiz();
+    saveQuiz("ty");
   }
   function typeCheck() {
     const item = ty.queue[ty.idx];
@@ -641,6 +666,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     fl = { queue: pool, idx: 0 };
     setQuizChrome("panel-flash", false);
     activeQuiz = "fl";
+    updateNewlistTab();
     clearSavedQuiz();
     $("panel-flash").querySelector(".flash-nav").classList.remove("hidden");
     flashShow();
@@ -651,7 +677,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("flashFront").textContent = item ? item.prompt : "🦛";
     $("flashBack").textContent = item ? item.answer : "…";
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
-    saveQuiz();
+    saveQuiz("fl");
   }
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
@@ -722,14 +748,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     loadColNames();
     renderOverview();
     activateTab("overview");
-    setQuizTabs(false);
+    setQuizTabs(true);
     const saved = loadSavedQuiz();
     if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
       const res = await showModal({
         title: "🦛 Unfinished quiz",
         text: "You have a quiz in progress. Resume it or start fresh?",
         okText: "Resume",
-        extraButton: { label: "Discard", value: "discard" }
+        extraButton: { label: "Discard", value: "discard" },
+        hideCancel: true
       });
       if (res === true || res === "save") {
         activeQuiz = saved.mode;
@@ -757,14 +784,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         loadColNames();
         renderOverview();
         activateTab("overview");
-        setQuizTabs(false);
+        setQuizTabs(true);
         const saved = loadSavedQuiz();
         if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
           const res = await showModal({
           title: "🦛 Unfinished quiz",
           text: "You have a quiz in progress. Resume it or start fresh?",
           okText: "Resume",
-          extraButton: { label: "Discard", value: "discard" }
+          extraButton: { label: "Discard", value: "discard" },
+          hideCancel: true
         });
         if (res === true || res === "save") {
         activeQuiz = saved.mode;
