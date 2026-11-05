@@ -166,6 +166,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
     const panel = $("panel-" + name);
     if (panel) panel.classList.add("active");
+    updateNewlistTab();
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
@@ -419,6 +420,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
       setQuizChrome("panel-flash", true);
     }
+    updateNewlistTab();
   }
   function setQuizChrome(panelId, show) {
     const p = $(panelId);
@@ -434,6 +436,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (tab === "quiz-type" && ty.queue.length > ty.idx) return "ty";
     if (tab === "flash" && fl.queue.length > fl.idx) return "fl";
     return null;
+  }
+  function updateNewlistTab() {
+    const t = document.querySelector('.tab[data-tab="newlist"]');
+    if (t) t.classList.toggle("hidden", !!currentQuizMode());
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
   function saveQuiz(mode) {
@@ -510,6 +516,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
     setQuizChrome("panel-quiz-mc", false);
     activeQuiz = "mc";
+    updateNewlistTab();
     clearSavedQuiz();
     mcNext();
   }
@@ -524,6 +531,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("mcHint").textContent = "Score " + mc.score + "/" + mc.total + " — " + gradeFeedback(grade);
       clearSavedQuiz();
       activeQuiz = null;
+      updateNewlistTab();
       $("mcChoices").innerHTML = "";
       setQuizChrome("panel-quiz-mc", true);
       updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.total, mc.total, mc.score);
@@ -588,6 +596,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
     setQuizChrome("panel-quiz-type", false);
     activeQuiz = "ty";
+    updateNewlistTab();
     clearSavedQuiz();
     typeNext();
   }
@@ -602,6 +611,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("typeHint").textContent = "Score " + ty.score + "/" + ty.total + " — " + gradeFeedback(grade);
       clearSavedQuiz();
       activeQuiz = null;
+      updateNewlistTab();
       $("typeInput").classList.add("hidden");
       setQuizChrome("panel-quiz-type", true);
       updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.total, ty.total, ty.score);
@@ -655,6 +665,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     fl = { queue: pool, idx: 0 };
     setQuizChrome("panel-flash", false);
     activeQuiz = "fl";
+    updateNewlistTab();
     clearSavedQuiz();
     $("panel-flash").querySelector(".flash-nav").classList.remove("hidden");
     flashShow();
