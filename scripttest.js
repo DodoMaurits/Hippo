@@ -172,7 +172,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
       const aqTab = activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz;
-      if (activeQuiz && tab.dataset.tab !== aqTab) {
+      if (quizRunning() && tab.dataset.tab !== aqTab) {
         if (!(await confirmLeaveQuiz())) return;
       }
       if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
@@ -181,7 +181,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 
   $("backToOverview").addEventListener("click", async () => {
-    if (activeQuiz && !(await confirmLeaveQuiz())) return;
+    if (quizRunning() && !(await confirmLeaveQuiz())) return;
     currentList = null;
     renderOverview(); activateTab("overview");
   });
@@ -391,14 +391,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return "You nailed it! 🦛👑";
   }
   async function confirmLeaveQuiz() {
-    if (!activeQuiz) return true;
+    if (!quizRunning()) return true;
     const res = await showModal({
       title: "Leave quiz?",
       text: "Are you sure you want to leave?",
       okText: "End Quiz",
       extraButton: { label: "Leave but save", value: "save" }
     });
-    if (res === "save") { saveQuiz(); return true; }
+    if (res === "save") { saveQuiz(); activeQuiz = null; resetQuizUI(); return true; }
     if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
     if (activeQuiz) activateTab(activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz);
     return false;
@@ -420,6 +420,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     p.querySelector(".quiz-controls").classList.toggle("hidden", !show);
     const o = p.querySelector(".quiz-options");
     if (o) o.classList.toggle("hidden", !show);
+  }
+  function quizRunning() {
+    if (!activeQuiz) return false;
+    const st = activeQuiz === "mc" ? mc : activeQuiz === "ty" ? ty : fl;
+    return (st.queue || []).length > 0 && st.idx < st.queue.length;
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
   function saveQuiz() {
