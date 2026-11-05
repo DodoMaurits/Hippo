@@ -171,9 +171,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
-      const aqTab = activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz;
-      if (quizRunning() && tab.dataset.tab !== aqTab) {
-        if (!(await confirmLeaveQuiz())) return;
+      const cur = currentQuizMode();
+      if (cur) {
+        if (!(await confirmLeaveQuiz(cur))) return;
       }
       if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
       activateTab(tab.dataset.tab);
@@ -181,7 +181,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 
   $("backToOverview").addEventListener("click", async () => {
-    if (quizRunning() && !(await confirmLeaveQuiz())) return;
+    if (currentQuizMode() && !(await confirmLeaveQuiz(currentQuizMode()))) return;
     currentList = null;
     renderOverview(); activateTab("overview");
   });
@@ -390,16 +390,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (grade < 9.5) return "Awesome! One more? Practice makes perfect 🌟";
     return "You nailed it! 🦛👑";
   }
-  async function confirmLeaveQuiz() {
-    if (!quizRunning()) return true;
+  async function confirmLeaveQuiz(mode) {
+    if (!mode) return true;
     const res = await showModal({
       title: "Leave quiz?",
       text: "Are you sure you want to leave?",
       okText: "End Quiz",
       extraButton: { label: "Leave but save", value: "save" }
     });
-    if (res === "save") { saveQuiz(); return true; }
-    if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
+    if (res === "save") { saveQuiz(mode); return true; }
+    if (res === true) { clearSavedQuiz(); resetQuizUI(); return true; }
     return false;
   }
   function resetQuizUI() {
@@ -420,16 +420,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const o = p.querySelector(".quiz-options");
     if (o) o.classList.toggle("hidden", !show);
   }
-  function quizRunning() {
-    if (!activeQuiz) return false;
-    const st = activeQuiz === "mc" ? mc : activeQuiz === "ty" ? ty : fl;
-    return (st.queue || []).length > 0 && st.idx < st.queue.length;
+  function currentQuizMode() {
+    const t = document.querySelector(".tab.active");
+    if (!t) return null;
+    const tab = t.dataset.tab;
+    if (tab === "quiz-mc" && mc.queue.length > mc.idx) return "mc";
+    if (tab === "quiz-type" && ty.queue.length > ty.idx) return "ty";
+    if (tab === "flash" && fl.queue.length > fl.idx) return "fl";
+    return null;
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
-  function saveQuiz() {
-    if (!activeQuiz) return;
-    const st = activeQuiz === "mc" ? mc : activeQuiz === "ty" ? ty : fl;
-    localStorage.setItem(QUIZ_SAVE_KEY, JSON.stringify({ mode: activeQuiz, state: st, opts: quizOpts }));
+  function saveQuiz(mode) {
+    if (!mode) return;
+    const st = mode === "mc" ? mc : mode === "ty" ? ty : fl;
+    localStorage.setItem(QUIZ_SAVE_KEY, JSON.stringify({ mode, state: st, opts: quizOpts }));
   }
   function loadSavedQuiz() {
     try { return JSON.parse(localStorage.getItem(QUIZ_SAVE_KEY)); } catch (e) { return null; }
