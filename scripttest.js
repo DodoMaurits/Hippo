@@ -130,7 +130,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
   }
 
-  function showModal({ title, text, inputPlaceholder, okText }) {
+  function showModal({ title, text, inputPlaceholder, okText, extraButton }) {
     return new Promise((resolve) => {
       const ov = $("modalOverlay");
       $("modalTitle").textContent = title;
@@ -140,8 +140,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       else { inp.classList.add("hidden"); }
       $("modalMsg").textContent = "";
       $("modalOk").textContent = okText || "OK";
+      let extra = null;
+      if (extraButton) {
+        extra = document.createElement("button");
+        extra.className = "btn secondary";
+        extra.textContent = extraButton.label;
+        extra.onclick = () => done(extraButton.value);
+        $("modalOk").after(extra);
+      }
       ov.classList.remove("hidden");
-      const done = (val) => { ov.classList.add("hidden"); resolve(val); };
+      const done = (val) => { if (extra) extra.remove(); ov.classList.add("hidden"); resolve(val); };
       $("modalOk").onclick = () => {
         if (inputPlaceholder && !inp.value.trim()) { $("modalMsg").textContent = "Please enter a name"; return; }
         done(inputPlaceholder ? inp.value.trim() : true);
@@ -368,27 +376,28 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   async function confirmLeaveQuiz() {
     if (!activeQuiz) return true;
-    const ok = await showModal({
-      title: "Warning!",
-      text: "Are you sure you want to leave? Progress will not be saved.",
-      okText: "Yes"
+    const res = await showModal({
+      title: "🦛 Leave quiz?",
+      text: "Leave and reset, save for later, or keep going?",
+      okText: "Leave & reset",
+      extraButton: { label: "Save for later", value: "save" }
     });
-    if (ok) {
-      activeQuiz = null;
-      mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
-      ty = { queue: [], total: 0, idx: 0, score: 0 };
-      fl = { queue: [], idx: 0 };
-      setQuizChrome("panel-quiz-mc", true);
-      setQuizChrome("panel-quiz-type", true);
-      setQuizChrome("panel-flash", true);
-      $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
-      $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
-      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
-      $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
-      return true;
-    }
+    if (res === "save") { saveQuiz(); activeQuiz = null; return true; }   //lus in-memory reset, save blijft staan
+    if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
     activateTab("quiz-" + activeQuiz);
     return false;
+  }
+  function resetQuizUI() {
+    mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
+    ty = { queue: [], total: 0, idx: 0, score: 0 };
+    fl = { queue: [], idx: 0 };
+    setQuizChrome("panel-quiz-mc", true);
+    setQuizChrome("panel-quiz-type", true);
+    setQuizChrome("panel-flash", true);
+    $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
+    $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
+    $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+    $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
   }
   function setQuizChrome(panelId, show) {
     const p = $(panelId);
@@ -396,6 +405,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const o = p.querySelector(".quiz-options");
     if (o) o.classList.toggle("hidden", !show);
   }
+  const QUIZ_SAVE_KEY = "hippo-quiz-save";
+  function saveQuiz() {
+    if (!activeQuiz) return;
+    const st = activeQuiz === "mc" ? mc : activeQuiz === "ty" ? ty : fl;
+    localStorage.setItem(QUIZ_SAVE_KEY, JSON.stringify({ mode: activeQuiz, state: st, opts: quizOpts }));
+  }
+  function loadSavedQuiz() {
+    try { return JSON.parse(localStorage.getItem(QUIZ_SAVE_KEY)); } catch (e) { return null; }
+  }
+  function clearSavedQuiz() { localStorage.removeItem(QUIZ_SAVE_KEY); }
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -472,6 +491,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("mcPrompt").style.fontSize = "4.5rem";
       $("mcPrompt").textContent = grade.toFixed(1);
       $("mcHint").textContent = "Score " + mc.score + "/" + mc.total + " — " + gradeFeedback(grade);
+      clearSavedQuiz();
       activeQuiz = null;
       $("mcChoices").innerHTML = "";
       setQuizChrome("panel-quiz-mc", true);
@@ -483,6 +503,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("mcPrompt").textContent = item.prompt;
     $("mcPrompt").style.fontSize = "";
     $("mcHint").textContent = "Pick the correct translation";
+    saveQuiz();
     const wrong = shuffle(mc.queue.filter((x) => x.answer !== item.answer)).slice(0, 3).map((x) => x.answer);
     const options = shuffle([item.answer, ...wrong]);
     const box = $("mcChoices");
@@ -547,6 +568,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("typePrompt").style.fontSize = "4.5rem";
       $("typePrompt").textContent = grade.toFixed(1);
       $("typeHint").textContent = "Score " + ty.score + "/" + ty.total + " — " + gradeFeedback(grade);
+      clearSavedQuiz();
       activeQuiz = null;
       $("typeInput").classList.add("hidden");
       setQuizChrome("panel-quiz-type", true);
@@ -561,6 +583,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
+    saveQuiz();
   }
   function typeCheck() {
     const item = ty.queue[ty.idx];
@@ -609,6 +632,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("flashFront").textContent = item ? item.prompt : "🦛";
     $("flashBack").textContent = item ? item.answer : "…";
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
+    saveQuiz();
   }
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
@@ -680,6 +704,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     renderOverview();
     activateTab("overview");
     setQuizTabs(false);
+    const saved = loadSavedQuiz();
+    if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
+      const res = await showModal({
+        title: "🦛 Unfinished quiz",
+        text: "You have a quiz in progress. Resume it or start fresh?",
+        okText: "Resume",
+        extraButton: { label: "Discard", value: "discard" }
+      });
+      if (res === true || res === "save") {
+        activeQuiz = saved.mode;
+        if (saved.mode === "mc") mc = saved.state; else if (saved.mode === "ty") ty = saved.state; else fl = saved.state;
+        quizOpts = saved.opts || quizOpts;
+        if (saved.mode === "mc") { activateTab("quiz-mc"); mcNext(); }
+        else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
+        else { activateTab("flash"); flashShow(); }
+        setQuizChrome("panel-quiz-" + (saved.mode === "fl" ? "flash" : saved.mode === "mc" ? "quiz-mc" : "quiz-type"), false);
+      } else {
+        clearSavedQuiz();
+      }
+    }
   }
 
   if (GUEST) {
@@ -695,6 +739,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         renderOverview();
         activateTab("overview");
         setQuizTabs(false);
+        const saved = loadSavedQuiz();
+        if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
+          const res = await showModal({
+          title: "🦛 Unfinished quiz",
+          text: "You have a quiz in progress. Resume it or start fresh?",
+          okText: "Resume",
+          extraButton: { label: "Discard", value: "discard" }
+        });
+        if (res === true || res === "save") {
+        activeQuiz = saved.mode;
+        if (saved.mode === "mc") mc = saved.state; else if (saved.mode === "ty") ty = saved.state; else fl = saved.state;
+        quizOpts = saved.opts || quizOpts;
+        if (saved.mode === "mc") { activateTab("quiz-mc"); mcNext(); }
+        else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
+        else { activateTab("flash"); flashShow(); }
+        setQuizChrome("panel-quiz-" + (saved.mode === "fl" ? "flash" : saved.mode === "mc" ? "quiz-mc" : "quiz-type"), false);
+      } else {
+        clearSavedQuiz();
+      }
+    }
       } else {
         words = [];
         $("app").classList.add("hidden");
