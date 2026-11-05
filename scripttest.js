@@ -17,6 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const $ = (id) => document.getElementById(id);
 
   let words = []; // [{ id, a, b }]
+  let lastRowIdx = -1;
   let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal" };
   let activeQuiz = null; // "mc" | "ty" | "fl" | null
 
@@ -307,11 +308,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (GUEST) return save();
         await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
       });
+      in1.addEventListener("focus", () => { lastRowIdx = i; });
       in2.addEventListener("input", async () => {
         words[i].b = in2.value;
         if (GUEST) return save();
         await supabase.from("words").update({ lang2: in2.value }).eq("id", w.id);
       });
+      in2.addEventListener("focus", () => { lastRowIdx = i; });
       const del = document.createElement("button");
       del.className = "btn danger";
       del.textContent = "✕";
@@ -346,6 +349,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     renderList();
     const inputs = $("listBody").querySelectorAll("tr:last-child input");
     if (inputs[0]) inputs[0].focus();
+  });
+    $("delRowBtn").addEventListener("click", async () => {
+    if (lastRowIdx < 0 || !words[lastRowIdx]) {
+      await showModal({ title: "🗑️ Delete row", text: "Tap a word row first, then Delete row.", okText: "OK" });
+      return;
+    }
+    const ok = await showModal({ title: "🗑️ Delete row", text: "Delete this word pair?", okText: "Delete" });
+    if (!ok) return;
+    const i = lastRowIdx;
+    if (GUEST) { words.splice(i, 1); save(); renderList(); return; }
+    await supabase.from("words").delete().eq("id", words[i].id);
+    words.splice(i, 1);
+    renderList();
   });
 
   $("clearList").addEventListener("click", async () => {
