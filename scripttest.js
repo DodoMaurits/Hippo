@@ -392,12 +392,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   async function confirmLeaveQuiz() {
     if (!activeQuiz) return true;
     const res = await showModal({
-      title: "🦛 Leave quiz?",
-      text: "Leave and reset, save for later, or keep going?",
-      okText: "Leave & reset",
-      extraButton: { label: "Save for later", value: "save" }
+      title: "Leave quiz?",
+      text: "Are you sure you want to leave?",
+      okText: "End Quiz",
+      extraButton: { label: "Leave but save", value: "save" }
     });
-    if (res === "save") { saveQuiz(); activeQuiz = null; return true; }   //lus in-memory reset, save blijft staan
+    if (res === "save") { saveQuiz(); activeQuiz = null; return true; } 
     if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
     activateTab("quiz-" + activeQuiz);
     return false;
