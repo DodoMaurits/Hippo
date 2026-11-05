@@ -400,7 +400,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
     if (res === "save") { saveQuiz(); return true; }
     if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
-    activateTab(activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz);
+    if (activeQuiz) activateTab(activeQuiz === "fl" ? "flash" : "quiz-" + activeQuiz);
     return false;
   }
   function resetQuizUI() {
