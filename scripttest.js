@@ -1,6 +1,5 @@
 import { createClient } from "https://esm.run/@supabase/supabase-js@2";
 
-// VUL IN vanuit jouw Supabase project (Settings → API):
 const SUPABASE_URL = "https://mftdqmdnkzpttyoiehqj.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_DTosIGRbW2TOBrButJxndQ_N_Typi0a";
 const GUEST = new URLSearchParams(location.search).get("guest") === "1";
