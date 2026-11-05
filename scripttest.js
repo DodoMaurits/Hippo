@@ -495,8 +495,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     mc = { queue: pool, total: pool.length, idx: 0, score: 0, locked: false };
     setQuizChrome("panel-quiz-mc", false);
-    clearSavedQuiz();
     activeQuiz = "mc";
+    clearSavedQuiz();
     mcNext();
   }
   function mcNext() {
@@ -573,8 +573,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     ty = { queue: pool, total: pool.length, idx: 0, score: 0 };
     setQuizChrome("panel-quiz-type", false);
-    clearSavedQuiz();
     activeQuiz = "ty";
+    clearSavedQuiz();
     typeNext();
   }
   function typeNext() {
@@ -640,8 +640,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     pool = pool.slice(0, Math.min(max, pool.length));
     fl = { queue: pool, idx: 0 };
     setQuizChrome("panel-flash", false);
-    clearSavedQuiz();
     activeQuiz = "fl";
+    clearSavedQuiz();
     $("panel-flash").querySelector(".flash-nav").classList.remove("hidden");
     flashShow();
   }
