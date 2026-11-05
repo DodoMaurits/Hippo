@@ -542,7 +542,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("mcPrompt").textContent = item.prompt;
     $("mcPrompt").style.fontSize = "";
     $("mcHint").textContent = "Pick the correct translation";
-    saveQuiz();
+    saveQuiz("mc");
     const wrong = shuffle(mc.queue.filter((x) => x.answer !== item.answer)).slice(0, 3).map((x) => x.answer);
     const options = shuffle([item.answer, ...wrong]);
     const box = $("mcChoices");
@@ -625,7 +625,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
-    saveQuiz();
+    saveQuiz("ty");
   }
   function typeCheck() {
     const item = ty.queue[ty.idx];
@@ -676,7 +676,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("flashFront").textContent = item ? item.prompt : "🦛";
     $("flashBack").textContent = item ? item.answer : "…";
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
-    saveQuiz();
+    saveQuiz("fl");
   }
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
