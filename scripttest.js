@@ -130,7 +130,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
   }
 
-  function showModal({ title, text, inputPlaceholder, okText, extraButton }) {
+  function showModal({ title, text, inputPlaceholder, okText, extraButton, hideCancel }) {
     return new Promise((resolve) => {
       const ov = $("modalOverlay");
       $("modalTitle").textContent = title;
@@ -139,6 +139,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
       else { inp.classList.add("hidden"); }
       $("modalMsg").textContent = "";
+      $("modalCancel").classList.toggle("hidden", !!hideCancel);
       $("modalOk").textContent = okText || "OK";
       let extra = null;
       if (extraButton) {
@@ -747,14 +748,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     loadColNames();
     renderOverview();
     activateTab("overview");
-    setQuizTabs(false);
+    setQuizTabs(true);
     const saved = loadSavedQuiz();
     if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
       const res = await showModal({
         title: "🦛 Unfinished quiz",
         text: "You have a quiz in progress. Resume it or start fresh?",
         okText: "Resume",
-        extraButton: { label: "Discard", value: "discard" }
+        extraButton: { label: "Discard", value: "discard" },
+        hideCancel: true
       });
       if (res === true || res === "save") {
         activeQuiz = saved.mode;
@@ -782,14 +784,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         loadColNames();
         renderOverview();
         activateTab("overview");
-        setQuizTabs(false);
+        setQuizTabs(true);
         const saved = loadSavedQuiz();
         if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
           const res = await showModal({
           title: "🦛 Unfinished quiz",
           text: "You have a quiz in progress. Resume it or start fresh?",
           okText: "Resume",
-          extraButton: { label: "Discard", value: "discard" }
+          extraButton: { label: "Discard", value: "discard" },
+          hideCancel: true
         });
         if (res === true || res === "save") {
         activeQuiz = saved.mode;
