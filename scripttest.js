@@ -398,7 +398,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       okText: "End Quiz",
       extraButton: { label: "Leave but save", value: "save" }
     });
-    if (res === "save") { saveQuiz(); activeQuiz = null; resetQuizUI(); return true; }
+    if (res === "save") { saveQuiz(); return true; }
     if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(); return true; }
     return false;
   }
