@@ -15,10 +15,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const $ = (id) => document.getElementById(id);
 
-  let words = []; // [{ id, a, b }]
+  let words = [];
   let lastRowIdx = -1;
   let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal" };
-  let activeQuiz = null; // "mc" | "ty" | "fl" | null
+  let activeQuiz = null;
 
   // ---------- Auth ----------
   function authMsg(text, ok) {
