@@ -399,20 +399,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       extraButton: { label: "Leave but save", value: "save" }
     });
     if (res === "save") { saveQuiz(mode); return true; }
-    if (res === true) { clearSavedQuiz(); resetQuizUI(); return true; }
+    if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(mode); return true; }
     return false;
   }
-  function resetQuizUI() {
-    mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
-    ty = { queue: [], total: 0, idx: 0, score: 0 };
-    fl = { queue: [], idx: 0 };
-    setQuizChrome("panel-quiz-mc", true);
-    setQuizChrome("panel-quiz-type", true);
-    setQuizChrome("panel-flash", true);
-    $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
-    $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
-    $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
-    $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
+  function resetQuizUI(mode) {
+    if (mode === "mc") {
+      mc = { queue: [], total: 0, idx: 0, score: 0, locked: false };
+      $("mcChoices").innerHTML = ""; $("mcFeedback").textContent = ""; $("mcPrompt").textContent = "";
+      setQuizChrome("panel-quiz-mc", true);
+    }
+    if (mode === "ty") {
+      ty = { queue: [], total: 0, idx: 0, score: 0 };
+      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+      setQuizChrome("panel-quiz-type", true);
+    }
+    if (mode === "fl") {
+      fl = { queue: [], idx: 0 };
+      $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
+      $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
+      setQuizChrome("panel-flash", true);
+    }
   }
   function setQuizChrome(panelId, show) {
     const p = $(panelId);
