@@ -281,4 +281,5 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .list-header input[type="text"], .list-header .btn { flex: 1 1 100%; }  /* kolommen/knoppen full-width, zelfde linkerrand */
 }
 
-.feedback mark { background: #111; color: #fff; border-radius: 4px; padding: 0 3px; }
+.feedback .ok { color: #43d17c; }
+.feedback .err { color: #ff5a5a; }
