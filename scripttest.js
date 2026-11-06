@@ -468,8 +468,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     for (let i = 0; i < n; i++) {
       const g = i < given.length ? given[i] : "";
       const t = i < target.length ? target[i] : "";
-      if (g === t) html += esc(t);
-      else html += "<mark>" + esc(t || "·") + "</mark>";
+      if (g === t) html += '<span class="ok">' + esc(t) + "</span>";
+      else html += '<span class="err">' + esc(t || "·") + "</span>";
     }
     return html;
   }
