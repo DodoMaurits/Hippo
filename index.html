@@ -128,10 +128,19 @@
             <label class="opt-pill"><input type="radio" name="typeHelp" value="hint"> Show first letter</label>
             <label class="opt-pill"><input type="radio" name="typeHelp" value="scrambled"> Scrambled</label>
           </div>
+          <div class="opt-row">
+            <label class="opt-pill"><input type="radio" name="typeFeedback" value="brief" checked> 
+              Show correct answer briefly</label>
+            <label class="opt-pill"><input type="radio" name="typeFeedback" value="click"> 
+              Show correct answer until click</label>
+            <label class="opt-pill"><input type="radio" name="typeFeedback" value="never"> 
+              Never show correct answer</label>
+          </div>
         </div>
         <div class="prompt" id="typePrompt"></div>
         <div class="hint" id="typeHint"></div>
         <input type="text" class="answer-input hidden" id="typeInput" placeholder="Type the translation…" autocomplete="off">
+        <button class="btn hidden" id="typeContinue">Continue →</button>
         <div class="feedback" id="typeFeedback"></div>
       </div>
     </div>
