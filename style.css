@@ -280,3 +280,6 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .hidden-mobile { display: inline-block !important; }
   .list-header input[type="text"], .list-header .btn { flex: 1 1 100%; }  /* kolommen/knoppen full-width, zelfde linkerrand */
 }
+
+.feedback .ok { color: #43d17c; }
+.feedback .err { color: #ff5a5a; }
