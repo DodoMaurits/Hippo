@@ -463,11 +463,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g, " "); }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function diffHighlight(given, target) {
-    let i = 0;
-    while (i < target.length && i < given.length && given[i] === target[i]) i++;
-    let html = esc(target.slice(0, i));
-    if (i < target.length) html += "<mark>" + esc(target[i]) + "</mark>" + esc(target.slice(i + 1));
-    else html += esc(target.slice(i));
+    const n = Math.max(given.length, target.length);
+    let html = "";
+    for (let i = 0; i < n; i++) {
+      const g = i < given.length ? given[i] : "";
+      const t = i < target.length ? target[i] : "";
+      if (g === t) html += esc(t);
+      else html += "<mark>" + esc(t || "·") + "</mark>";
+    }
     return html;
   }
   function acceptedAnswers(answer) {
