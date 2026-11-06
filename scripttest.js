@@ -614,11 +614,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     clearSavedQuiz();
     typeNext();
   }
-  function typeAdvance() {
+  function typeAdvance(immediate) {
     ty.idx++;
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     saveQuiz("ty");
-    setTimeout(typeNext, 1200);
+    if (immediate) typeNext();
+    else setTimeout(typeNext, 1200);
   }
   function typeNext() {
     $("typeFeedback").textContent = "";
@@ -652,7 +653,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (ty.awaitContinue) {
       ty.awaitContinue = false;
       $("typeContinue").classList.add("hidden");
-      typeAdvance();
+      typeAdvance(true);
       return;
     }
     const item = ty.queue[ty.idx];
