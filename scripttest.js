@@ -461,6 +461,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return a;
   }
   function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g, " "); }
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function diffHighlight(given, target) {
+    let i = 0;
+    while (i < target.length && i < given.length && given[i] === target[i]) i++;
+    let html = esc(target.slice(0, i));
+    if (i < target.length) html += "<mark>" + esc(target[i]) + "</mark>" + esc(target.slice(i + 1));
+    else html += esc(target.slice(i));
+    return html;
+  }
   function acceptedAnswers(answer) {
     return answer.split(";")
       .map((s) => (quizOpts.caseSensitive ? s.trim() : normalize(s)))
@@ -644,7 +653,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       item.missed = true;
       const back = 2 + Math.floor(Math.random() * 3);
       ty.queue.splice(Math.min(ty.idx + back, ty.queue.length), 0, item);
-      $("typeFeedback").textContent = "✘ Almost! It was: " + item.answer;
+      const target = acceptedAnswers(item.answer)[0] || normalize(item.answer);
+      $("typeFeedback").innerHTML = "✘ Almost! It was: " + diffHighlight(givenN, target);
       $("typeFeedback").classList.add("bad");
     }
     ty.idx++;
