@@ -17,7 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let words = [];
   let lastRowIdx = -1;
-  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal" };
+  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief" };
   let activeQuiz = null;
 
   // ---------- Auth ----------
@@ -597,6 +597,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     quizOpts.caseSensitive = $("typeCase").checked;
     quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
     quizOpts.fuzzy = $("typeFuzzy").checked;
+    quizOpts.feedback = document.querySelector('input[name="typeFeedback"]:checked').value;
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
@@ -610,9 +611,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     clearSavedQuiz();
     typeNext();
   }
+  function typeAdvance() {
+    ty.idx++;
+    updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
+    saveQuiz("ty");
+    setTimeout(typeNext, 1200);
+  }
   function typeNext() {
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
+    $("typeContinue").classList.add("hidden"); ty.awaitContinue = false;
     if (ty.idx >= ty.queue.length) {
       const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
@@ -638,6 +646,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     saveQuiz("ty");
   }
   function typeCheck() {
+    if (ty.awaitContinue) {
+      ty.awaitContinue = false;
+      $("typeContinue").classList.add("hidden");
+      typeAdvance();
+      return;
+    }
     const item = ty.queue[ty.idx];
     if (!item) return;
     const given = $("typeInput").value;
@@ -649,20 +663,31 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (!item.missed) ty.score++;
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
+      $("typeFeedback").classList.remove("bad");
+      typeAdvance();
     } else {
       item.missed = true;
       const back = 2 + Math.floor(Math.random() * 3);
       ty.queue.splice(Math.min(ty.idx + back, ty.queue.length), 0, item);
-      const target = acceptedAnswers(item.answer)[0] || normalize(item.answer);
-      $("typeFeedback").innerHTML = "✘ Almost! It was: " + diffHighlight(givenN, target);
       $("typeFeedback").classList.add("bad");
+      $("typeFeedback").classList.remove("good");
+      if (quizOpts.feedback === "never") {
+        $("typeFeedback").textContent = "✘ Wrong";
+      } else {
+        const target = acceptedAnswers(item.answer)[0] || normalize(item.answer);
+        $("typeFeedback").innerHTML = "✘ Almost! It was: " + diffHighlight(givenN, target);
+      }
+      if (quizOpts.feedback === "click") {
+        ty.awaitContinue = true;
+        $("typeContinue").classList.remove("hidden");
+        return;
+      }
+      typeAdvance();
     }
-    ty.idx++;
-    updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
-    setTimeout(typeNext, 1200);
   }
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
+  $("typeContinue").addEventListener("click", typeCheck);
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0 };
