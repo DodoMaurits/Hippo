@@ -276,9 +276,10 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .panel { padding: 14px 10px; }
   th, td { padding: 6px 4px; }
   td input { padding: 8px 6px; font-size: 1rem; }
-  td .btn.danger { display: none; }              /* ✕ weg op mobile */
+  td .btn.danger { display: none; } 
   .hidden-mobile { display: inline-block !important; }
-  .list-header input[type="text"], .list-header .btn { flex: 1 1 100%; }  /* kolommen/knoppen full-width, zelfde linkerrand */
+  .list-header input[type="text"], .list-header .btn { flex: 1 1 100%; }
+  .tip-desktop { display: none; }
 }
 
 .feedback .ok { color: #43d17c; }
