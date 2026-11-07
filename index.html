@@ -48,9 +48,9 @@
     <div class="tabs">
       <button class="tab active" data-tab="overview">🗂️ My lists</button>
       <button class="tab" data-tab="newlist">➕ New list</button>
+      <button class="tab hidden" data-tab="flash">🃏 Flashcards</button>
       <button class="tab hidden" data-tab="quiz-mc">🫧 Multiple choice</button>
       <button class="tab hidden" data-tab="quiz-type">⌨️ Typing</button>
-      <button class="tab hidden" data-tab="flash">🃏 Flashcards</button>
     </div>
 
     <!-- OVERVIEW -->
@@ -71,7 +71,10 @@
         <button class="btn secondary" id="importBtn">📥 Import</button>
         <input type="file" id="importFile" accept=".csv,.xlsx,.xls" class="hidden">
         <button class="btn danger hidden-mobile" id="delRowBtn">🗑 Delete row</button>
+        <button class="btn secondary" id="tipSemi">;</button>
+        <button class="btn secondary" id="tipParen">()</button>
       </div>
+      <p class="tip-note hidden" id="tipNote"></p>
       <table>
         <thead>
           <tr><th id="th1">Language 1</th><th id="th2">Language 2</th><th></th></tr>
@@ -79,6 +82,37 @@
         <tbody id="listBody"></tbody>
       </table>
       <p class="empty" id="emptyMsg">The pool is empty… add your first word above! 🦛</p>
+    </div>
+
+    <!-- FLASHCARDS -->
+    <div class="panel" id="panel-flash">
+      <div class="quiz-controls">
+          <select id="flashDirection">
+          <option value="1to2">Language 1 → Language 2</option>
+          <option value="2to1">Language 2 → Language 1</option>
+          <option value="both">Both directions</option>
+        </select>
+        <button class="btn" id="flashStart">▶ Start flashcards</button>
+      </div>
+      <div class="score-bar"><span id="flashCount">Card 0/0</span></div>
+      <div class="quiz-box">
+        <div class="quiz-options">
+          <label class="opt-pill"><input type="checkbox" id="flashShuffle" checked> Shuffle</label>
+          <label class="opt-pill">Max <input type="number" id="flashMax" min="1" class="opt-max"></label>
+        </div>
+      </div>
+      <div class="flashcard" id="flashCard">
+        <div class="flashcard-inner">
+          <div class="face front" id="flashFront">🦛</div>
+          <div class="face back" id="flashBack">Hippo</div>
+        </div>
+      </div>
+      <div class="prompt" id="flashPrompt"></div>
+      <p class="hint" style="text-align:center">Click the card to flip it</p>
+      <div class="flash-nav hidden">
+        <button class="btn secondary" id="flashPrev">← Previous</button>
+        <button class="btn" id="flashNext">Next →</button>
+      </div>
     </div>
 
     <!-- MULTIPLE CHOICE -->
@@ -142,37 +176,6 @@
         <input type="text" class="answer-input hidden" id="typeInput" placeholder="Type the translation…" autocomplete="off">
         <button class="btn hidden" id="typeContinue">Continue →</button>
         <div class="feedback" id="typeFeedback"></div>
-      </div>
-    </div>
-
-    <!-- FLASHCARDS -->
-    <div class="panel" id="panel-flash">
-      <div class="quiz-controls">
-          <select id="flashDirection">
-          <option value="1to2">Language 1 → Language 2</option>
-          <option value="2to1">Language 2 → Language 1</option>
-          <option value="both">Both directions</option>
-        </select>
-        <button class="btn" id="flashStart">▶ Start flashcards</button>
-      </div>
-      <div class="score-bar"><span id="flashCount">Card 0/0</span></div>
-      <div class="quiz-box">
-        <div class="quiz-options">
-          <label class="opt-pill"><input type="checkbox" id="flashShuffle" checked> Shuffle</label>
-          <label class="opt-pill">Max <input type="number" id="flashMax" min="1" class="opt-max"></label>
-        </div>
-      </div>
-      <div class="flashcard" id="flashCard">
-        <div class="flashcard-inner">
-          <div class="face front" id="flashFront">🦛</div>
-          <div class="face back" id="flashBack">Hippo</div>
-        </div>
-      </div>
-      <div class="prompt" id="flashPrompt"></div>
-      <p class="hint" style="text-align:center">Click the card to flip it</p>
-      <div class="flash-nav hidden">
-        <button class="btn secondary" id="flashPrev">← Previous</button>
-        <button class="btn" id="flashNext">Next →</button>
       </div>
     </div>
     
