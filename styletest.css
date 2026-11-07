@@ -271,6 +271,8 @@ input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
+.tip-desktop { white-space: nowrap; }
+
 .hidden-mobile { display: none; }
 @media (max-width: 560px) {
   .panel { padding: 14px 10px; }
