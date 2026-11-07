@@ -143,8 +143,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("modalOk").textContent = okText || "OK";
       let extra = null;
       if (extraButton) {
+        document.querySelectorAll(".modal-extra").forEach((b) => b.remove());
         extra = document.createElement("button");
-        extra.className = "btn secondary";
+        extra.className = "btn secondary modal-extra";
         extra.textContent = extraButton.label;
         extra.onclick = () => done(extraButton.value);
         $("modalOk").after(extra);
@@ -615,6 +616,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     typeNext();
   }
   function typeAdvance(immediate) {
+    ty.locked = true;
     ty.idx++;
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     saveQuiz("ty");
@@ -625,6 +627,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
     $("typeContinue").classList.add("hidden"); ty.awaitContinue = false;
+    ty.locked = false;
     if (ty.idx >= ty.queue.length) {
       const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
@@ -656,6 +659,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       typeAdvance(true);
       return;
     }
+    if (ty.locked) return;
     const item = ty.queue[ty.idx];
     if (!item) return;
     const given = $("typeInput").value;
