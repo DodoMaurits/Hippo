@@ -460,7 +460,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     return a;
   }
-  function normalize(s) { return s.trim().toLowerCase().replace(/\s+/g, " "); }
+  function normalize(s) { return s.trim().toLowerCase().replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim(); }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function diffHighlight(given, target) {
     const n = Math.max(given.length, target.length);
