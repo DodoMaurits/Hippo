@@ -625,6 +625,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
     $("typeContinue").classList.add("hidden"); ty.awaitContinue = false;
+    ty.locked = false;
     if (ty.idx >= ty.queue.length) {
       const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
       const grade = Math.max(1, Math.min(10, Math.round((1 + 9 * (ty.score / ty.total)) * 10) / 10));
@@ -656,6 +657,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       typeAdvance(true);
       return;
     }
+    if (ty.locked) return;
     const item = ty.queue[ty.idx];
     if (!item) return;
     const given = $("typeInput").value;
