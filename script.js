@@ -777,6 +777,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     renderList();
     await showModal({ title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" });
   });
+
+  let tipMode = null;
+  function showTip(mode) {
+    const note = $("tipNote");
+    if (tipMode === mode) { tipMode = null; note.classList.add("hidden"); note.textContent = ""; return; }
+    tipMode = mode;
+    note.innerHTML = mode === "semi"
+      ? 'Use <b>;</b> for multiple accepted answers, for example: hey; hi.'
+      : 'Anything in <b>(parentheses)</b> will be ignored.';
+    note.classList.remove("hidden");
+  }
+  $("tipSemi").addEventListener("click", () => showTip("semi"));
+  $("tipParen").addEventListener("click", () => showTip("paren"));
   
   // ---------- Init ----------
   async function startGuest() {
