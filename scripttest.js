@@ -143,8 +143,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       $("modalOk").textContent = okText || "OK";
       let extra = null;
       if (extraButton) {
+        document.querySelectorAll(".modal-extra").forEach((b) => b.remove());
         extra = document.createElement("button");
-        extra.className = "btn secondary";
+        extra.className = "btn secondary modal-extra";
         extra.textContent = extraButton.label;
         extra.onclick = () => done(extraButton.value);
         $("modalOk").after(extra);
