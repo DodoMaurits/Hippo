@@ -615,6 +615,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     typeNext();
   }
   function typeAdvance(immediate) {
+    ty.locked = true;
     ty.idx++;
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     saveQuiz("ty");
