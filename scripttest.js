@@ -70,13 +70,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     handleAuth("register");
   });
   document.addEventListener("click", async (e) => {
-    if (!e.target.closest("#btnGuest")) return;
+    const b = e.target.closest("#btnGuest");
+    if (!b) return;
+    e.preventDefault();
     const ok = await showModal({
       title: "🦛 Guest mode",
       text: "As a guest, your lists are stored only in this browser's local storage/cache. If you clear your browsing data, your lists will be lost. Continue as guest?",
       okText: "Continue as guest"
     });
-    if (ok) location.href = location.pathname + "?guest=1";
+    if (ok) location.href = "?guest=1";
   });
   $("btnLogout").addEventListener("click", async () => {
     if (GUEST) { location.href = location.pathname; return; }
