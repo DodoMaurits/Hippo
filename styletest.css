@@ -70,7 +70,7 @@ body {
 .auth-msg { min-height: 1.4rem; margin-top: 12px; font-weight: 700; color: var(--bad); }
 .auth-msg.ok { color: var(--good); }
 .auth-buttons { flex-wrap: wrap; display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
-#btnGuest { margin-top: 12px; }
+#btnRegister { margin-top: 12px; }
 
 /* ---------- Header ---------- */
 .hippo-header { display: flex; align-items: center; gap: 18px; margin-bottom: 24px; flex-wrap: wrap; }
