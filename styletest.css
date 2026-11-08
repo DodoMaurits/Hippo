@@ -71,6 +71,7 @@ body {
 .auth-msg.ok { color: var(--good); }
 .auth-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; align-items: center; }
 #btnLogin { flex: 1 1 100%; }
+#btnRegister { margin-top: 12px; }
 #btnGuest { display: inline-flex; align-items: center; line-height: 1.2; }
 
 /* ---------- Header ---------- */
