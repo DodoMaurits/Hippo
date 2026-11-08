@@ -72,7 +72,7 @@ body {
 .auth-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; align-items: center; }
 #btnLogin { flex: 1 1 100%; }
 #btnRegister { margin-top: 12px; }
-#btnGuest { display: inline-flex; align-items: center; line-height: 1.2; }
+#btnGuest { display: inline-flex; align-items: center; line-height: 1.2; margin-top: 12px; }
 
 /* ---------- Header ---------- */
 .hippo-header { display: flex; align-items: center; gap: 18px; margin-bottom: 24px; flex-wrap: wrap; }
