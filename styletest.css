@@ -284,6 +284,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .hidden-mobile { display: inline-block !important; }
   .list-header input[type="text"], .list-header .btn { flex: 1 1 100%; }
   .tip-desktop { display: none; }
+  #typeContinue { margin-top: 10px; }
 }
 
 .feedback .ok { color: #43d17c; }
