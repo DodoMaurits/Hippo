@@ -73,15 +73,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (GUEST) { location.href = location.pathname; return; }
     await supabase.auth.signOut();
   });
-  $("btnGuest").addEventListener("click", async (e) => {
-    e.preventDefault();
-    const ok = await showModal({
-      title: "🦛 Guest mode",
-      text: "Guest lists are stored in your browser cache — clearing browsing data deletes them.",
-      okText: "Continue as guest"
-    });
-    if (ok) location.href = "?guest=1";
-  });
   
   // ---------- Data (Supabase) ----------
   function save() {
@@ -834,6 +825,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         clearSavedQuiz();
       }
     }
+    await showModal({
+      title: "🦛 Guest mode",
+      text: "Guest lists are stored in your browser cache — clearing browsing data deletes them.",
+      okText: "OK"
+    });
   }
 
   if (GUEST) {
