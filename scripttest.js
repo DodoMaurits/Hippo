@@ -78,6 +78,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
     if (ok) location.href = location.pathname + "?guest=1";
   });
+  $("btnLogout").addEventListener("click", async () => {
+    if (GUEST) { location.href = location.pathname; return; }
+    await supabase.auth.signOut();
+  });
   
   // ---------- Data (Supabase) ----------
   function save() {
