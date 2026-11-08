@@ -138,7 +138,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
       else { inp.classList.add("hidden"); }
       $("modalMsg").textContent = "";
-      $("modalCancel").classList.toggle("hidden", !!hideCancel);
+      $("modalCancel").classList.add("hidden");
       $("modalOk").textContent = okText || "OK";
       let extra = null;
       if (extraButton) {
