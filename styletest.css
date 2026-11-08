@@ -69,7 +69,7 @@ body {
 .hippo-face.big { font-size: 3.4rem; width: 80px; height: 80px; margin: 0 auto; }
 .auth-msg { min-height: 1.4rem; margin-top: 12px; font-weight: 700; color: var(--bad); }
 .auth-msg.ok { color: var(--good); }
-.auth-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 6px; align-items: center; }
+.auth-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 12px; align-items: center; }
 #btnLogin { flex: 1 1 100%; }
 #btnGuest { display: inline-flex; align-items: center; line-height: 1.2; }
 
