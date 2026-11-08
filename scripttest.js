@@ -73,10 +73,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (GUEST) { location.href = location.pathname; return; }
     await supabase.auth.signOut();
   });
-  document.addEventListener("click", async (e) => {
-    const b = e.target.closest("#btnGuest");
-    if (!b) return;
-    if (!location.pathname.includes("indextest")) return;
+  $("btnGuest").addEventListener("click", async (e) => {
     e.preventDefault();
     const ok = await showModal({
       title: "🦛 Guest mode",
