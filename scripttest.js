@@ -826,7 +826,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
     }
     await showModal({
-      title: "🦛 Guest mode",
+      title: "Guest mode",
       text: "Guest lists are stored in your browser cache — clearing browsing data deletes them.",
       okText: "OK"
     });
