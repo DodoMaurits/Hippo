@@ -356,7 +356,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await showModal({
       title: "🤖 Automatic images",
       text: found ? found + " images added" + (failed ? " (" + failed + " failed/rate-limited)" : "") + "!" : 
-        "No images found — maybe rate-limited (max 200/day anonymous). Try again later.",
+        "No images found — try a different phrasing.",
       okText: "OK"
     });
   });
