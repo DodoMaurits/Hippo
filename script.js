@@ -309,10 +309,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("imgModeBtn").textContent = on ? "🖼️ Image ✅" : "🖼️ Image";
     $("imgModeBtn").style.color = on ? "#43d17c" : "";
     $("autoImgBtn").classList.toggle("hidden", !on);
-    ["mcDirection", "typeDirection", "flashDirection"].forEach((id) => {
-      $(id).disabled = !!on;
-      if (on) $(id).value = "1to2";
-    });
+    $("typeDirection").disabled = !!on;
+    if (on) $("typeDirection").value = "1to2";
   }
   $("imgModeBtn").addEventListener("click", () => {
     if (!currentList) return;
@@ -601,16 +599,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }).join(" ");
   }
   function getPairs(direction) {
-    if (currentList && currentList.imgMode) direction = "1to2";
     return words
       .filter((w) => w.a.trim() && w.b.trim())
       .map((w) => {
+        const img = !!(currentList && currentList.imgMode);
         if (direction === "both") {
           return Math.random() < 0.5
-            ? { prompt: w.a, answer: w.b }
-            : { prompt: w.b, answer: w.a };
+            ? { prompt: w.a, answer: w.b, answerImg: false }
+            : { prompt: w.b, answer: w.a, answerImg: img };
         }
-        return direction === "2to1" ? { prompt: w.b, answer: w.a } : { prompt: w.a, answer: w.b };
+        return direction === "2to1"
+          ? { prompt: w.b, answer: w.a, answerImg: img }
+          : { prompt: w.a, answer: w.b, answerImg: false };
       });
   }
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
@@ -657,7 +657,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     mc.locked = false;
     const item = mc.queue[mc.idx];
-    if (currentList.imgMode) $("mcPrompt").innerHTML = '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
+    if (typeof item.prompt === "string" && (item.prompt.startsWith("data:image") || item.prompt.startsWith("http")))
+      $("mcPrompt").innerHTML = 
+        '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
     else $("mcPrompt").textContent = item.prompt;
     $("mcPrompt").style.fontSize = "";
     $("mcHint").textContent = "Pick the correct translation";
@@ -669,7 +671,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     options.forEach((opt) => {
       const btn = document.createElement("button");
       btn.className = "choice";
-      btn.textContent = opt;
+      btn.dataset.opt = opt;
+      if (item.answerImg) btn.innerHTML = 
+        '<img src="' + opt + '" style="max-width:130px;max-height:95px;border-radius:10px;">';
+      else btn.textContent = opt;
       btn.addEventListener("click", () => {
         if (mc.locked) return;
         mc.locked = true;
@@ -686,7 +691,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
           $("mcFeedback").textContent = "✘ Oops! It was: " + item.answer;
           $("mcFeedback").classList.add("bad");
           box.querySelectorAll(".choice").forEach((b) => {
-            if (normalize(b.textContent) === normalize(item.answer)) b.classList.add("correct");
+            if (normalize(b.dataset.opt) === normalize(item.answer)) b.classList.add("correct");
           });
         }
         updateScore($("mcProgress"), $("mcScore"), $("mcCount"), mc.queue.length, mc.idx + 1, mc.score);
@@ -708,7 +713,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     quizOpts.fuzzy = $("typeFuzzy").checked;
     quizOpts.punct = $("typePunct").checked;
     quizOpts.feedback = document.querySelector('input[name="typeFeedback"]:checked').value;
-    const dir = $("typeDirection").value;
+    const dir = currentList.imgMode ? "1to2" : $("typeDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) {
       showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
@@ -828,8 +833,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function flashShow() {
     $("flashCard").classList.remove("flipped");
     const item = fl.queue[fl.idx];
-    $("flashFront").textContent = item ? item.prompt : "🦛";
-    $("flashBack").textContent = item ? item.answer : "…";
+    const p = item ? item.prompt : "🦛";
+    const a = item ? item.answer : "…";
+    if (typeof p === "string" && (p.startsWith("data:image") || p.startsWith("http"))) $("flashFront").innerHTML = 
+      '<img src="' + p + '" style="max-height:180px;border-radius:12px;">';
+    else $("flashFront").textContent = p;
+    if (typeof a === "string" && (a.startsWith("data:image") || a.startsWith("http"))) $("flashBack").innerHTML = 
+      '<img src="' + a + '" style="max-height:180px;border-radius:12px;">';
+    else $("flashBack").textContent = a;
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
     saveQuiz("fl");
   }
