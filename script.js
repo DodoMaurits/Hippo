@@ -17,7 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let words = [];
   let lastRowIdx = -1;
-  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief" };
+  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief", punct: true };
   let activeQuiz = null;
 
   // ---------- Auth ----------
@@ -121,8 +121,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function updateHeaders() {
     const c1 = $("col1name").value || "Language 1";
     const c2 = $("col2name").value || "Language 2";
-    $("th1").textContent = c1;
-    $("th2").textContent = c2;
+    $("col1name").placeholder = c1;
+    $("col2name").placeholder = c2;
     document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option").forEach((o) => {
       if (o.value === "1to2") o.textContent = c1 + " → " + c2;
       else if (o.value === "2to1") o.textContent = c2 + " → " + c1;
@@ -172,7 +172,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
-      if (tab.dataset.tab === "newlist") { newList(); return; }
+      if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab) && currentList && !getPairs("1to2").length) {
+        showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" });
+        return;
+      }
       const cur = currentQuizMode();
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
@@ -305,6 +308,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("imgModeBtn").textContent = on ? "🖼️ Image ✅" : "🖼️ Image";
     $("imgModeBtn").style.color = on ? "#43d17c" : "";
     $("autoImgBtn").classList.toggle("hidden", !on);
+    ["mcDirection", "typeDirection", "flashDirection"].forEach((id) => {
+      $(id).disabled = !!on;
+      if (on) $(id).value = "1to2";
+    });
   }
   $("imgModeBtn").addEventListener("click", () => {
     if (!currentList) return;
@@ -325,6 +332,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       await showModal({ title: "🤖 Automatic images", text: "No words without an image yet.", okText: "OK" });
       return;
     }
+    const btn = $("autoImgBtn");
+    btn.disabled = true;
+    btn.textContent = "🤖 Searching images…";
     for (const { w, i } of todo) {
       try {
         const res = await fetch("https://api.openverse.org/v1/images/?q=" + encodeURIComponent(w.b.trim()) + "&per_page=5");
@@ -338,6 +348,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       } catch (e) { console.error(e); }
     }
     renderList();
+    btn.disabled = false;
+    btn.textContent = "🤖 Automatic images";
     await showModal({ title: "🤖 Automatic images", text: "Done — images added where found!", okText: "OK" });
   });
   
@@ -403,7 +415,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       in2.addEventListener("focus", () => { lastRowIdx = i; });
       in2.addEventListener("keydown", tabGo);
       const del = document.createElement("button");
-      del.className = "btn danger";
+      del.className = "btn danger row-del";
       del.textContent = "✕";
       del.addEventListener("click", async () => {
         if (GUEST) { words.splice(i, 1); save(); renderList(); return; }
@@ -545,7 +557,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     return a;
   }
-  function normalize(s) { return s.trim().toLowerCase().replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim(); }
+  function normalize(s) {
+    s = s.trim().toLowerCase().replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+    if (quizOpts.punct === false) s = s.replace(/[.,!?;:"'«»“”‘’…—–-]/g, "");
+    return s;
+  }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function diffHighlight(given, target) {
     const n = Math.max(given.length, target.length);
@@ -608,7 +624,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
-    if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
+    if (!pool.length) { 
+      showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
+    }
     if ($("mcShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("mcMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -687,10 +705,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     quizOpts.caseSensitive = $("typeCase").checked;
     quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
     quizOpts.fuzzy = $("typeFuzzy").checked;
+    quizOpts.punct = $("typePunct").checked;
     quizOpts.feedback = document.querySelector('input[name="typeFeedback"]:checked').value;
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
-    if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
+    if (!pool.length) {
+      showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
+    }
     if ($("typeShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("typeMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -789,7 +810,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs($("flashDirection").value);
-    if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
+    if (!pool.length) { 
+      showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
+    }
     if ($("flashShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("flashMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -881,6 +904,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("tipSemi").addEventListener("click", () => showTip("semi"));
   $("tipParen").addEventListener("click", () => showTip("paren"));
+  $("toggleDelBtn").addEventListener("click", () => {
+    $("panel-list").classList.toggle("show-del");
+  });
   
   // ---------- Init ----------
   async function startGuest() {
