@@ -403,7 +403,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       in2.addEventListener("focus", () => { lastRowIdx = i; });
       in2.addEventListener("keydown", tabGo);
       const del = document.createElement("button");
-      del.className = "btn danger";
+      del.className = "btn danger row-del";
       del.textContent = "✕";
       del.addEventListener("click", async () => {
         if (GUEST) { words.splice(i, 1); save(); renderList(); return; }
@@ -886,6 +886,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("tipSemi").addEventListener("click", () => showTip("semi"));
   $("tipParen").addEventListener("click", () => showTip("paren"));
+  $("toggleDelBtn").addEventListener("click", () => {
+    $("panel-list").classList.toggle("show-del");
+  });
   
   // ---------- Init ----------
   async function startGuest() {
