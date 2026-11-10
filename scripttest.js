@@ -279,6 +279,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("col2name").value = currentList.col2 || "Language 2";
     updateHeaders();
     await loadWords();
+    if (!words.length) {
+      if (GUEST) {
+        words.push({ id: "g" + Date.now(), listId: currentList.id, a: "", b: "" });
+        save();
+      } else {
+        const { data, error } = await supabase
+          .from("words")
+          .insert({ lang1: "", lang2: "", list_id: currentList.id })
+          .select("id").single();
+        if (!error && data) words.push({ id: data.id, listId: currentList.id, a: "", b: "" });
+      }
+    }
     renderList();
     $("mcMax").value = words.length;
     $("typeMax").value = words.length;
