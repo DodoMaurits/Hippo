@@ -312,6 +312,33 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateImgBtn();
     renderList();
   });
+  $("autoImgBtn").addEventListener("click", async () => {
+    if (!currentList) return;
+    if (!currentList.imgMode) {
+      currentList.imgMode = true;
+      if (GUEST) saveListsGuest();
+      updateImgBtn();
+    }
+    const todo = words.map((w, i) => ({ w, i })).filter((x) => x.w.b.trim() && !x.w.a.trim());
+    if (!todo.length) {
+      await showModal({ title: "🤖 Automatic images", text: "No words without an image yet.", okText: "OK" });
+      return;
+    }
+    for (const { w, i } of todo) {
+      try {
+        const res = await fetch("https://api.openverse.org/v1/images/?q=" + encodeURIComponent(w.b.trim()) + "&per_page=5");
+        const data = await res.json();
+        const pick = (data.results || []).find((r) => r.url && r.url.startsWith("http"));
+        if (pick) {
+          words[i].a = pick.url;
+          if (GUEST) save();
+          else await supabase.from("words").update({ lang1: pick.url }).eq("id", w.id);
+        }
+      } catch (e) { console.error(e); }
+    }
+    renderList();
+    await showModal({ title: "🤖 Automatic images", text: "Done — images added where found!", okText: "OK" });
+  });
   
   function setQuizTabs(show) {
     document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"]')
