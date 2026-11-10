@@ -304,6 +304,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const on = currentList && currentList.imgMode;
     $("imgModeBtn").textContent = on ? "🖼️ Image ✅" : "🖼️ Image";
     $("imgModeBtn").style.color = on ? "#43d17c" : "";
+    $("autoImgBtn").classList.toggle("hidden", !on);
   }
   $("imgModeBtn").addEventListener("click", () => {
     if (!currentList) return;
