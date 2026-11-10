@@ -334,22 +334,30 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const btn = $("autoImgBtn");
     btn.disabled = true;
     btn.textContent = "🤖 Searching images…";
+    let found = 0, failed = 0;
     for (const { w, i } of todo) {
       try {
         const res = await fetch("https://api.openverse.org/v1/images/?q=" + encodeURIComponent(w.b.trim()) + "&per_page=5");
+        if (!res.ok) { failed++; continue; }
         const data = await res.json();
         const pick = (data.results || []).find((r) => r.url && r.url.startsWith("http"));
         if (pick) {
           words[i].a = pick.url;
+          found++;
           if (GUEST) save();
           else await supabase.from("words").update({ lang1: pick.url }).eq("id", w.id);
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { failed++; }
     }
     renderList();
     btn.disabled = false;
     btn.textContent = "🤖 Automatic images";
-    await showModal({ title: "🤖 Automatic images", text: "Done — images added where found!", okText: "OK" });
+    await showModal({
+      title: "🤖 Automatic images",
+      text: found ? found + " images added" + (failed ? " (" + failed + " failed/rate-limited)" : "") + "!" : 
+        "No images found — maybe rate-limited (max 200/day anonymous). Try again later.",
+      okText: "OK"
+    });
   });
   
   function setQuizTabs(show) {
@@ -901,7 +909,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     await loadWords();
     renderList();
-    await showModal({ title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" });
+    await showModal({ 
+      title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" 
+    });
   });
 
   let tipMode = null;
