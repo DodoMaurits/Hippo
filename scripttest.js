@@ -17,7 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let words = [];
   let lastRowIdx = -1;
-  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief" };
+  let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief", punct: true };
   let activeQuiz = null;
 
   // ---------- Auth ----------
@@ -545,7 +545,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     return a;
   }
-  function normalize(s) { return s.trim().toLowerCase().replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim(); }
+  function normalize(s) {
+    s = s.trim().toLowerCase().replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+    if (quizOpts.punct === false) s = s.replace(/[.,!?;:"'«»“”‘’…—–-]/g, "");
+    return s;
+  }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function diffHighlight(given, target) {
     const n = Math.max(given.length, target.length);
@@ -687,6 +691,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     quizOpts.caseSensitive = $("typeCase").checked;
     quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
     quizOpts.fuzzy = $("typeFuzzy").checked;
+    quizOpts.punct = $("typePunct").checked;
     quizOpts.feedback = document.querySelector('input[name="typeFeedback"]:checked').value;
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
