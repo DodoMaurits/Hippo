@@ -121,8 +121,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function updateHeaders() {
     const c1 = $("col1name").value || "Language 1";
     const c2 = $("col2name").value || "Language 2";
-    $("th1").textContent = c1;
-    $("th2").textContent = c2;
+    $("col1name").placeholder = c1;
+    $("col2name").placeholder = c2;
     document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option").forEach((o) => {
       if (o.value === "1to2") o.textContent = c1 + " → " + c2;
       else if (o.value === "2to1") o.textContent = c2 + " → " + c1;
