@@ -293,3 +293,6 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
 .feedback .ok { color: #43d17c; }
 .feedback .err { color: #ff5a5a; }
+
+.row-del { display: none; }
+#panel-list.show-del .row-del { display: inline-block; }
