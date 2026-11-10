@@ -30,6 +30,7 @@ body {
 }
 
 .hidden { display: none !important; }
+.hidden-desktop { display: none; }
 .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 2; }
 
 /* ================= Login ================= */
@@ -730,6 +731,10 @@ th input { width: 100%; }
           
           .hidden-mobile { 
             display: none !important; 
+          }
+          
+          .hidden-desktop { 
+            display: inline-block !important; 
           }
           
           .list-header input[type="text"], .list-header .btn { 
