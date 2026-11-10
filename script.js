@@ -337,10 +337,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let found = 0, failed = 0;
     for (const { w, i } of todo) {
       try {
-        const res = await fetch("https://api.openverse.org/v1/images/?q=" + encodeURIComponent(w.b.trim()) + "&per_page=5");
+        const res = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(w.b.trim() + " filetype:bitmap") + "&gsrlimit=5&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json&origin=*");
         if (!res.ok) { failed++; continue; }
         const data = await res.json();
-        const pick = (data.results || []).find((r) => r.url && r.url.startsWith("http"));
+        const pages = Object.values((data.query && data.query.pages) || {});
+        const pick = pages.map((p) => p.imageinfo && p.imageinfo[0] && (p.imageinfo[0].thumburl || p.imageinfo[0].url)).find((u) => u && u.startsWith("http"));
         if (pick) {
           words[i].a = pick.url;
           found++;
