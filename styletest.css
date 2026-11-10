@@ -405,6 +405,11 @@ th input { width: 100%; }
   padding: 26px 10px; 
 }
 
+.btn:disabled { 
+  opacity: .6; 
+  cursor: wait; 
+}
+
 .prompt { 
   font-size: 2.1rem; 
   font-weight: 800; 
