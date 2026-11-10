@@ -317,6 +317,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         await supabase.from("words").update({ lang2: in2.value }).eq("id", w.id);
       });
       in2.addEventListener("focus", () => { lastRowIdx = i; });
+      const tabGo = (e) => {
+        if (e.key === "Tab" && i === words.length - 1) {
+          e.preventDefault();
+          $("addRow").click();
+        }
+      };
+      in1.addEventListener("keydown", tabGo);
+      in2.addEventListener("keydown", tabGo);
       const del = document.createElement("button");
       del.className = "btn danger";
       del.textContent = "✕";
