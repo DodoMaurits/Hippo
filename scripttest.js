@@ -305,6 +305,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("imgModeBtn").textContent = on ? "🖼️ Image ✅" : "🖼️ Image";
     $("imgModeBtn").style.color = on ? "#43d17c" : "";
     $("autoImgBtn").classList.toggle("hidden", !on);
+    ["mcDirection", "typeDirection", "flashDirection"].forEach((id) => {
+      $(id).disabled = !!on;
+      if (on) $(id).value = "1to2";
+    });
   }
   $("imgModeBtn").addEventListener("click", () => {
     if (!currentList) return;
