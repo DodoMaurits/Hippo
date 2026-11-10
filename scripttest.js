@@ -358,6 +358,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         "No images found — maybe rate-limited (max 200/day anonymous). Try again later.",
       okText: "OK"
     });
+  });
   
   function setQuizTabs(show) {
     document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"]')
@@ -909,7 +910,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadWords();
     renderList();
     await showModal({ 
-      title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" });
+      title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" 
     });
   });
 
