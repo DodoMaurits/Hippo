@@ -325,6 +325,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       await showModal({ title: "🤖 Automatic images", text: "No words without an image yet.", okText: "OK" });
       return;
     }
+    const btn = $("autoImgBtn");
+    btn.disabled = true;
+    btn.textContent = "🤖 Searching images…";
     for (const { w, i } of todo) {
       try {
         const res = await fetch("https://api.openverse.org/v1/images/?q=" + encodeURIComponent(w.b.trim()) + "&per_page=5");
@@ -338,6 +341,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       } catch (e) { console.error(e); }
     }
     renderList();
+    btn.disabled = false;
+    btn.textContent = "🤖 Automatic images";
     await showModal({ title: "🤖 Automatic images", text: "Done — images added where found!", okText: "OK" });
   });
   
