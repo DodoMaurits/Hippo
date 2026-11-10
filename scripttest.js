@@ -172,7 +172,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
-      if (tab.dataset.tab === "newlist") { newList(); return; }
+      if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab) && currentList && !getPairs("1to2").length) {
+        showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" });
+        return;
+      }
       const cur = currentQuizMode();
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
