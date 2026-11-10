@@ -279,14 +279,68 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("col2name").value = currentList.col2 || "Language 2";
     updateHeaders();
     await loadWords();
+    if (!words.length) {
+      if (GUEST) {
+        words.push({ id: "g" + Date.now(), listId: currentList.id, a: "", b: "" });
+        save();
+      } else {
+        const { data, error } = await supabase
+          .from("words")
+          .insert({ lang1: "", lang2: "", list_id: currentList.id })
+          .select("id").single();
+        if (!error && data) words.push({ id: data.id, listId: currentList.id, a: "", b: "" });
+      }
+    }
     renderList();
     $("mcMax").value = words.length;
     $("typeMax").value = words.length;
     $("flashMax").value = words.length;
+    updateImgBtn();
     activateTab("list");
     setQuizTabs(true);
   }
 
+  function updateImgBtn() {
+    const on = currentList && currentList.imgMode;
+    $("imgModeBtn").textContent = on ? "🖼️ Image ✅" : "🖼️ Image";
+    $("imgModeBtn").style.color = on ? "#43d17c" : "";
+    $("autoImgBtn").classList.toggle("hidden", !on);
+  }
+  $("imgModeBtn").addEventListener("click", () => {
+    if (!currentList) return;
+    currentList.imgMode = !currentList.imgMode;
+    if (GUEST) saveListsGuest();
+    updateImgBtn();
+    renderList();
+  });
+  $("autoImgBtn").addEventListener("click", async () => {
+    if (!currentList) return;
+    if (!currentList.imgMode) {
+      currentList.imgMode = true;
+      if (GUEST) saveListsGuest();
+      updateImgBtn();
+    }
+    const todo = words.map((w, i) => ({ w, i })).filter((x) => x.w.b.trim() && !x.w.a.trim());
+    if (!todo.length) {
+      await showModal({ title: "🤖 Automatic images", text: "No words without an image yet.", okText: "OK" });
+      return;
+    }
+    for (const { w, i } of todo) {
+      try {
+        const res = await fetch("https://api.openverse.org/v1/images/?q=" + encodeURIComponent(w.b.trim()) + "&per_page=5");
+        const data = await res.json();
+        const pick = (data.results || []).find((r) => r.url && r.url.startsWith("http"));
+        if (pick) {
+          words[i].a = pick.url;
+          if (GUEST) save();
+          else await supabase.from("words").update({ lang1: pick.url }).eq("id", w.id);
+        }
+      } catch (e) { console.error(e); }
+    }
+    renderList();
+    await showModal({ title: "🤖 Automatic images", text: "Done — images added where found!", okText: "OK" });
+  });
+  
   function setQuizTabs(show) {
     document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"]')
       .forEach((t) => t.classList.toggle("hidden", !show));
@@ -301,22 +355,53 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const td1 = document.createElement("td");
       const td2 = document.createElement("td");
       const tdDel = document.createElement("td");
-      const in1 = document.createElement("input");
+      if (currentList.imgMode) {
+        const td1img = document.createElement("img");
+        td1img.style.cssText = "max-width:80px;max-height:60px;border-radius:8px;vertical-align:middle;";
+        if (w.a) td1img.src = w.a;
+        const file = document.createElement("input");
+        file.type = "file"; file.accept = "image/*"; file.className = "hidden";
+        file.addEventListener("change", () => {
+          const f = file.files[0]; if (!f) return;
+          const r = new FileReader();
+          r.onload = async () => {
+            words[i].a = r.result;
+            if (GUEST) save();
+            else await supabase.from("words").update({ lang1: r.result }).eq("id", w.id);
+            renderList();
+          };
+          r.readAsDataURL(f);
+        });
+        const up = document.createElement("button");
+        up.className = "btn secondary"; up.textContent = w.a ? "🖼️" : "＋🖼️";
+        up.addEventListener("click", () => file.click());
+        td1.appendChild(td1img); td1.appendChild(up); td1.appendChild(file);
+      }
+      const in1 = currentList.imgMode ? null : document.createElement("input");
       const in2 = document.createElement("input");
-      in1.type = "text"; in1.value = w.a; in1.placeholder = "word in language 1";
+      if (in1) { in1.type = "text"; in1.value = w.a; in1.placeholder = "word in language 1"; }
       in2.type = "text"; in2.value = w.b; in2.placeholder = "word in language 2";
-      in1.addEventListener("input", async () => {
-        words[i].a = in1.value;
-        if (GUEST) return save();
-        await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
-      });
-      in1.addEventListener("focus", () => { lastRowIdx = i; });
+      const tabGo = (e) => {
+        if (e.key === "Tab" && i === words.length - 1) {
+          e.preventDefault();
+          $("addRow").click();
+        }
+      };
+      if (in1) {
+        in1.addEventListener("input", async () => {
+          words[i].a = in1.value;
+          if (GUEST) return save();
+          await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
+        });
+        in1.addEventListener("focus", () => { lastRowIdx = i; });
+      }
       in2.addEventListener("input", async () => {
         words[i].b = in2.value;
         if (GUEST) return save();
         await supabase.from("words").update({ lang2: in2.value }).eq("id", w.id);
       });
       in2.addEventListener("focus", () => { lastRowIdx = i; });
+      in2.addEventListener("keydown", tabGo);
       const del = document.createElement("button");
       del.className = "btn danger";
       del.textContent = "✕";
@@ -326,7 +411,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         words.splice(i, 1);
         renderList();
       });
-      td1.appendChild(in1); td2.appendChild(in2); tdDel.appendChild(del);
+      if (in1) td1.appendChild(in1); td2.appendChild(in2); tdDel.appendChild(del);
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(tdDel);
       body.appendChild(tr);
     });
@@ -499,6 +584,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }).join(" ");
   }
   function getPairs(direction) {
+    if (currentList && currentList.imgMode) direction = "1to2";
     return words
       .filter((w) => w.a.trim() && w.b.trim())
       .map((w) => {
@@ -552,7 +638,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     mc.locked = false;
     const item = mc.queue[mc.idx];
-    $("mcPrompt").textContent = item.prompt;
+    if (currentList.imgMode) $("mcPrompt").innerHTML = '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
+    else $("mcPrompt").textContent = item.prompt;
     $("mcPrompt").style.fontSize = "";
     $("mcHint").textContent = "Pick the correct translation";
     saveQuiz("mc");
@@ -645,7 +732,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const item = ty.queue[ty.idx];
     $("typeInput").value = quizOpts.help === "hint" && item.answer ? item.answer[0] : "";
     $("typePrompt").style.fontSize = "";
-    $("typePrompt").textContent = item.prompt;
+    if (currentList.imgMode) $("typePrompt").innerHTML = '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
+    else $("typePrompt").textContent = item.prompt;
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
