@@ -621,7 +621,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
-    if (!pool.length) { $("mcPrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
+    if (!pool.length) { 
+      showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
+    }
     if ($("mcShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("mcMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -704,7 +706,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     quizOpts.feedback = document.querySelector('input[name="typeFeedback"]:checked').value;
     const dir = $("typeDirection").value;
     let pool = getPairs(dir);
-    if (!pool.length) { $("typePrompt").textContent = "🦛 The pool is empty! Add words first."; return; }
+    if (!pool.length) {
+      showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
+    }
     if ($("typeShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("typeMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -803,7 +807,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs($("flashDirection").value);
-    if (!pool.length) { $("flashFront").textContent = "🦛 Add words first!"; return; }
+    if (!pool.length) { 
+      showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
+    }
     if ($("flashShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("flashMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
