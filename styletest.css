@@ -706,10 +706,6 @@ th input { width: 100%; }
 }
 
 /* ================= Mobile ================= */
-        .hidden-mobile { 
-          display: none; 
-        }
-        
         @media (max-width: 560px) {
           body { 
             padding-bottom: 190px; 
@@ -733,7 +729,7 @@ th input { width: 100%; }
           }
           
           .hidden-mobile { 
-            display: inline-block !important; 
+            display: none !important; 
           }
           
           .list-header input[type="text"], .list-header .btn { 
