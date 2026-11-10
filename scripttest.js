@@ -352,7 +352,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
           await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
         });
         in1.addEventListener("focus", () => { lastRowIdx = i; });
-        in1.addEventListener("keydown", tabGo);
       }
       in2.addEventListener("input", async () => {
         words[i].b = in2.value;
