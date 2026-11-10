@@ -148,6 +148,7 @@ th { text-align: left; color: var(--sand); font-size: .9rem; padding: 8px 10px; 
 td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
 td input { width: 100%; }
 .empty { color: var(--muted); text-align: center; padding: 32px 0; font-size: 1.05rem; }
+th input { width: 100%; }
 
 /* ---------- Quiz ---------- */
 .quiz-controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
