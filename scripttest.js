@@ -289,7 +289,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
   function updateImgBtn() {
-    $("imgModeBtn").textContent = currentList && currentList.imgMode ? "🖼️ Image: on" : "🖼️ Image";
+    const on = currentList && currentList.imgMode;
+    $("imgModeBtn").textContent = on ? "🖼️ Image ✅" : "🖼️ Image";
+    $("imgModeBtn").style.color = on ? "#43d17c" : "";
   }
   $("imgModeBtn").addEventListener("click", () => {
     if (!currentList) return;
