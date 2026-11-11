@@ -194,17 +194,27 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (!(await confirmLeaveQuiz(cur))) return;
         if (currentList) { activateTab("list"); return; }
       }
-      if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
+      if (tab.dataset.tab === "overview") { 
+        currentList = null; try { 
+          localStorage.removeItem("hippo-list"); 
+        } catch (e) {} renderOverview(); activateTab("overview"); return; 
+      }
       activateTab(tab.dataset.tab);
       const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
       const m = modeMap[tab.dataset.tab];
-      if (m && !currentQuizMode()) resetQuizUI(m);
+      if (m) {
+        if (currentList) await flushList();
+        const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
+        $("mcMax").value = filled; $("typeMax").value = filled; $("flashMax").value = filled;
+        if (!currentQuizMode()) resetQuizUI(m);
+      }
     });
   });
 
   $("backToOverview").addEventListener("click", async () => {
     if (currentList) await flushList();
     if (currentQuizMode() && !(await confirmLeaveQuiz(currentQuizMode()))) return;
+    try { localStorage.removeItem("hippo-list"); } catch (e) {}
     currentList = null;
     renderOverview(); activateTab("overview");
   });
@@ -307,6 +317,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   async function openList(id) {
     currentList = lists.find((l) => l.id === id) || null;
+    try { localStorage.setItem("hippo-list", id); } catch (e) {}
     if (!currentList) return;
     $("col1name").value = currentList.col1 || "Language 1";
     $("col2name").value = currentList.col2 || "Language 2";
@@ -328,9 +339,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("panel-list").classList.remove("show-del");
     updateDelBtn();
     $("panel-list").classList.remove("show-order"); updateOrderBtn();
-    $("mcMax").value = words.length;
-    $("typeMax").value = words.length;
-    $("flashMax").value = words.length;
+    const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
+    $("mcMax").value = filled;
+    $("typeMax").value = filled;
+    $("flashMax").value = filled;
     updateImgBtn();
     activateTab("list");
     setQuizTabs(true);
@@ -365,32 +377,28 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     const btn = $("autoImgBtn");
     btn.disabled = true;
-    btn.textContent = "🤖 Searching images…";
-    let found = 0, failed = 0;
+    btn.textContent = "🤖 Adding images…";
+    let found = 0;
     for (const { w, i } of todo) {
+      const q = encodeURIComponent(w.b.trim().split(" ")[0]);
+      let url = "https://picsum.photos/seed/" + q + "/400/300";
       try {
-        const res = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" + encodeURIComponent(w.b.trim() + " filetype:bitmap") + "&gsrlimit=5&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json&origin=*");
-        if (!res.ok) { failed++; continue; }
-        const data = await res.json();
-        const pages = Object.values((data.query && data.query.pages) || {});
-        const pick = pages.map((p) => p.imageinfo && p.imageinfo[0] && (p.imageinfo[0].thumburl || p.imageinfo[0].url)).find((u) => u && u.startsWith("http"));
-        if (pick) {
-          words[i].a = pick.url;
-          found++;
-          if (GUEST) save();
-          else await supabase.from("words").update({ lang1: pick.url }).eq("id", w.id);
+        const res = await fetch("https://api.openverse.org/v1/images/?q=" + q + "&per_page=5");
+        if (res.ok) {
+          const data = await res.json();
+          const pick = (data.results || []).map((r) => r.url).find((u) => u && u.startsWith("http"));
+          if (pick) url = pick;
         }
-      } catch (e) { failed++; }
+      } catch (e) {}
+      words[i].a = url;
+      found++;
+      if (GUEST) save();
+      else await supabase.from("words").update({ lang1: url }).eq("id", w.id);
     }
     renderList();
     btn.disabled = false;
     btn.textContent = "🤖 Automatic images";
-    await showModal({
-      title: "🤖 Automatic images",
-      text: found ? found + " images added" + (failed ? " (" + failed + " failed/rate-limited)" : "") + "!" : 
-        "No images found — try a different phrasing.",
-      okText: "OK"
-    });
+    await showModal({ title: "🤖 Automatic images", text: found + " images added!", okText: "OK" });
   });
   
   function setQuizTabs(show) {
@@ -571,7 +579,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       setQuizChrome("panel-quiz-type", true);
     }
     if (mode === "fl") {
-      fl = { queue: [], idx: 0 };
+      fl = { queue: [], idx: 0, marks: {} };
       $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
       $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
       setQuizChrome("panel-flash", true);
@@ -875,7 +883,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("typeContinue").addEventListener("click", typeCheck);
 
   // ---------- Flashcards ----------
-  let fl = { queue: [], idx: 0 };
+  let fl = { queue: [], idx: 0, marks: {} };
   function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs($("flashDirection").value);
@@ -885,7 +893,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if ($("flashShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("flashMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
-    fl = { queue: pool, idx: 0 };
+    fl = { queue: pool, idx: 0, marks: {} };
     setQuizChrome("panel-flash", false);
     activeQuiz = "fl";
     updateNewlistTab();
@@ -895,6 +903,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function flashShow() {
     $("flashCard").classList.remove("flipped");
+    setTimeout(() => {
     const item = fl.queue[fl.idx];
     const p = item ? item.prompt : "🦛";
     const a = item ? item.answer : "…";
@@ -904,9 +913,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (typeof a === "string" && (a.startsWith("data:image") || a.startsWith("http"))) $("flashBack").innerHTML = 
       '<img src="' + a + '" style="max-height:180px;border-radius:12px;">';
     else $("flashBack").textContent = a;
-    $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
-    saveQuiz("fl");
+    const vals = Object.values(fl.marks);
+    const good = vals.filter((v) => v === "good").length;
+    const bad = vals.filter((v) => v === "bad").length;
+    $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length
+      + (fl.marks[fl.idx] === "good" ? " ✔" : fl.marks[fl.idx] === "bad" ? " ✘" : "")
+      + (vals.length ? " — ✔" + good + " ✘" + bad : "");
+  saveQuiz("fl");
+  }, 250);
   }
+  $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
+  $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
+  $("flashDone").addEventListener("click", async () => {
+    const vals = Object.values(fl.marks);
+    const good = vals.filter((v) => v === "good").length;
+    const total = vals.length;
+    const grade = total ? Math.max(1, Math.min(10, Math.round((1 + 9 * (good / total)) * 10) / 10)) : 0;
+    clearSavedQuiz(); activeQuiz = null;
+    await showModal({ title: "🏁 Flashcards done", text: "Score: " + good + "/" + total + (total ? " — grade " + grade.toFixed(1) + " — " + gradeFeedback(grade) : " (no cards marked)"), okText: "OK" });
+    resetQuizUI("fl");
+  });
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
     if (fl.queue.length) { fl.idx = (fl.idx + 1) % fl.queue.length; flashShow(); }
@@ -915,6 +941,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (fl.queue.length) { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
   });
   $("flashStart").addEventListener("click", flashStart);
+  document.addEventListener("keydown", (e) => {
+    const t = document.querySelector(".tab.active");
+    if (!t || t.dataset.tab !== "flash" || !fl.queue.length) return;
+    if (e.key === "ArrowRight") { fl.idx = (fl.idx + 1) % fl.queue.length; flashShow(); }
+    if (e.key === "ArrowLeft") { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
+  });
 
   // ---------- Go back ----------
   async function backToList() {
@@ -1042,12 +1074,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadLists();
     loadColNames();
     renderOverview();
-    let lastTab = "overview";
     try {
       const lt = localStorage.getItem("hippo-tab");
-      if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
-    } catch (e) {}
-    activateTab(lastTab);
+      const ll = localStorage.getItem("hippo-list");
+      if (lt === "list" && ll) { openList(ll); }
+      else activateTab(lt && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+    } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
     const saved = loadSavedQuiz();
     if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
@@ -1089,12 +1121,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         await loadLists();
         loadColNames();
         renderOverview();
-        let lastTab = "overview";
         try {
           const lt = localStorage.getItem("hippo-tab");
-          if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
-        } catch (e) {}
-        activateTab(lastTab);
+          const ll = localStorage.getItem("hippo-list");
+          if (lt === "list" && ll) { openList(ll); }
+          else activateTab(lt && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+        } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
         const saved = loadSavedQuiz();
         if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
