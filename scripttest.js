@@ -221,7 +221,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       box.innerHTML = '<p class="empty">The pool is empty — start with ➕ New list! 🦛</p>';
       return;
     }
-    lists.forEach((l) => {
+    [...lists].sort((a, b) => a.name.localeCompare(b.name, "nl")).forEach((l) => {
       const row = document.createElement("div");
       row.className = "list-item";
       const nameBtn = document.createElement("button");
