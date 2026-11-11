@@ -380,6 +380,17 @@ th input { width: 100%; }
   display: inline-block; 
 }
 
+.row-order { 
+  display: none; 
+  cursor: grab; 
+  padding: 0 6px; 
+  user-select: none; 
+}
+
+#panel-list.show-order .row-order { 
+  display: inline-block; 
+
+
 .tip-note { 
   color: #ff5a5a; 
   font-weight: 700; 
