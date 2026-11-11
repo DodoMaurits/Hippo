@@ -217,7 +217,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const box = $("listsOverview");
     box.innerHTML = "";
     if (!lists.length) {
-      box.innerHTML = '<p class="empty">No lists yet — create one with ➕ New list! 🦛</p>';
+      box.innerHTML = '<p class="empty">The pool is empty — start with ➕ New list! 🦛</p>';
       return;
     }
     lists.forEach((l) => {
@@ -912,19 +912,28 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     if (GUEST) {
       const all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]");
-      clean.forEach((r, i) => all.push({ id: "g" + Date.now() + "_" + i, listId: currentList.id, a: r[0], b: r[1] }));
+      const emptyIdx = all.findIndex((w) => w.listId === currentList.id && !w.a.trim() && !w.b.trim());
+      clean.forEach((r, i) => {
+        if (i === 0 && emptyIdx >= 0) { all[emptyIdx].a = r[0]; all[emptyIdx].b = r[1]; }
+        else all.push({ id: "g" + Date.now() + "_" + i, listId: currentList.id, a: r[0], b: r[1] });
+      });
       localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all));
     } else {
-      for (let i = 0; i < clean.length; i += 500) {
-        const batch = clean.slice(i, i + 500)
-          .map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }));
-        const { error } = await supabase.from("words").insert(batch);
+      const rows = clean.map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }));
+      const emptyRow = words.find((w) => !w.a.trim() && !w.b.trim());
+      if (emptyRow && rows.length) {
+        await supabase.from("words").update({ lang1: rows[0].lang1, lang2: rows[0].lang2 }).eq("id", emptyRow.id);
+        rows.shift();
+      }
+      for (let i = 0; i < rows.length; i += 500) {
+        const { error } = await supabase.from("words").insert(rows.slice(i, i + 500));
         if (error) { console.error(error); }
       }
     }
     await loadWords();
     renderList();
-    await showModal({ 
+    activateTab("list");
+    await showModal({ title: "📥 Import done", ...
       title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" 
     });
   });
