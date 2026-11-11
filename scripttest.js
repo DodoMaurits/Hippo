@@ -194,7 +194,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (!(await confirmLeaveQuiz(cur))) return;
         if (currentList) { activateTab("list"); return; }
       }
-      if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
+      if (tab.dataset.tab === "overview") { 
+        currentList = null; try { 
+          localStorage.removeItem("hippo-list"); 
+        } catch (e) {} renderOverview(); activateTab("overview"); return; 
+      }
       activateTab(tab.dataset.tab);
       const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
       const m = modeMap[tab.dataset.tab];
@@ -205,6 +209,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("backToOverview").addEventListener("click", async () => {
     if (currentList) await flushList();
     if (currentQuizMode() && !(await confirmLeaveQuiz(currentQuizMode()))) return;
+    try { localStorage.removeItem("hippo-list"); } catch (e) {}
     currentList = null;
     renderOverview(); activateTab("overview");
   });
@@ -307,6 +312,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   async function openList(id) {
     currentList = lists.find((l) => l.id === id) || null;
+    try { localStorage.setItem("hippo-list", id); } catch (e) {}
     if (!currentList) return;
     $("col1name").value = currentList.col1 || "Language 1";
     $("col2name").value = currentList.col2 || "Language 2";
@@ -1042,12 +1048,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadLists();
     loadColNames();
     renderOverview();
-    let lastTab = "overview";
     try {
       const lt = localStorage.getItem("hippo-tab");
-      if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
-    } catch (e) {}
-    activateTab(lastTab);
+      const ll = localStorage.getItem("hippo-list");
+      if (lt === "list" && ll) { openList(ll); }
+      else activateTab(lt && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+    } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
     const saved = loadSavedQuiz();
     if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
