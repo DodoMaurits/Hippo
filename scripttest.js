@@ -905,7 +905,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("mcBack").addEventListener("click", backToList);
   $("typeBack").addEventListener("click", backToList);
-  $("flashBack").addEventListener("click", backToList);
+  $("flashBackBtn").addEventListener("click", backToList);
   
   // ---------- Importeren ----------
   $("importBtn").addEventListener("click", () => $("importFile").click());
