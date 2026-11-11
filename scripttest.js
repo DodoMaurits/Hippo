@@ -954,7 +954,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     loadColNames();
     renderOverview();
     activateTab("overview");
-    setQuizTabs(true);
+    setQuizTabs(false);
     const saved = loadSavedQuiz();
     if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
       const res = await showModal({
@@ -972,6 +972,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
         else { activateTab("flash"); flashShow(); }
         setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
+        setQuizTabs(true);
       } else {
         clearSavedQuiz();
       }
