@@ -645,13 +645,13 @@ th input { width: 100%; }
 
 .flash-good { 
   background: var(--good); 
-  color: #063; 
+  color: #14532d; 
   box-shadow: 0 4px 0 rgba(0,0,0,.2); 
 }
 
 .flash-bad { 
   background: var(--bad); 
-  color: #fff; 
+  color: #7f1d1d; 
   box-shadow: 0 4px 0 rgba(0,0,0,.2); 
 }
 
@@ -660,6 +660,8 @@ th input { width: 100%; }
   gap: 12px; 
   margin-bottom: 10px; 
 }
+
+#panel-flash .hint { margin: 8px 0 0; }
 
 /* ================= Modal ================= */
 .modal-overlay { 
