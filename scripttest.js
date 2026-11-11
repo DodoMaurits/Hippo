@@ -563,7 +563,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       setQuizChrome("panel-quiz-type", true);
     }
     if (mode === "fl") {
-      fl = { queue: [], idx: 0 };
+      fl = { queue: [], idx: 0, marks: {} };
       $("flashFront").textContent = "🦛"; $("flashBack").textContent = "…";
       $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
       setQuizChrome("panel-flash", true);
@@ -867,7 +867,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("typeContinue").addEventListener("click", typeCheck);
 
   // ---------- Flashcards ----------
-  let fl = { queue: [], idx: 0 };
+  let fl = { queue: [], idx: 0, marks: {} };
   function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs($("flashDirection").value);
@@ -877,7 +877,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if ($("flashShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("flashMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
-    fl = { queue: pool, idx: 0 };
+    fl = { queue: pool, idx: 0, marks: {} };
     setQuizChrome("panel-flash", false);
     activeQuiz = "fl";
     updateNewlistTab();
@@ -896,9 +896,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (typeof a === "string" && (a.startsWith("data:image") || a.startsWith("http"))) $("flashBack").innerHTML = 
       '<img src="' + a + '" style="max-height:180px;border-radius:12px;">';
     else $("flashBack").textContent = a;
-    $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length;
+    $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length + (fl.marks[fl.idx] === "good" ? " ✔" : fl.marks[fl.idx] === "bad" ? " ✘" : "");
     saveQuiz("fl");
   }
+  $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
+  $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
     if (fl.queue.length) { fl.idx = (fl.idx + 1) % fl.queue.length; flashShow(); }
@@ -1081,12 +1083,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         await loadLists();
         loadColNames();
         renderOverview();
-        let lastTab = "overview";
         try {
           const lt = localStorage.getItem("hippo-tab");
-          if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
-        } catch (e) {}
-        activateTab(lastTab);
+          const ll = localStorage.getItem("hippo-list");
+          if (lt === "list" && ll) { openList(ll); }
+          else activateTab(lt && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+        } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
         const saved = loadSavedQuiz();
         if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
