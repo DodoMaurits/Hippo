@@ -934,9 +934,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadWords();
     renderList();
     activateTab("list");
-    await showModal({ title: "📥 Import done", ...
-      title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" 
-    });
+    await showModal({
+      title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" });
   });
 
   let tipMode = null;
@@ -1016,7 +1015,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
           if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
         } catch (e) {}
         activateTab(lastTab);
-        setQuizTabs(true);
+        setQuizTabs(false);
         const saved = loadSavedQuiz();
         if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
           const res = await showModal({
@@ -1034,7 +1033,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
         else { activateTab("flash"); flashShow(); }
         setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
-      } else {
+        setQuizTabs(true);
+        } else {
         clearSavedQuiz();
       }
     }
