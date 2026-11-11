@@ -974,7 +974,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const desk = window.matchMedia("(min-width: 561px)").matches;
     $("clearList").classList.toggle("hidden", desk && !on);
     const b = $("toggleDelBtn");
-    b.textContent = on ? "🗑️ Del row ✅" : "🗑️ Del row";
+    b.textContent = on ? "🗑️ Delete ✅" : "🗑️ Delete";
     b.style.color = on ? "#43d17c" : "";
   }
   $("toggleDelBtn").addEventListener("click", () => {
