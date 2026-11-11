@@ -168,6 +168,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const panel = $("panel-" + name);
     if (panel) panel.classList.add("active");
     updateNewlistTab();
+    try { localStorage.setItem("hippo-tab", name); } catch (e) {}
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
@@ -962,7 +963,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadLists();
     loadColNames();
     renderOverview();
-    activateTab("overview");
+    let lastTab = "overview";
+    try {
+      const lt = localStorage.getItem("hippo-tab");
+      if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
+    } catch (e) {}
+    activateTab(lastTab);
     setQuizTabs(false);
     const saved = loadSavedQuiz();
     if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
@@ -1004,7 +1010,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         await loadLists();
         loadColNames();
         renderOverview();
-        activateTab("overview");
+        let lastTab = "overview";
+        try {
+          const lt = localStorage.getItem("hippo-tab");
+          if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
+        } catch (e) {}
+        activateTab(lastTab);
         setQuizTabs(true);
         const saved = loadSavedQuiz();
         if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
