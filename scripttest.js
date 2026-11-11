@@ -324,8 +324,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
     }
     renderList();
-    if (window.matchMedia("(min-width: 561px)").matches) $("panel-list").classList.add("show-del");
-    else $("panel-list").classList.remove("show-del");
+    $("panel-list").classList.remove("show-del");
     updateDelBtn();
     $("mcMax").value = words.length;
     $("typeMax").value = words.length;
