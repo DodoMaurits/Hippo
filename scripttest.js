@@ -78,6 +78,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function save() {
     if (GUEST) { localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(words)); return; }
   }
+  async function flushList() {
+    if (!currentList) return;
+    if (GUEST) { save(); return; }
+    for (const w of words) {
+      await supabase.from("words").update({ lang1: w.a, lang2: w.b }).eq("id", w.id);
+    }
+  }
   
   async function loadWords() {
     if (GUEST) {
@@ -174,6 +181,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
+      const fromList = document.querySelector(".tab.active") && 
+        document.querySelector(".tab.active").dataset.tab === "list";
+      if (fromList && currentList) await flushList();
       if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab) && currentList && !getPairs("1to2").length) {
         showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" });
         return;
@@ -189,6 +199,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
 
   $("backToOverview").addEventListener("click", async () => {
+    if (currentList) await flushList();
     if (currentQuizMode() && !(await confirmLeaveQuiz(currentQuizMode()))) return;
     currentList = null;
     renderOverview(); activateTab("overview");
