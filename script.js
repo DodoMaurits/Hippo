@@ -324,6 +324,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
     }
     renderList();
+    $("panel-list").classList.remove("show-del");
+    updateDelBtn();
     $("mcMax").value = words.length;
     $("typeMax").value = words.length;
     $("flashMax").value = words.length;
@@ -427,8 +429,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
       const in1 = currentList.imgMode ? null : document.createElement("input");
       const in2 = document.createElement("input");
-      if (in1) { in1.type = "text"; in1.value = w.a; in1.placeholder = "Add here, press tab to move next"; }
-      in2.type = "text"; in2.value = w.b; in2.placeholder = "Add here, press tab to add row";
+      if (in1) { in1.type = "text"; in1.value = w.a; in1.placeholder = "Enter here, press tab to move next"; }
+      in2.type = "text"; in2.value = w.b; in2.placeholder = "Enter here, press tab to add row";
       const tabGo = (e) => {
         if (e.key === "Tab" && i === words.length - 1) {
           e.preventDefault();
@@ -967,8 +969,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("tipSemi").addEventListener("click", () => showTip("semi"));
   $("tipParen").addEventListener("click", () => showTip("paren"));
+  function updateDelBtn() {
+    const on = $("panel-list").classList.contains("show-del");
+    const desk = window.matchMedia("(min-width: 561px)").matches;
+    $("clearList").classList.toggle("hidden", desk && !on);
+    const b = $("toggleDelBtn");
+    b.textContent = on ? "🗑️ Delete ✅" : "🗑️ Delete";
+    b.style.color = on ? "#43d17c" : "";
+  }
   $("toggleDelBtn").addEventListener("click", () => {
     $("panel-list").classList.toggle("show-del");
+    updateDelBtn();
   });
   
   // ---------- Init ----------
