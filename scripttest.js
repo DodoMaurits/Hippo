@@ -611,6 +611,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (g === t) html += '<span class="ok">' + esc(orig) + "</span>";
       else html += '<span class="err">' + esc(orig) + "</span>";
     }
+    html += '<span class="ok">' + esc(target.slice(n)) + "</span>";
     return html;
   }
   function acceptedAnswers(answer) {
