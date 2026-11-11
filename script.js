@@ -138,7 +138,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
       else { inp.classList.add("hidden"); }
       $("modalMsg").textContent = "";
-      $("modalCancel").classList.add("hidden");
+      $("modalCancel").classList.toggle("hidden", !!hideCancel);
       $("modalOk").textContent = okText || "OK";
       let extra = null;
       if (extraButton) {
@@ -168,6 +168,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const panel = $("panel-" + name);
     if (panel) panel.classList.add("active");
     updateNewlistTab();
+    try { localStorage.setItem("hippo-tab", name); } catch (e) {}
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
@@ -180,6 +181,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const cur = currentQuizMode();
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
+        if (currentList) { activateTab("list"); return; }
       }
       if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
       activateTab(tab.dataset.tab);
@@ -216,7 +218,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const box = $("listsOverview");
     box.innerHTML = "";
     if (!lists.length) {
-      box.innerHTML = '<p class="empty">No lists yet — create one with ➕ New list! 🦛</p>';
+      box.innerHTML = '<p class="empty">The pool is empty — start with ➕ New list! 🦛</p>';
       return;
     }
     lists.forEach((l) => {
@@ -249,7 +251,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (currentList && currentList.id === l.id) currentList = null;
         if (GUEST) renderOverview();
       });
+      const edit = document.createElement("button");
+      edit.className = "btn secondary";
+      edit.textContent = "✏️";
+      edit.addEventListener("click", async () => {
+        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: l.name, okText: "Save" });
+        if (!name || !name.trim()) return;
+        l.name = name.trim();
+        if (GUEST) saveListsGuest();
+        else await supabase.from("lists").update({ name: l.name }).eq("id", l.id);
+        renderOverview();
+      });
       row.appendChild(nameBtn);
+      row.appendChild(edit);
       row.appendChild(del);
       box.appendChild(row);
     });
@@ -399,8 +413,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
       const in1 = currentList.imgMode ? null : document.createElement("input");
       const in2 = document.createElement("input");
-      if (in1) { in1.type = "text"; in1.value = w.a; in1.placeholder = "word in language 1"; }
-      in2.type = "text"; in2.value = w.b; in2.placeholder = "word in language 2";
+      if (in1) { in1.type = "text"; in1.value = w.a; in1.placeholder = "Add here, press tab to move next"; }
+      in2.type = "text"; in2.value = w.b; in2.placeholder = "Add here, press tab to add row";
       const tabGo = (e) => {
         if (e.key === "Tab" && i === words.length - 1) {
           e.preventDefault();
@@ -548,15 +562,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (t) t.classList.toggle("hidden", !!currentQuizMode());
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
+  function quizSaveKey() { return QUIZ_SAVE_KEY + "-" + (currentList ? currentList.id : "none"); }
   function saveQuiz(mode) {
     if (!mode) return;
     const st = mode === "mc" ? mc : mode === "ty" ? ty : fl;
-    localStorage.setItem(QUIZ_SAVE_KEY, JSON.stringify({ mode, state: st, opts: quizOpts }));
+    localStorage.setItem(quizSaveKey(), JSON.stringify({ mode, state: st, opts: quizOpts }));
   }
   function loadSavedQuiz() {
-    try { return JSON.parse(localStorage.getItem(QUIZ_SAVE_KEY)); } catch (e) { return null; }
+    try { return JSON.parse(localStorage.getItem(quizSaveKey())); } catch (e) { return null; }
   }
-  function clearSavedQuiz() { localStorage.removeItem(QUIZ_SAVE_KEY); }
+  function clearSavedQuiz() { localStorage.removeItem(quizSaveKey()); }
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -898,21 +913,29 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     if (GUEST) {
       const all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]");
-      clean.forEach((r, i) => all.push({ id: "g" + Date.now() + "_" + i, listId: currentList.id, a: r[0], b: r[1] }));
+      const emptyIdx = all.findIndex((w) => w.listId === currentList.id && !w.a.trim() && !w.b.trim());
+      clean.forEach((r, i) => {
+        if (i === 0 && emptyIdx >= 0) { all[emptyIdx].a = r[0]; all[emptyIdx].b = r[1]; }
+        else all.push({ id: "g" + Date.now() + "_" + i, listId: currentList.id, a: r[0], b: r[1] });
+      });
       localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all));
     } else {
-      for (let i = 0; i < clean.length; i += 500) {
-        const batch = clean.slice(i, i + 500)
-          .map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }));
-        const { error } = await supabase.from("words").insert(batch);
+      const rows = clean.map((r) => ({ lang1: r[0], lang2: r[1], list_id: currentList.id }));
+      const emptyRow = words.find((w) => !w.a.trim() && !w.b.trim());
+      if (emptyRow && rows.length) {
+        await supabase.from("words").update({ lang1: rows[0].lang1, lang2: rows[0].lang2 }).eq("id", emptyRow.id);
+        rows.shift();
+      }
+      for (let i = 0; i < rows.length; i += 500) {
+        const { error } = await supabase.from("words").insert(rows.slice(i, i + 500));
         if (error) { console.error(error); }
       }
     }
     await loadWords();
     renderList();
-    await showModal({ 
-      title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" 
-    });
+    activateTab("list");
+    await showModal({
+      title: "📥 Import done", text: clean.length + " words added to “" + currentList.name + "”!", okText: "OK" });
   });
 
   let tipMode = null;
@@ -939,8 +962,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     await loadLists();
     loadColNames();
     renderOverview();
-    activateTab("overview");
-    setQuizTabs(true);
+    let lastTab = "overview";
+    try {
+      const lt = localStorage.getItem("hippo-tab");
+      if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
+    } catch (e) {}
+    activateTab(lastTab);
+    setQuizTabs(false);
     const saved = loadSavedQuiz();
     if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
       const res = await showModal({
@@ -958,6 +986,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
         else { activateTab("flash"); flashShow(); }
         setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
+        setQuizTabs(true);
       } else {
         clearSavedQuiz();
       }
@@ -980,8 +1009,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         await loadLists();
         loadColNames();
         renderOverview();
-        activateTab("overview");
-        setQuizTabs(true);
+        let lastTab = "overview";
+        try {
+          const lt = localStorage.getItem("hippo-tab");
+          if (lt && $("panel-" + lt) && lt !== "list" && !lt.startsWith("quiz") && lt !== "flash") lastTab = lt;
+        } catch (e) {}
+        activateTab(lastTab);
+        setQuizTabs(false);
         const saved = loadSavedQuiz();
         if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
           const res = await showModal({
@@ -999,7 +1033,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
         else { activateTab("flash"); flashShow(); }
         setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
-      } else {
+        setQuizTabs(true);
+        } else {
         clearSavedQuiz();
       }
     }
