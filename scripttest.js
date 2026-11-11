@@ -598,13 +598,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function diffHighlight(given, target) {
-    const n = Math.max(given.length, target.length);
+    const cmpT = quizOpts.caseSensitive ? target.trim() : normalize(target);
+    const n = Math.max(given.length, cmpT.length);
     let html = "";
     for (let i = 0; i < n; i++) {
       const g = i < given.length ? given[i] : "";
-      const t = i < target.length ? target[i] : "";
-      if (g === t) html += '<span class="ok">' + esc(t) + "</span>";
-      else html += '<span class="err">' + esc(t || "·") + "</span>";
+      const t = i < cmpT.length ? cmpT[i] : "";
+      const orig = target[i] || t || "·";
+      if (g === t) html += '<span class="ok">' + esc(orig) + "</span>";
+      else html += '<span class="err">' + esc(orig) + "</span>";
     }
     return html;
   }
