@@ -903,8 +903,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length
       + (fl.marks[fl.idx] === "good" ? " ✔" : fl.marks[fl.idx] === "bad" ? " ✘" : "")
       + (vals.length ? " — ✔" + good + " ✘" + bad : "");
-    }, 250);
   saveQuiz("fl");
+  }, 250);
   $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
   $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
   $("flashDone").addEventListener("click", async () => {
