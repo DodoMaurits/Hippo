@@ -17,6 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let words = [];
   let lastRowIdx = -1;
+  let dragIdx = -1;
   let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief", punct: true };
   let activeQuiz = null;
 
@@ -326,6 +327,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     renderList();
     $("panel-list").classList.remove("show-del");
     updateDelBtn();
+    $("panel-list").classList.remove("show-order"); updateOrderBtn();
     $("mcMax").value = words.length;
     $("typeMax").value = words.length;
     $("flashMax").value = words.length;
@@ -462,6 +464,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         renderList();
       });
       if (in1) td1.appendChild(in1); td2.appendChild(in2); tdDel.appendChild(del);
+      const ord = document.createElement("span");
+      ord.className = "row-order";
+      ord.textContent = "☰";
+      tdDel.insertBefore(ord, del);
+      tr.draggable = $("panel-list").classList.contains("show-order");
+      tr.addEventListener("dragstart", (e) => { dragIdx = i; e.dataTransfer.effectAllowed = "move"; });
+      tr.addEventListener("dragover", (e) => e.preventDefault());
+      tr.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        if (dragIdx < 0 || dragIdx === i) return;
+        const [moved] = words.splice(dragIdx, 1);
+        words.splice(i, 0, moved);
+        if (GUEST) save();
+        else for (let k = 0; k < words.length; k++) {
+          await supabase.from("words").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", words[k].id);
+        }
+        renderList();
+      });
       tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(tdDel);
       body.appendChild(tr);
     });
@@ -991,6 +1011,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("toggleDelBtn").addEventListener("click", () => {
     $("panel-list").classList.toggle("show-del");
     updateDelBtn();
+  });
+    function updateOrderBtn() {
+    const on = $("panel-list").classList.contains("show-order");
+    const b = $("orderBtn");
+    b.textContent = on ? "☰ Order ✅" : "☰ Order";
+    b.style.color = on ? "#43d17c" : "";
+  }
+  $("orderBtn").addEventListener("click", () => {
+    $("panel-list").classList.toggle("show-order");
+    updateOrderBtn();
+    renderList();
   });
   
   // ---------- Init ----------
