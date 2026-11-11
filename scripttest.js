@@ -374,10 +374,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     btn.textContent = "🤖 Adding images…";
     let found = 0;
     for (const { w, i } of todo) {
-      words[i].a = "https://loremflickr.com/400/300/" + encodeURIComponent(w.b.trim().split(" ")[0]);
+      const q = encodeURIComponent(w.b.trim().split(" ")[0]);
+      let url = "https://picsum.photos/seed/" + q + "/400/300";
+      try {
+        const res = await fetch("https://api.openverse.org/v1/images/?q=" + q + "&per_page=5");
+        if (res.ok) {
+          const data = await res.json();
+          const pick = (data.results || []).map((r) => r.url).find((u) => u && u.startsWith("http"));
+          if (pick) url = pick;
+        }
+      } catch (e) {}
+      words[i].a = url;
       found++;
       if (GUEST) save();
-      else await supabase.from("words").update({ lang1: words[i].a }).eq("id", w.id);
+      else await supabase.from("words").update({ lang1: url }).eq("id", w.id);
     }
     renderList();
     btn.disabled = false;
