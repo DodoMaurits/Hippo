@@ -915,6 +915,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       + (vals.length ? " — ✔" + good + " ✘" + bad : "");
   saveQuiz("fl");
   }, 250);
+  }
   $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
   $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
   $("flashDone").addEventListener("click", async () => {
