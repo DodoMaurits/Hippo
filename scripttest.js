@@ -255,7 +255,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       edit.className = "btn secondary";
       edit.textContent = "✏️";
       edit.addEventListener("click", async () => {
-        const name = await showModal({ title: "✏️ Rename list", text: "New name for “" + l.name + "”:", inputPlaceholder: l.name, okText: "Save" });
+        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: l.name, okText: "Save" });
         if (!name || !name.trim()) return;
         l.name = name.trim();
         if (GUEST) saveListsGuest();
