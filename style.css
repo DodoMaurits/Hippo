@@ -628,7 +628,40 @@ th input { width: 100%; }
   justify-content: center; 
   gap: 12px; 
   margin-top: 10px; 
+  flex-direction: column; 
+  align-items: center; 
 }
+
+.flash-marks { 
+  display: flex; 
+  gap: 12px; 
+  margin-bottom: 10px; 
+}
+
+.flash-marks .btn { 
+  font-size: 1.1rem; 
+  padding: 12px 24px; 
+}
+
+.flash-good { 
+  background: var(--good); 
+  color: #14532d; 
+  box-shadow: 0 4px 0 rgba(0,0,0,.2); 
+}
+
+.flash-bad { 
+  background: var(--bad); 
+  color: #7f1d1d; 
+  box-shadow: 0 4px 0 rgba(0,0,0,.2); 
+}
+
+.flash-nav-row { 
+  display: flex; 
+  gap: 12px; 
+  margin-bottom: 10px; 
+}
+
+#panel-flash .hint { margin: 8px 0 0; }
 
 /* ================= Modal ================= */
 .modal-overlay { 
