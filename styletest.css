@@ -391,6 +391,14 @@ th input { width: 100%; }
   display: inline-block; 
 }
 
+.row-order-btn { 
+  display: none; 
+}
+
+#panel-list.show-order .row-order-btn { 
+  display: inline-block; 
+}
+
 .tip-note { 
   color: #ff5a5a; 
   font-weight: 700; 
