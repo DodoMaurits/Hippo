@@ -820,7 +820,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       if (quizOpts.feedback === "never") {
         $("typeFeedback").textContent = "✘ Wrong";
       } else {
-        const target = acceptedAnswers(item.answer)[0] || normalize(item.answer);
+        const target = String(item.answer).split(";")[0].trim();
         $("typeFeedback").innerHTML = "✘ Almost! It was: " + diffHighlight(givenN, target);
       }
       if (quizOpts.feedback === "click") {
