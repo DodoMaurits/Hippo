@@ -195,6 +195,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
       if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
       activateTab(tab.dataset.tab);
+      const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
+      const m = modeMap[tab.dataset.tab];
+      if (m && !currentQuizMode()) resetQuizUI(m);
     });
   });
 
