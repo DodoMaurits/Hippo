@@ -324,6 +324,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
     }
     renderList();
+    if (window.matchMedia("(min-width: 561px)").matches) $("panel-list").classList.add("show-del");
+    else $("panel-list").classList.remove("show-del");
+    updateDelBtn();
     $("mcMax").value = words.length;
     $("typeMax").value = words.length;
     $("flashMax").value = words.length;
@@ -967,8 +970,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("tipSemi").addEventListener("click", () => showTip("semi"));
   $("tipParen").addEventListener("click", () => showTip("paren"));
+  function updateDelBtn() {
+    const on = $("panel-list").classList.contains("show-del");
+    const b = $("toggleDelBtn");
+    b.textContent = on ? "🗑️ Del row ✅" : "🗑️ Del row";
+    b.style.color = on ? "#43d17c" : "";
+  }
   $("toggleDelBtn").addEventListener("click", () => {
     $("panel-list").classList.toggle("show-del");
+    updateDelBtn();
   });
   
   // ---------- Init ----------
