@@ -413,8 +413,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
       const in1 = currentList.imgMode ? null : document.createElement("input");
       const in2 = document.createElement("input");
-      if (in1) { in1.type = "text"; in1.value = w.a; in1.placeholder = "Type here"; }
-      in2.type = "text"; in2.value = w.b; in2.placeholder = "Type here";
+      if (in1) { in1.type = "text"; in1.value = w.a; in1.placeholder = "Add here, press tab to move next"; }
+      in2.type = "text"; in2.value = w.b; in2.placeholder = "Add here, press tab to add row";
       const tabGo = (e) => {
         if (e.key === "Tab" && i === words.length - 1) {
           e.preventDefault();
