@@ -972,6 +972,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("tipParen").addEventListener("click", () => showTip("paren"));
   function updateDelBtn() {
     const on = $("panel-list").classList.contains("show-del");
+    const desk = window.matchMedia("(min-width: 561px)").matches;
+    $("clearList").classList.toggle("hidden", desk && !on);
     const b = $("toggleDelBtn");
     b.textContent = on ? "🗑️ Del row ✅" : "🗑️ Del row";
     b.style.color = on ? "#43d17c" : "";
