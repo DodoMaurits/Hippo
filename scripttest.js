@@ -896,11 +896,25 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (typeof a === "string" && (a.startsWith("data:image") || a.startsWith("http"))) $("flashBack").innerHTML = 
       '<img src="' + a + '" style="max-height:180px;border-radius:12px;">';
     else $("flashBack").textContent = a;
-    $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length + (fl.marks[fl.idx] === "good" ? " ✔" : fl.marks[fl.idx] === "bad" ? " ✘" : "");
+    const vals = Object.values(fl.marks);
+    const good = vals.filter((v) => v === "good").length;
+    const bad = vals.filter((v) => v === "bad").length;
+    $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length
+      + (fl.marks[fl.idx] === "good" ? " ✔" : fl.marks[fl.idx] === "bad" ? " ✘" : "")
+      + (vals.length ? " — ✔" + good + " ✘" + bad : "");
     saveQuiz("fl");
   }
   $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
   $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
+  $("flashDone").addEventListener("click", async () => {
+    const vals = Object.values(fl.marks);
+    const good = vals.filter((v) => v === "good").length;
+    const total = vals.length;
+    const grade = total ? Math.max(1, Math.min(10, Math.round((1 + 9 * (good / total)) * 10) / 10)) : 0;
+    clearSavedQuiz(); activeQuiz = null;
+    await showModal({ title: "🏁 Flashcards done", text: "Score: " + good + "/" + total + (total ? " — grade " + grade.toFixed(1) + " — " + gradeFeedback(grade) : " (no cards marked)"), okText: "OK" });
+    resetQuizUI("fl");
+  });
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
     if (fl.queue.length) { fl.idx = (fl.idx + 1) % fl.queue.length; flashShow(); }
@@ -909,6 +923,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (fl.queue.length) { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
   });
   $("flashStart").addEventListener("click", flashStart);
+  document.addEventListener("keydown", (e) => {
+    const t = document.querySelector(".tab.active");
+    if (!t || t.dataset.tab !== "flash" || !fl.queue.length) return;
+    if (e.key === "ArrowRight") { fl.idx = (fl.idx + 1) % fl.queue.length; flashShow(); }
+    if (e.key === "ArrowLeft") { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
+  });
 
   // ---------- Go back ----------
   async function backToList() {
