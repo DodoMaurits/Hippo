@@ -887,6 +887,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function flashShow() {
     $("flashCard").classList.remove("flipped");
+    setTimeout(() => {
     const item = fl.queue[fl.idx];
     const p = item ? item.prompt : "🦛";
     const a = item ? item.answer : "…";
@@ -902,8 +903,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("flashCount").textContent = "Card " + (fl.idx + 1) + "/" + fl.queue.length
       + (fl.marks[fl.idx] === "good" ? " ✔" : fl.marks[fl.idx] === "bad" ? " ✘" : "")
       + (vals.length ? " — ✔" + good + " ✘" + bad : "");
-    saveQuiz("fl");
-  }
+    }, 250);
+  saveQuiz("fl");
   $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
   $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
   $("flashDone").addEventListener("click", async () => {
