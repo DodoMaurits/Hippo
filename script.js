@@ -896,6 +896,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   });
   $("flashStart").addEventListener("click", flashStart);
 
+  // ---------- Go back ----------
+  async function backToList() {
+    if (currentList) await flushList();
+    const cur = currentQuizMode();
+    if (cur && !(await confirmLeaveQuiz(cur))) return;
+    if (currentList) activateTab("list");
+  }
+  $("mcBack").addEventListener("click", backToList);
+  $("typeBack").addEventListener("click", backToList);
+  $("flashBackBtn").addEventListener("click", backToList);
+  
   // ---------- Importeren ----------
   $("importBtn").addEventListener("click", () => $("importFile").click());
 
