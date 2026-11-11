@@ -180,6 +180,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const cur = currentQuizMode();
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
+        if (currentList) { activateTab("list"); return; }
       }
       if (tab.dataset.tab === "overview") { currentList = null; renderOverview(); activateTab("overview"); return; }
       activateTab(tab.dataset.tab);
@@ -548,15 +549,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (t) t.classList.toggle("hidden", !!currentQuizMode());
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
+  function quizSaveKey() { return QUIZ_SAVE_KEY + "-" + (currentList ? currentList.id : "none"); }
   function saveQuiz(mode) {
     if (!mode) return;
     const st = mode === "mc" ? mc : mode === "ty" ? ty : fl;
-    localStorage.setItem(QUIZ_SAVE_KEY, JSON.stringify({ mode, state: st, opts: quizOpts }));
+    localStorage.setItem(quizSaveKey(), JSON.stringify({ mode, state: st, opts: quizOpts }));
   }
   function loadSavedQuiz() {
-    try { return JSON.parse(localStorage.getItem(QUIZ_SAVE_KEY)); } catch (e) { return null; }
+    try { return JSON.parse(localStorage.getItem(quizSaveKey())); } catch (e) { return null; }
   }
-  function clearSavedQuiz() { localStorage.removeItem(QUIZ_SAVE_KEY); }
+  function clearSavedQuiz() { localStorage.removeItem(quizSaveKey()); }
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
