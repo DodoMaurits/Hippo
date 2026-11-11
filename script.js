@@ -1023,6 +1023,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateOrderBtn();
     renderList();
   });
+  async function sortWords(col) {
+    words.sort((x, y) => String(x[col]).localeCompare(String(y[col]), "nl"));
+    if (GUEST) save();
+    else for (let k = 0; k < words.length; k++) {
+      await supabase.from("words").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", words[k].id);
+    }
+    renderList();
+  }
+  $("sortA").addEventListener("click", () => sortWords("a"));
+  $("sortB").addEventListener("click", () => sortWords("b"));
   
   // ---------- Init ----------
   async function startGuest() {
