@@ -237,11 +237,20 @@ h1 {
 }
 
 .list-item { 
-  padding: 8px 12px; 
-  margin-bottom: 6px; 
+  padding: 5px 10px; 
+  margin-bottom: 4px;
+  background: rgba(255,255,255,.05);
+}
+
+.list-item .list-name { 
+  font-weight: 600; 
+  font-size: .95rem; 
 }
 
 .folder-item { 
+  padding: 8px 12px;
+  margin-bottom: 6px; 
+  background: rgba(255,255,255,.12);
   font-weight: 800; 
 }
 
