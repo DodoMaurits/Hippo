@@ -754,6 +754,13 @@ th input { width: 100%; }
   border-color: var(--sand); 
 }
 
+.modal-checks .opt-pill { 
+  display: flex; 
+  width: 100%; 
+  box-sizing: 
+  border-box; 
+}
+
 /* ================= Decor (bubbles & water) ================= */
 .bubbles span { 
   position: fixed; 
