@@ -365,6 +365,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       nameBtn.textContent = (openFolders.has(f.id) ? "📂 " : "📁 ") + f.name;
       nameBtn.addEventListener("click", () => { openFolders.has(f.id) ? openFolders.delete(f.id) : openFolders.add(f.id); renderOverview(); });
       row.appendChild(nameBtn);
+            const fedit = document.createElement("button");
+      fedit.className = "btn secondary ov-edit";
+      fedit.textContent = "✏️";
+      fedit.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: f.name, okText: "Save" });
+        if (!name || !name.trim()) return;
+        const oldId = f.id;
+        f.name = name.trim();
+        f.id = f.name;
+        for (const l of lists) {
+          if (l.folder === oldId) {
+            l.folder = f.id;
+            if (!GUEST) await supabase.from("lists").update({ folder: f.id }).eq("id", l.id);
+          }
+        }
+        if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
+        renderOverview();
+      });
+      row.appendChild(fedit);
       const addBtn = document.createElement("button");
       addBtn.className = "btn secondary";
       addBtn.textContent = "Manage lists";
