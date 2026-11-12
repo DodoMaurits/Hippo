@@ -401,8 +401,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
         renderOverview();
       });
-      row.appendChild(fdel);
       row.appendChild(fedit);
+      row.appendChild(fdel);
       const addBtn = document.createElement("button");
       addBtn.className = "btn secondary";
       addBtn.textContent = "Manage lists";
