@@ -6,6 +6,7 @@ const GUEST = new URLSearchParams(location.search).get("guest") === "1";
 const GUEST_WORDS_KEY = "hippo-guest-words";
 const GUEST_COLNAMES_KEY = "hippo-guest-colnames";
 let lists = [];
+let folders = []; const openFolders = new Set();
 let currentList = null;
 const GUEST_LISTS_KEY = "hippo-guest-lists";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -221,7 +222,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   
   async function loadLists() {
     if (GUEST) {
-      try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; }
+      try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; } catch (e) { lists = []; }
+      try { folders = JSON.parse(localStorage.getItem("hippo-guest-folders")) || []; } catch (e) { folders = []; }
       catch (e) { lists = []; }
       if (!lists.length) {
         lists = [{ id: "g1", name: "My list", col1: "Language 1", col2: "Language 2" }];
@@ -230,10 +232,21 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       return;
     }
     const { data, error } = await supabase
-      .from("lists").select("id, name, col1, col2").order("created_at", { ascending: true });
+      .from("lists").select("id, name, col1, col2, folder").order("created_at", { ascending: true });
     if (error) { console.error(error); return; }
     lists = data || [];
+    folders = [...new Set(lists.map((l) => l.folder).filter(Boolean))].map((name) => ({ id: name, name }));
   }
+
+  function saveFoldersGuest() { localStorage.setItem("hippo-guest-folders", JSON.stringify(folders)); }
+  async function newFolder() {
+    const name = await showModal({ title: "📁 Create map", text: "Name of the map:", inputPlaceholder: "New map", okText: "Create" });
+    if (!name || !name.trim()) return;
+    folders.unshift({ id: "f" + Date.now(), name: name.trim() });
+    if (GUEST) saveFoldersGuest();
+    renderOverview();
+  }
+  $("newFolderBtn").addEventListener("click", newFolder);
 
   function saveListsGuest() {
     localStorage.setItem(GUEST_LISTS_KEY, JSON.stringify(lists));
@@ -242,13 +255,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function renderOverview() {
     const box = $("listsOverview");
     box.innerHTML = "";
-    if (!lists.length) {
+    if (!lists.length && !folders.length) {
       box.innerHTML = '<p class="empty">The pool is empty — start with ➕ New list! 🦛</p>';
+      setQuizTabs(!!currentList);
       return;
     }
-    [...lists].sort((a, b) => a.name.localeCompare(b.name, "nl")).forEach((l) => {
+    const addListRow = (l) => {
       const row = document.createElement("div");
-      row.className = "list-item";
+      row.className = "list-item" + (l.folder ? " in-folder" : "");
+      row.draggable = true;
+      row.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/list-id", l.id));
       const nameBtn = document.createElement("button");
       nameBtn.className = "list-name";
       nameBtn.textContent = "🗂️ " + l.name;
@@ -257,8 +273,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       del.className = "btn danger ov-del";
       del.textContent = "✕";
       del.addEventListener("click", async () => {
-        const ok = await showModal({ title: "🗑️ Delete list", 
-        text: "Delete list “" + l.name + "” and all its words?", okText: "Delete" }); 
+        const ok = await showModal({ title: "🗑️ Delete list", text: "Delete list “" + l.name + "” and all its words?", okText: "Delete" });
         if (!ok) return;
         if (GUEST) {
           const w = (JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]")).filter((x) => x.listId !== l.id);
@@ -287,10 +302,41 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else await supabase.from("lists").update({ name: l.name }).eq("id", l.id);
         renderOverview();
       });
-      row.appendChild(nameBtn);
-      row.appendChild(edit);
-      row.appendChild(del);
+      row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(del);
       box.appendChild(row);
+    };
+    folders.forEach((f) => {
+      const row = document.createElement("div");
+      row.className = "list-item folder-item";
+      const nameBtn = document.createElement("button");
+      nameBtn.className = "list-name";
+      nameBtn.textContent = (openFolders.has(f.id) ? "📂 " : "📁 ") + f.name;
+      nameBtn.addEventListener("click", () => { openFolders.has(f.id) ? openFolders.delete(f.id) : openFolders.add(f.id); renderOverview(); });
+      row.appendChild(nameBtn);
+      row.addEventListener("dragover", (e) => e.preventDefault());
+      row.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text/list-id");
+        const l = lists.find((x) => x.id === id);
+        if (!l) return;
+        l.folder = f.id;
+        if (GUEST) saveListsGuest();
+        else await supabase.from("lists").update({ folder: f.id }).eq("id", l.id);
+        renderOverview();
+      });
+      box.appendChild(row);
+      if (openFolders.has(f.id)) lists.filter((l) => l.folder === f.id).forEach(addListRow);
+    });
+    lists.filter((l) => !l.folder).forEach(addListRow);
+    box.addEventListener("dragover", (e) => e.preventDefault());
+    box.addEventListener("drop", async (e) => {
+      const id = e.dataTransfer.getData("text/list-id");
+      const l = lists.find((x) => x.id === id);
+      if (!l || !l.folder) return;
+      l.folder = null;
+      if (GUEST) saveListsGuest();
+      else await supabase.from("lists").update({ folder: null }).eq("id", l.id);
+      renderOverview();
     });
     setQuizTabs(!!currentList);
   }
