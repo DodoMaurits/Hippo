@@ -250,7 +250,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   async function addListsToFolder(f) {
     if (!lists.length) { await showModal({ title: "📁 " + f.name, text: "Er zijn nog geen lijsten.", okText: "OK" }); return; }
     const ov = $("modalOverlay");
-    $("modalTitle").textContent = "📁 Manage lists in “" + f.name + "”";
+    $("modalTitle").textContent = "📁 Manage lists in " + f.name;
     $("modalInput").classList.add("hidden");
     $("modalMsg").textContent = "";
     $("modalCancel").classList.remove("hidden");
