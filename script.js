@@ -6,6 +6,7 @@ const GUEST = new URLSearchParams(location.search).get("guest") === "1";
 const GUEST_WORDS_KEY = "hippo-guest-words";
 const GUEST_COLNAMES_KEY = "hippo-guest-colnames";
 let lists = [];
+let folders = []; const openFolders = new Set();
 let currentList = null;
 const GUEST_LISTS_KEY = "hippo-guest-lists";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -137,13 +138,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
   }
 
-  function showModal({ title, text, inputPlaceholder, okText, extraButton, hideCancel }) {
+  function showModal({ title, text, inputPlaceholder, okText, extraButton, hideCancel, prefill }) {
     return new Promise((resolve) => {
       const ov = $("modalOverlay");
       $("modalTitle").textContent = title;
       $("modalText").textContent = text || "";
       const inp = $("modalInput");
-      if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
+      if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = prefill || ""; inp.placeholder = inputPlaceholder; }
       else { inp.classList.add("hidden"); }
       $("modalMsg").textContent = "";
       $("modalCancel").classList.toggle("hidden", !!hideCancel);
@@ -221,8 +222,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   
   async function loadLists() {
     if (GUEST) {
-      try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; }
-      catch (e) { lists = []; }
+      try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; } catch (e) { lists = []; }
+      try { folders = JSON.parse(localStorage.getItem("hippo-guest-folders")) || []; } catch (e) { folders = []; }
       if (!lists.length) {
         lists = [{ id: "g1", name: "My list", col1: "Language 1", col2: "Language 2" }];
         localStorage.setItem(GUEST_LISTS_KEY, JSON.stringify(lists));
@@ -230,11 +231,76 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       return;
     }
     const { data, error } = await supabase
-      .from("lists").select("id, name, col1, col2").order("created_at", { ascending: true });
+      .from("lists").select("id, name, col1, col2, folder").order("created_at", { ascending: true });
     if (error) { console.error(error); return; }
     lists = data || [];
+    folders = [...new Set(lists.map((l) => l.folder).filter(Boolean))].map((name) => ({ id: name, name }));
   }
 
+  function saveFoldersGuest() { localStorage.setItem("hippo-guest-folders", JSON.stringify(folders)); }
+  async function newFolder() {
+    const name = await showModal({ title: "📁 Create map", inputPlaceholder: "New map", okText: "Create" });
+    if (!name || !name.trim()) return;
+    folders.unshift({ id: "f" + Date.now(), name: name.trim() });
+    if (GUEST) saveFoldersGuest();
+    renderOverview();
+  }
+  $("newFolderBtn").addEventListener("click", newFolder);
+
+  async function addListsToFolder(f) {
+    if (!lists.length) { await showModal({ title: "📁 " + f.name, text: "Er zijn nog geen lijsten.", okText: "OK" }); return; }
+    const ov = $("modalOverlay");
+    $("modalTitle").textContent = "📁 Manage lists in " + f.name;
+    $("modalInput").classList.add("hidden");
+    $("modalMsg").textContent = "";
+    $("modalCancel").classList.remove("hidden");
+    $("modalOk").textContent = "Save";
+    document.querySelectorAll(".modal-checks").forEach((d) => d.remove());
+    const wrap = document.createElement("div");
+    wrap.className = "modal-checks";
+    wrap.style.cssText = "text-align:left; max-height:220px; overflow:auto; margin-bottom:10px;";
+    lists.forEach((l) => {
+      const lab = document.createElement("label");
+      lab.className = "opt-pill";
+      lab.style.cssText = "display:inline-flex; margin-bottom:6px;";
+      lab.innerHTML = '<input type="checkbox" value="' + l.id + '"' + (l.folder === f.id ? " checked" : "") + ' style="display:none"> ' + l.name;
+      wrap.appendChild(lab);
+    });
+    $("modalMsg").after(wrap);
+    ov.classList.remove("hidden");
+    const picked = await new Promise((resolve) => {
+      const done = (val) => { wrap.remove(); ov.classList.add("hidden"); resolve(val); };
+      $("modalOk").onclick = () => done([...wrap.querySelectorAll("input")].map((c) => ({ id: c.value, on: c.checked })));
+      $("modalCancel").onclick = () => done(null);
+      ov.onclick = (e) => { if (e.target === ov) done(null); };
+    });
+    if (!picked) return;
+    for (const { id, on } of picked) {
+      const l = lists.find((x) => x.id === id);
+      if (!l) continue;
+      const newFolder = on ? f.id : (l.folder === f.id ? null : l.folder);
+      if (newFolder !== l.folder) {
+        l.folder = newFolder;
+        if (!GUEST) await supabase.from("lists").update({ folder: newFolder }).eq("id", l.id);
+      }
+    }
+    if (GUEST) saveListsGuest();
+    renderOverview();
+  }
+  
+  async function pickFolder(l) {
+    const names = folders.map((f) => f.name);
+    const label = names.length ? names.map((n, i) => (i + 1) + ") " + n).join(", ") : "(geen mappen)";
+    const ans = await showModal({ title: "📁 Verplaats “" + l.name + "” naar map", text: "Kies: " + label + ". Leeg = uit map halen.", inputPlaceholder: "Naam of nummer", okText: "Verplaats" });
+    if (ans === null || ans === true || !String(ans).trim()) return;
+    const q = String(ans).trim().toLowerCase();
+    const f = folders.find((fo, i) => fo.name.toLowerCase() === q || String(i + 1) === q);
+    l.folder = f ? f.id : null;
+    if (GUEST) saveListsGuest();
+    else await supabase.from("lists").update({ folder: l.folder }).eq("id", l.id);
+    renderOverview();
+  }
+  
   function saveListsGuest() {
     localStorage.setItem(GUEST_LISTS_KEY, JSON.stringify(lists));
   }
@@ -242,23 +308,23 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function renderOverview() {
     const box = $("listsOverview");
     box.innerHTML = "";
-    if (!lists.length) {
+    if (!lists.length && !folders.length) {
       box.innerHTML = '<p class="empty">The pool is empty — start with ➕ New list! 🦛</p>';
+      setQuizTabs(!!currentList);
       return;
     }
-    [...lists].sort((a, b) => a.name.localeCompare(b.name, "nl")).forEach((l) => {
+    const addListRow = (l) => {
       const row = document.createElement("div");
-      row.className = "list-item";
+      row.className = "list-item" + (l.folder ? " in-folder" : "");
       const nameBtn = document.createElement("button");
       nameBtn.className = "list-name";
-      nameBtn.textContent = "🗂️ " + l.name;
+      nameBtn.textContent = "📋 " + l.name;
       nameBtn.addEventListener("click", () => openList(l.id));
       const del = document.createElement("button");
-      del.className = "btn danger";
+      del.className = "btn danger ov-del";
       del.textContent = "✕";
       del.addEventListener("click", async () => {
-        const ok = await showModal({ title: "🗑️ Delete list", 
-        text: "Delete list “" + l.name + "” and all its words?", okText: "Delete" }); 
+        const ok = await showModal({ title: "🗑️ Delete list", text: "Delete list “" + l.name + "” and all its words?", okText: "Delete" });
         if (!ok) return;
         if (GUEST) {
           const w = (JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]")).filter((x) => x.listId !== l.id);
@@ -277,30 +343,83 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (GUEST) renderOverview();
       });
       const edit = document.createElement("button");
-      edit.className = "btn secondary";
+      edit.className = "btn secondary ov-edit";
       edit.textContent = "✏️";
       edit.addEventListener("click", async () => {
-        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: l.name, okText: "Save" });
+        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: "New name", prefill: l.name, okText: "Save"});
         if (!name || !name.trim()) return;
         l.name = name.trim();
         if (GUEST) saveListsGuest();
         else await supabase.from("lists").update({ name: l.name }).eq("id", l.id);
         renderOverview();
       });
-      row.appendChild(nameBtn);
-      row.appendChild(edit);
-      row.appendChild(del);
+      row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(del);
       box.appendChild(row);
+    };
+    folders.forEach((f) => {
+      const row = document.createElement("div");
+      row.className = "list-item folder-item";
+      const nameBtn = document.createElement("button");
+      nameBtn.className = "list-name";
+      nameBtn.textContent = "📁 " + f.name;
+      if (openFolders.has(f.id)) row.classList.add("folder-open");
+      nameBtn.addEventListener("click", () => { openFolders.has(f.id) ? openFolders.delete(f.id) : openFolders.add(f.id); renderOverview(); });
+      row.appendChild(nameBtn);
+            const fedit = document.createElement("button");
+      fedit.className = "btn secondary ov-edit";
+      fedit.textContent = "✏️";
+      fedit.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: "New name", prefill: f.name, okText: "Save"});
+        if (!name || !name.trim()) return;
+        const oldId = f.id;
+        f.name = name.trim();
+        f.id = f.name;
+        for (const l of lists) {
+          if (l.folder === oldId) {
+            l.folder = f.id;
+            if (!GUEST) await supabase.from("lists").update({ folder: f.id }).eq("id", l.id);
+          }
+        }
+        if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
+        renderOverview();
+      });
+            const fdel = document.createElement("button");
+      fdel.className = "btn danger ov-del";
+      fdel.textContent = "✕";
+      fdel.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const ok = await showModal({ title: "🗑️ Delete map", text: "Delete map “" + f.name + "”? The lists inside are kept.", okText: "Delete" });
+        if (!ok) return;
+        for (const l of lists) {
+          if (l.folder === f.id) {
+            l.folder = null;
+            if (!GUEST) await supabase.from("lists").update({ folder: null }).eq("id", l.id);
+          }
+        }
+        folders = folders.filter((x) => x.id !== f.id);
+        if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
+        renderOverview();
+      });
+      row.appendChild(fedit);
+      row.appendChild(fdel);
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn secondary";
+      addBtn.textContent = "Manage lists";
+      addBtn.addEventListener("click", (e) => { e.stopPropagation(); addListsToFolder(f); });
+      row.appendChild(addBtn);
+      box.appendChild(row);
+      if (openFolders.has(f.id)) lists.filter((l) => l.folder === f.id).forEach(addListRow);
     });
+    lists.filter((l) => !l.folder).forEach(addListRow);
     setQuizTabs(!!currentList);
   }
 
-  async function newList() {
-    const name = await showModal({ title: "➕ New list", text: "Name of the new list:", 
-      inputPlaceholder: "New list", okText: "Create" }); 
+  async function newList(folderId) {
+    const name = await showModal({ title: "➕ New list", text: "Name of the new list:", inputPlaceholder: "New list", okText: "Create" });
     if (!name) return;
     if (GUEST) {
-      const l = { id: "g" + Date.now(), name: name.trim(), col1: "Language 1", col2: "Language 2" };
+      const l = { id: "g" + Date.now(), name: name.trim(), col1: "Language 1", col2: "Language 2", folder: folderId || null };
       lists.push(l);
       saveListsGuest();
       renderOverview();
@@ -308,7 +427,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       return;
     }
     const { data, error } = await supabase
-      .from("lists").insert({ name: name.trim() }).select("id, name, col1, col2").single();
+      .from("lists").insert({ name: name.trim(), folder: folderId || null }).select("id, name, col1, col2").single();
     if (error) { console.error(error); return; }
     lists.push(data);
     renderOverview();
@@ -881,6 +1000,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
   $("typeContinue").addEventListener("click", typeCheck);
+  
+  function updateOvBtns() {
+    const e = $("panel-overview").classList.contains("show-ov-edit");
+    const d = $("panel-overview").classList.contains("show-ov-del");
+    const eb = $("ovEditBtn"), db = $("ovDelBtn");
+    eb.textContent = e ? "✏️ Edit title ✅" : "✏️ Edit title";
+    eb.style.color = e ? "#43d17c" : "";
+    db.textContent = d ? "🗑️ Delete ✅" : "🗑️ Delete";
+    db.style.color = d ? "#43d17c" : "";
+  }
+  $("ovEditBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-edit"); updateOvBtns(); });
+  $("ovDelBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-del"); updateOvBtns(); });
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0, marks: {} };
