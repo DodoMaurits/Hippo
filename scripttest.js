@@ -248,11 +248,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("newFolderBtn").addEventListener("click", newFolder);
 
   async function addListsToFolder(f) {
-    const candidates = lists.filter((l) => l.folder !== f.id);
-    if (!candidates.length) { await showModal({ title: "📁 " + f.name, text: "Alle lijsten zitten al in een map.", okText: "OK" }); return; }
+    if (!lists.length) { await showModal({ title: "📁 " + f.name, text: "Er zijn nog geen lijsten.", okText: "OK" }); return; }
     const ov = $("modalOverlay");
-    $("modalTitle").textContent = "➕ Add list to “" + f.name + "”";
-    $("modalText").textContent = "Vink de lijsten aan die je wilt toevoegen:";
+    $("modalTitle").textContent = "📁 Manage lists in “" + f.name + "”";
+    $("modalText").textContent = "Aangevinkt = in deze map. Aan/uit vinken verplaatst de lijst.";
     $("modalInput").classList.add("hidden");
     $("modalMsg").textContent = "";
     $("modalCancel").classList.remove("hidden");
@@ -261,27 +260,29 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const wrap = document.createElement("div");
     wrap.className = "modal-checks";
     wrap.style.cssText = "text-align:left; max-height:220px; overflow:auto; margin-bottom:10px;";
-    candidates.forEach((l) => {
+    lists.forEach((l) => {
       const lab = document.createElement("label");
       lab.className = "opt-pill";
       lab.style.cssText = "display:flex; margin-bottom:6px;";
-      lab.innerHTML = '<input type="checkbox" value="' + l.id + '"> ' + l.name;
+      lab.innerHTML = '<input type="checkbox" value="' + l.id + '"' + (l.folder === f.id ? " checked" : "") + '> ' + l.name;
       wrap.appendChild(lab);
     });
     $("modalOk").before(wrap);
     ov.classList.remove("hidden");
-    const ids = await new Promise((resolve) => {
+    const picked = await new Promise((resolve) => {
       const done = (val) => { wrap.remove(); ov.classList.add("hidden"); resolve(val); };
-      $("modalOk").onclick = () => done([...wrap.querySelectorAll("input:checked")].map((c) => c.value));
+      $("modalOk").onclick = () => done([...wrap.querySelectorAll("input")].map((c) => ({ id: c.value, on: c.checked })));
       $("modalCancel").onclick = () => done(null);
       ov.onclick = (e) => { if (e.target === ov) done(null); };
     });
-    if (!ids) return;
-    for (const id of ids) {
+    if (!picked) return;
+    for (const { id, on } of picked) {
       const l = lists.find((x) => x.id === id);
-      if (l) {
-        l.folder = f.id;
-        if (!GUEST) await supabase.from("lists").update({ folder: f.id }).eq("id", l.id);
+      if (!l) continue;
+      const newFolder = on ? f.id : (l.folder === f.id ? null : l.folder);
+      if (newFolder !== l.folder) {
+        l.folder = newFolder;
+        if (!GUEST) await supabase.from("lists").update({ folder: newFolder }).eq("id", l.id);
       }
     }
     if (GUEST) saveListsGuest();
@@ -370,7 +371,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       row.appendChild(nameBtn);
       const addBtn = document.createElement("button");
       addBtn.className = "btn secondary";
-      addBtn.textContent = "➕ Add list";
+      addBtn.textContent = "Manage lists";
       addBtn.addEventListener("click", (e) => { e.stopPropagation(); addListsToFolder(f); });
       row.appendChild(addBtn);
       box.appendChild(row);
