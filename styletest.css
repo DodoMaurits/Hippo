@@ -236,6 +236,10 @@ h1 {
   color: #fff; 
 }
 
+.ov-edit, .ov-del { display: none; }
+#panel-overview.show-ov-edit .ov-edit { display: inline-block; }
+#panel-overview.show-ov-del .ov-del { display: inline-block; }
+
 /* ================= Buttons & inputs ================= */
 .btn { 
   background: var(--sand); 
