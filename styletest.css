@@ -759,10 +759,7 @@ th input { width: 100%; }
 }
 
 .modal-checks .opt-pill { 
-  display: flex; 
-  width: 100%; 
-  box-sizing: 
-  border-box; 
+  display: inline-flex;
 }
 
 /* ================= Decor (bubbles & water) ================= */
