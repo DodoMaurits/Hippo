@@ -263,6 +263,14 @@ h1 {
   margin-left: 26px; 
 }
 
+.folder-item.folder-open { 
+  background: var(--sand); 
+}
+
+.folder-item.folder-open .list-name { 
+  color: #5c3d00; 
+}
+
 .ov-edit, .ov-del { display: none; }
 #panel-overview.show-ov-edit .ov-edit { display: inline-block; }
 #panel-overview.show-ov-del .ov-del { display: inline-block; }
