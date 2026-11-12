@@ -138,13 +138,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
   }
 
-  function showModal({ title, text, inputPlaceholder, okText, extraButton, hideCancel }) {
+  function showModal({ title, text, inputPlaceholder, okText, extraButton, hideCancel, prefill }) {
     return new Promise((resolve) => {
       const ov = $("modalOverlay");
       $("modalTitle").textContent = title;
       $("modalText").textContent = text || "";
       const inp = $("modalInput");
-      if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = ""; inp.placeholder = inputPlaceholder; }
+      if (inputPlaceholder) { inp.classList.remove("hidden"); inp.value = prefill || ""; inp.placeholder = inputPlaceholder; }
       else { inp.classList.add("hidden"); }
       $("modalMsg").textContent = "";
       $("modalCancel").classList.toggle("hidden", !!hideCancel);
@@ -346,7 +346,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       edit.className = "btn secondary ov-edit";
       edit.textContent = "✏️";
       edit.addEventListener("click", async () => {
-        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: l.name, okText: "Save" });
+        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: "New name", prefill: l.name, okText: "Save"
         if (!name || !name.trim()) return;
         l.name = name.trim();
         if (GUEST) saveListsGuest();
@@ -370,7 +370,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       fedit.textContent = "✏️";
       fedit.addEventListener("click", async (e) => {
         e.stopPropagation();
-        const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: f.name, okText: "Save" });
+        const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: "New name", prefill: f.name, okText: "Save"
         if (!name || !name.trim()) return;
         const oldId = f.id;
         f.name = name.trim();
