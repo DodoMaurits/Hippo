@@ -251,11 +251,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!lists.length) { await showModal({ title: "📁 " + f.name, text: "Er zijn nog geen lijsten.", okText: "OK" }); return; }
     const ov = $("modalOverlay");
     $("modalTitle").textContent = "📁 Manage lists in “" + f.name + "”";
-    $("modalText").textContent = "Aangevinkt = in deze map. Aan/uit vinken verplaatst de lijst.";
     $("modalInput").classList.add("hidden");
     $("modalMsg").textContent = "";
     $("modalCancel").classList.remove("hidden");
-    $("modalOk").textContent = "OK";
+    $("modalOk").textContent = "Save";
     document.querySelectorAll(".modal-checks").forEach((d) => d.remove());
     const wrap = document.createElement("div");
     wrap.className = "modal-checks";
@@ -267,7 +266,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       lab.innerHTML = '<input type="checkbox" value="' + l.id + '"' + (l.folder === f.id ? " checked" : "") + ' style="display:none"> ' + l.name;
       wrap.appendChild(lab);
     });
-    $("modalOk").before(wrap);
+    $("modalMsg").after(wrap);
     ov.classList.remove("hidden");
     const picked = await new Promise((resolve) => {
       const done = (val) => { wrap.remove(); ov.classList.add("hidden"); resolve(val); };
