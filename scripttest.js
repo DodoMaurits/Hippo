@@ -881,6 +881,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
   $("typeContinue").addEventListener("click", typeCheck);
+  $("infoOverviewBtn").addEventListener("click", () => $("overviewHint").classList.toggle("hidden"));
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0, marks: {} };
