@@ -247,6 +247,47 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("newFolderBtn").addEventListener("click", newFolder);
 
+  async function addListsToFolder(f) {
+    const candidates = lists.filter((l) => l.folder !== f.id);
+    if (!candidates.length) { await showModal({ title: "📁 " + f.name, text: "Alle lijsten zitten al in een map.", okText: "OK" }); return; }
+    const ov = $("modalOverlay");
+    $("modalTitle").textContent = "➕ Add list to “" + f.name + "”";
+    $("modalText").textContent = "Vink de lijsten aan die je wilt toevoegen:";
+    $("modalInput").classList.add("hidden");
+    $("modalMsg").textContent = "";
+    $("modalCancel").classList.remove("hidden");
+    $("modalOk").textContent = "OK";
+    document.querySelectorAll(".modal-checks").forEach((d) => d.remove());
+    const wrap = document.createElement("div");
+    wrap.className = "modal-checks";
+    wrap.style.cssText = "text-align:left; max-height:220px; overflow:auto; margin-bottom:10px;";
+    candidates.forEach((l) => {
+      const lab = document.createElement("label");
+      lab.className = "opt-pill";
+      lab.style.cssText = "display:flex; margin-bottom:6px;";
+      lab.innerHTML = '<input type="checkbox" value="' + l.id + '"> ' + l.name;
+      wrap.appendChild(lab);
+    });
+    $("modalOk").before(wrap);
+    ov.classList.remove("hidden");
+    const ids = await new Promise((resolve) => {
+      const done = (val) => { wrap.remove(); ov.classList.add("hidden"); resolve(val); };
+      $("modalOk").onclick = () => done([...wrap.querySelectorAll("input:checked")].map((c) => c.value));
+      $("modalCancel").onclick = () => done(null);
+      ov.onclick = (e) => { if (e.target === ov) done(null); };
+    });
+    if (!ids) return;
+    for (const id of ids) {
+      const l = lists.find((x) => x.id === id);
+      if (l) {
+        l.folder = f.id;
+        if (!GUEST) await supabase.from("lists").update({ folder: f.id }).eq("id", l.id);
+      }
+    }
+    if (GUEST) saveListsGuest();
+    renderOverview();
+  }
+  
   async function pickFolder(l) {
     const names = folders.map((f) => f.name);
     const label = names.length ? names.map((n, i) => (i + 1) + ") " + n).join(", ") : "(geen mappen)";
@@ -327,6 +368,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       nameBtn.textContent = (openFolders.has(f.id) ? "📂 " : "📁 ") + f.name;
       nameBtn.addEventListener("click", () => { openFolders.has(f.id) ? openFolders.delete(f.id) : openFolders.add(f.id); renderOverview(); });
       row.appendChild(nameBtn);
+      const addBtn = document.createElement("button");
+      addBtn.className = "btn secondary";
+      addBtn.textContent = "➕ Add list";
+      addBtn.addEventListener("click", (e) => { e.stopPropagation(); addListsToFolder(f); });
+      row.appendChild(addBtn);
       box.appendChild(row);
       if (openFolders.has(f.id)) lists.filter((l) => l.folder === f.id).forEach(addListRow);
     });
