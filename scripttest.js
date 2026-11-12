@@ -264,7 +264,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const lab = document.createElement("label");
       lab.className = "opt-pill";
       lab.style.cssText = "display:flex; margin-bottom:6px;";
-      lab.innerHTML = '<input type="checkbox" value="' + l.id + '"' + (l.folder === f.id ? " checked" : "") + '> ' + l.name;
+      lab.innerHTML = '<input type="checkbox" value="' + l.id + '"' + (l.folder === f.id ? " checked" : "") + ' style="display:none"> ' + l.name;
       wrap.appendChild(lab);
     });
     $("modalOk").before(wrap);
