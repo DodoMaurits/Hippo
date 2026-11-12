@@ -240,6 +240,7 @@ h1 {
   padding: 5px 10px; 
   margin-bottom: 4px;
   background: rgba(255,255,255,.05);
+  align-items: center;
 }
 
 .list-item .list-name { 
@@ -248,8 +249,10 @@ h1 {
 }
 
 .list-item .btn { 
-  padding: 3px 8px; 
-  font-size: .75rem; 
+  padding: 2px 7px; 
+  font-size: .72rem;
+  line-height: 1.2;
+  box-shadow: none;
 }
 
 .folder-item { 
