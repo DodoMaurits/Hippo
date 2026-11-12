@@ -346,7 +346,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       edit.className = "btn secondary ov-edit";
       edit.textContent = "✏️";
       edit.addEventListener("click", async () => {
-        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: "New name", prefill: l.name, okText: "Save"
+        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: "New name", prefill: l.name, okText: "Save"});
         if (!name || !name.trim()) return;
         l.name = name.trim();
         if (GUEST) saveListsGuest();
@@ -370,7 +370,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       fedit.textContent = "✏️";
       fedit.addEventListener("click", async (e) => {
         e.stopPropagation();
-        const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: "New name", prefill: f.name, okText: "Save"
+        const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: "New name", prefill: f.name, okText: "Save"});
         if (!name || !name.trim()) return;
         const oldId = f.id;
         f.name = name.trim();
