@@ -247,6 +247,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("newFolderBtn").addEventListener("click", newFolder);
 
+  async function pickFolder(l) {
+    const names = folders.map((f) => f.name);
+    const label = names.length ? names.map((n, i) => (i + 1) + ") " + n).join(", ") : "(geen mappen)";
+    const ans = await showModal({ title: "📁 Verplaats “" + l.name + "” naar map", text: "Kies: " + label + ". Leeg = uit map halen.", inputPlaceholder: "Naam of nummer", okText: "Verplaats" });
+    if (ans === null || ans === true || !String(ans).trim()) return;
+    const q = String(ans).trim().toLowerCase();
+    const f = folders.find((fo, i) => fo.name.toLowerCase() === q || String(i + 1) === q);
+    l.folder = f ? f.id : null;
+    if (GUEST) saveListsGuest();
+    else await supabase.from("lists").update({ folder: l.folder }).eq("id", l.id);
+    renderOverview();
+  }
+  
   function saveListsGuest() {
     localStorage.setItem(GUEST_LISTS_KEY, JSON.stringify(lists));
   }
@@ -299,7 +312,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else await supabase.from("lists").update({ name: l.name }).eq("id", l.id);
         renderOverview();
       });
-      row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(del);
+      const mov = document.createElement("button");
+      mov.className = "btn secondary ov-edit";
+      mov.textContent = "📁";
+      mov.addEventListener("click", () => pickFolder(l));
+      row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(mov); row.appendChild(del);
       box.appendChild(row);
     };
     folders.forEach((f) => {
@@ -311,17 +328,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       nameBtn.addEventListener("click", () => { openFolders.has(f.id) ? openFolders.delete(f.id) : openFolders.add(f.id); renderOverview(); });
       row.appendChild(nameBtn);
       box.appendChild(row);
-      if (openFolders.has(f.id)) {
-        const addRow = document.createElement("div");
-        addRow.className = "list-item in-folder";
-        const addBtn = document.createElement("button");
-        addBtn.className = "list-name";
-        addBtn.textContent = "➕ add list";
-        addBtn.addEventListener("click", () => newList(f.id));
-        addRow.appendChild(addBtn);
-        box.appendChild(addRow);
-        lists.filter((l) => l.folder === f.id).forEach(addListRow);
-      }
+      if (openFolders.has(f.id)) lists.filter((l) => l.folder === f.id).forEach(addListRow);
     });
     lists.filter((l) => !l.folder).forEach(addListRow);
     setQuizTabs(!!currentList);
