@@ -272,6 +272,8 @@ h1 {
 }
 
 .ov-edit, .ov-del { display: none; }
+#listsOverview { margin-top: 6px; }
+#panel-overview .panel-title { margin-bottom: 14px; }
 #panel-overview.show-ov-edit .ov-edit { display: inline-block; }
 #panel-overview.show-ov-del .ov-del { display: inline-block; }
 
