@@ -262,8 +262,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const addListRow = (l) => {
       const row = document.createElement("div");
       row.className = "list-item" + (l.folder ? " in-folder" : "");
-      row.draggable = true;
-      row.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/list-id", l.id));
       const nameBtn = document.createElement("button");
       nameBtn.className = "list-name";
       nameBtn.textContent = "🗂️ " + l.name;
@@ -312,40 +310,28 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       nameBtn.textContent = (openFolders.has(f.id) ? "📂 " : "📁 ") + f.name;
       nameBtn.addEventListener("click", () => { openFolders.has(f.id) ? openFolders.delete(f.id) : openFolders.add(f.id); renderOverview(); });
       row.appendChild(nameBtn);
-      row.addEventListener("dragover", (e) => e.preventDefault());
-      row.addEventListener("drop", async (e) => {
-        e.preventDefault();
-        const id = e.dataTransfer.getData("text/list-id");
-        const l = lists.find((x) => x.id === id);
-        if (!l) return;
-        l.folder = f.id;
-        if (GUEST) saveListsGuest();
-        else await supabase.from("lists").update({ folder: f.id }).eq("id", l.id);
-        renderOverview();
-      });
       box.appendChild(row);
-      if (openFolders.has(f.id)) lists.filter((l) => l.folder === f.id).forEach(addListRow);
+      if (openFolders.has(f.id)) {
+        const addRow = document.createElement("div");
+        addRow.className = "list-item in-folder";
+        const addBtn = document.createElement("button");
+        addBtn.className = "list-name";
+        addBtn.textContent = "➕ add list";
+        addBtn.addEventListener("click", () => newList(f.id));
+        addRow.appendChild(addBtn);
+        box.appendChild(addRow);
+        lists.filter((l) => l.folder === f.id).forEach(addListRow);
+      }
     });
     lists.filter((l) => !l.folder).forEach(addListRow);
-    box.addEventListener("dragover", (e) => e.preventDefault());
-    box.addEventListener("drop", async (e) => {
-      const id = e.dataTransfer.getData("text/list-id");
-      const l = lists.find((x) => x.id === id);
-      if (!l || !l.folder) return;
-      l.folder = null;
-      if (GUEST) saveListsGuest();
-      else await supabase.from("lists").update({ folder: null }).eq("id", l.id);
-      renderOverview();
-    });
     setQuizTabs(!!currentList);
   }
 
-  async function newList() {
-    const name = await showModal({ title: "➕ New list", text: "Name of the new list:", 
-      inputPlaceholder: "New list", okText: "Create" }); 
+  async function newList(folderId) {
+    const name = await showModal({ title: "➕ New list", text: "Name of the new list:", inputPlaceholder: "New list", okText: "Create" });
     if (!name) return;
     if (GUEST) {
-      const l = { id: "g" + Date.now(), name: name.trim(), col1: "Language 1", col2: "Language 2" };
+      const l = { id: "g" + Date.now(), name: name.trim(), col1: "Language 1", col2: "Language 2", folder: folderId || null };
       lists.push(l);
       saveListsGuest();
       renderOverview();
@@ -353,7 +339,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       return;
     }
     const { data, error } = await supabase
-      .from("lists").insert({ name: name.trim() }).select("id, name, col1, col2").single();
+      .from("lists").insert({ name: name.trim(), folder: folderId || null }).select("id, name, col1, col2").single();
     if (error) { console.error(error); return; }
     lists.push(data);
     renderOverview();
