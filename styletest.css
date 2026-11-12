@@ -264,11 +264,12 @@ h1 {
 }
 
 .folder-item.folder-open { 
-  background: var(--sand); 
+  background: var(--water-light); 
+  border-color: #7ec8e3; 
 }
 
 .folder-item.folder-open .list-name { 
-  color: #5c3d00; 
+  color: #fff; 
 }
 
 .ov-edit, .ov-del { display: none; }
