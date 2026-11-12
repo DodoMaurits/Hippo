@@ -224,7 +224,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (GUEST) {
       try { lists = JSON.parse(localStorage.getItem(GUEST_LISTS_KEY)) || []; } catch (e) { lists = []; }
       try { folders = JSON.parse(localStorage.getItem("hippo-guest-folders")) || []; } catch (e) { folders = []; }
-      catch (e) { lists = []; }
       if (!lists.length) {
         lists = [{ id: "g1", name: "My list", col1: "Language 1", col2: "Language 2" }];
         localStorage.setItem(GUEST_LISTS_KEY, JSON.stringify(lists));
