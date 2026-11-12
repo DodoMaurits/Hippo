@@ -1001,8 +1001,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("typeStart").addEventListener("click", typeStart);
   $("typeContinue").addEventListener("click", typeCheck);
   $("infoOverviewBtn").addEventListener("click", () => $("overviewHint").classList.toggle("hidden"));
-  $("ovEditBtn").addEventListener("click", () => $("panel-overview").classList.toggle("show-ov-edit"));
-  $("ovDelBtn").addEventListener("click", () => $("panel-overview").classList.toggle("show-ov-del"));
+  
+  function updateOvBtns() {
+    const e = $("panel-overview").classList.contains("show-ov-edit");
+    const d = $("panel-overview").classList.contains("show-ov-del");
+    const eb = $("ovEditBtn"), db = $("ovDelBtn");
+    eb.textContent = e ? "✏️ ✅" : "✏️";
+    eb.style.color = e ? "#43d17c" : "";
+    db.textContent = d ? "🗑️ ✅" : "🗑️";
+    db.style.color = d ? "#43d17c" : "";
+  }
+  $("ovEditBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-edit"); updateOvBtns(); });
+  $("ovDelBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-del"); updateOvBtns(); });
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0, marks: {} };
