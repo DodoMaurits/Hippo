@@ -354,11 +354,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else await supabase.from("lists").update({ name: l.name }).eq("id", l.id);
         renderOverview();
       });
-      const mov = document.createElement("button");
-      mov.className = "btn secondary ov-edit";
-      mov.textContent = "📁";
-      mov.addEventListener("click", () => pickFolder(l));
-      row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(mov); row.appendChild(del);
+      row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(del);
       box.appendChild(row);
     };
     folders.forEach((f) => {
