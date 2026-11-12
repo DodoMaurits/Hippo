@@ -239,7 +239,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   function saveFoldersGuest() { localStorage.setItem("hippo-guest-folders", JSON.stringify(folders)); }
   async function newFolder() {
-    const name = await showModal({ title: "📁 Create map", text: "Name of the map:", inputPlaceholder: "New map", okText: "Create" });
+    const name = await showModal({ title: "📁 Create map", inputPlaceholder: "New map", okText: "Create" });
     if (!name || !name.trim()) return;
     folders.unshift({ id: "f" + Date.now(), name: name.trim() });
     if (GUEST) saveFoldersGuest();
