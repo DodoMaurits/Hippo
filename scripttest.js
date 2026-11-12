@@ -262,7 +262,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     lists.forEach((l) => {
       const lab = document.createElement("label");
       lab.className = "opt-pill";
-      lab.style.cssText = "display:flex; margin-bottom:6px;";
+      lab.style.cssText = "display:inline-flex; margin-bottom:6px;";
       lab.innerHTML = '<input type="checkbox" value="' + l.id + '"' + (l.folder === f.id ? " checked" : "") + ' style="display:none"> ' + l.name;
       wrap.appendChild(lab);
     });
