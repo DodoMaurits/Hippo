@@ -254,7 +254,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       nameBtn.textContent = "🗂️ " + l.name;
       nameBtn.addEventListener("click", () => openList(l.id));
       const del = document.createElement("button");
-      del.className = "btn danger";
+      del.className = "btn danger ov-del";
       del.textContent = "✕";
       del.addEventListener("click", async () => {
         const ok = await showModal({ title: "🗑️ Delete list", 
@@ -277,7 +277,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (GUEST) renderOverview();
       });
       const edit = document.createElement("button");
-      edit.className = "btn secondary";
+      edit.className = "btn secondary ov-edit";
       edit.textContent = "✏️";
       edit.addEventListener("click", async () => {
         const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: l.name, okText: "Save" });
@@ -882,6 +882,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("typeStart").addEventListener("click", typeStart);
   $("typeContinue").addEventListener("click", typeCheck);
   $("infoOverviewBtn").addEventListener("click", () => $("overviewHint").classList.toggle("hidden"));
+  $("ovEditBtn").addEventListener("click", () => $("panel-overview").classList.toggle("show-ov-edit"));
+  $("ovDelBtn").addEventListener("click", () => $("panel-overview").classList.toggle("show-ov-del"));
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0, marks: {} };
