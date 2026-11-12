@@ -385,6 +385,24 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
         renderOverview();
       });
+            const fdel = document.createElement("button");
+      fdel.className = "btn danger ov-del";
+      fdel.textContent = "✕";
+      fdel.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const ok = await showModal({ title: "🗑️ Delete map", text: "Delete map “" + f.name + "”? The lists inside are kept.", okText: "Delete" });
+        if (!ok) return;
+        for (const l of lists) {
+          if (l.folder === f.id) {
+            l.folder = null;
+            if (!GUEST) await supabase.from("lists").update({ folder: null }).eq("id", l.id);
+          }
+        }
+        folders = folders.filter((x) => x.id !== f.id);
+        if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
+        renderOverview();
+      });
+      row.appendChild(fdel);
       row.appendChild(fedit);
       const addBtn = document.createElement("button");
       addBtn.className = "btn secondary";
