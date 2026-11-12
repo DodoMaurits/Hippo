@@ -236,6 +236,19 @@ h1 {
   color: #fff; 
 }
 
+.list-item { 
+  padding: 8px 12px; 
+  margin-bottom: 6px; 
+}
+
+.folder-item { 
+  font-weight: 800; 
+}
+
+.list-item.in-folder { 
+  margin-left: 26px; 
+}
+
 .ov-edit, .ov-del { display: none; }
 #panel-overview.show-ov-edit .ov-edit { display: inline-block; }
 #panel-overview.show-ov-del .ov-del { display: inline-block; }
