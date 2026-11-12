@@ -232,9 +232,54 @@ h1 {
 
 .panel-title { 
   font-size: 1.3rem; 
-  margin-bottom: 4px; 
+  margin-bottom: 10px; 
   color: #fff; 
 }
+
+.list-item { 
+  padding: 5px 10px; 
+  margin-bottom: 4px;
+  background: rgba(255,255,255,.05);
+  align-items: center;
+}
+
+.list-item .list-name { 
+  font-weight: 600; 
+  font-size: .95rem; 
+}
+
+.list-item .btn { 
+  padding: 2px 7px; 
+  font-size: .72rem;
+  line-height: 1.2;
+  box-shadow: none;
+}
+
+.folder-item { 
+  padding: 8px 12px;
+  margin-bottom: 6px; 
+  background: rgba(255,255,255,.12);
+  font-weight: 800; 
+}
+
+.list-item.in-folder { 
+  margin-left: 26px; 
+}
+
+.folder-item.folder-open { 
+  background: var(--water-light); 
+  border-color: #7ec8e3; 
+}
+
+.folder-item.folder-open .list-name { 
+  color: #fff; 
+}
+
+.ov-edit, .ov-del { display: none; }
+#listsOverview { margin-top: 6px; }
+#panel-overview .panel-title { margin-bottom: 14px; }
+#panel-overview.show-ov-edit .ov-edit { display: inline-block; }
+#panel-overview.show-ov-del .ov-del { display: inline-block; }
 
 /* ================= Buttons & inputs ================= */
 .btn { 
@@ -711,6 +756,10 @@ th input { width: 100%; }
 
 .modal-card input:focus { 
   border-color: var(--sand); 
+}
+
+.modal-checks .opt-pill { 
+  display: inline-flex;
 }
 
 /* ================= Decor (bubbles & water) ================= */
