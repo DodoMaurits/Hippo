@@ -1251,8 +1251,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   async function sortFolderLists(f, dir) {
     const inFolder = lists.filter((l) => l.folder === f.id);
     inFolder.sort((x, y) => dir === "a" ? x.name.localeCompare(y.name, "nl") : y.name.localeCompare(x.name, "nl"));
-    const sortedIds = new Set(inFolder.map((l) => l.id));
-    lists = lists.map((l) => sortedIds.has(l.id) ? inFolder.find((x) => x.id === l.id) : l);
+    let j = 0;
+    lists = lists.map((l) => l.folder === f.id ? inFolder[j++] : l);
     if (GUEST) saveListsGuest();
     else for (let k = 0; k < lists.length; k++) await supabase.from("lists").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", lists[k].id);
     renderOverview();
