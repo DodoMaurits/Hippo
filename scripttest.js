@@ -85,7 +85,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!currentList) return;
     if (GUEST) { save(); return; }
     for (const w of words) {
-      await supabase.from("words").update({ lang1: w.a, lang2: w.b }).eq("id", w.id);
+      await supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id);
     }
   }
   
@@ -95,14 +95,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       try { raw = localStorage.getItem(GUEST_WORDS_KEY); } catch (e) {}
       words = (raw ? JSON.parse(raw) : [])
         .filter((w) => !currentList || w.listId === currentList.id)
-        .map((w, i) => ({ id: w.id || "g" + i, listId: w.listId, a: w.a || "", b: w.b || "" }));
+        .map((w, i) => ({ id: w.id || "g" + i, listId: w.listId, a: w.a || "", b: w.b || "", hidden: !!w.hidden }));
       return;
     }
     let all = [];
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabase
         .from("words")
-        .select("id, lang1, lang2")
+        .select("id, lang1, lang2, hidden")
         .eq("list_id", currentList.id)
         .order("created_at", { ascending: true })
         .range(from, from + 999);
@@ -110,7 +110,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       all = all.concat(data || []);
       if (!data || data.length < 1000) break;
     }
-    words = all.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2 }));
+    words = all.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2, hidden: !!r.hidden }));
   }
 
   function loadColNames() {
@@ -502,6 +502,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("panel-list").classList.remove("show-del");
     updateDelBtn();
     $("panel-list").classList.remove("show-order"); updateOrderBtn();
+    $("panel-list").classList.remove("show-hide"); updateHideBtn();
     const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
     $("mcMax").value = filled;
     $("typeMax").value = filled;
@@ -638,6 +639,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const ord = document.createElement("span");
       ord.className = "row-order";
       ord.textContent = "☰";
+      const eye = document.createElement("span");
+      eye.className = "row-eye" + (w.hidden ? " closed" : "");
+      eye.textContent = w.hidden ? "🙈" : "👁️";
+      eye.addEventListener("click", async () => {
+        w.hidden = !w.hidden;
+        if (GUEST) save();
+        else await supabase.from("words").update({ hidden: w.hidden }).eq("id", w.id);
+        renderList();
+      });
+      tdDel.insertBefore(eye, ord);
       tdDel.insertBefore(ord, del);
       tr.draggable = $("panel-list").classList.contains("show-order");
       tr.addEventListener("dragstart", (e) => { dragIdx = i; e.dataTransfer.effectAllowed = "move"; });
@@ -659,6 +670,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("emptyMsg").style.display = words.length ? "none" : "block";
   }
 
+  function updateHideBtn() {
+    const on = $("panel-list").classList.contains("show-hide");
+    const b = $("hideBtn");
+    b.textContent = on ? "👁️ Hide ✅" : "👁️ Hide";
+    b.style.color = on ? "#43d17c" : "";
+  }
+  $("hideBtn").addEventListener("click", () => {
+    $("panel-list").classList.toggle("show-hide");
+    updateHideBtn();
+    renderList();
+  });
+  
   function updateOvOrderBtn() {
     const on = $("panel-overview").classList.contains("show-ov-order");
     const b = $("ovOrderBtn");
@@ -842,7 +865,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function getPairs(direction) {
     return words
-      .filter((w) => w.a.trim() && w.b.trim())
+      .filter((w) => w.a.trim() && w.b.trim() && !w.hidden)
       .map((w) => {
         const img = !!(currentList && currentList.imgMode);
         if (direction === "both") {
