@@ -421,6 +421,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       });
       row.appendChild(fedit);
       row.appendChild(fdel);
+      const sA = document.createElement("button");
+      sA.className = "btn secondary row-order-btn";
+      sA.textContent = "A-Z";
+      sA.addEventListener("click", (e) => { e.stopPropagation(); sortFolderLists(f, "a"); });
+      const sZ = document.createElement("button");
+      sZ.className = "btn secondary row-order-btn";
+      sZ.textContent = "Z-A";
+      sZ.addEventListener("click", (e) => { e.stopPropagation(); sortFolderLists(f, "z"); });
+      row.appendChild(sA); row.appendChild(sZ);
       const addBtn = document.createElement("button");
       addBtn.className = "btn secondary";
       addBtn.textContent = "Manage lists";
@@ -1239,6 +1248,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("sortA").addEventListener("click", () => sortWords("a"));
   $("sortB").addEventListener("click", () => sortWords("b"));
+  async function sortFolderLists(f, dir) {
+    const inFolder = lists.filter((l) => l.folder === f.id);
+    inFolder.sort((x, y) => dir === "a" ? x.name.localeCompare(y.name, "nl") : y.name.localeCompare(x.name, "nl"));
+    const sortedIds = new Set(inFolder.map((l) => l.id));
+    lists = lists.map((l) => sortedIds.has(l.id) ? inFolder.find((x) => x.id === l.id) : l);
+    if (GUEST) saveListsGuest();
+    else for (let k = 0; k < lists.length; k++) await supabase.from("lists").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", lists[k].id);
+    renderOverview();
+  }
   
   // ---------- Init ----------
   async function startGuest() {
