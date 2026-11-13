@@ -494,6 +494,7 @@ function bumpStat(id, key) {
     $("col1name").value = currentList.col1 || "Language 1";
     $("col2name").value = currentList.col2 || "Language 2";
     updateHeaders();
+    $("listTitle").textContent = currentList.name;
     await loadWords();
     if (!words.length) {
       if (GUEST) {
