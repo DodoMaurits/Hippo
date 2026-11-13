@@ -19,6 +19,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let words = [];
   let lastRowIdx = -1;
   let dragIdx = -1;
+  let dragOvType = null, dragOvId = null;
   let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief", punct: true };
   let activeQuiz = null;
 
@@ -354,6 +355,23 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         renderOverview();
       });
       row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(del);
+            const ord = document.createElement("span");
+      ord.className = "row-order";
+      ord.textContent = "☰";
+      row.insertBefore(ord, row.firstChild);
+      row.draggable = $("panel-overview").classList.contains("show-ov-order");
+      row.addEventListener("dragstart", (e) => { dragOvType = "list"; dragOvId = l.id; e.dataTransfer.effectAllowed = "move"; });
+      row.addEventListener("dragover", (e) => e.preventDefault());
+      row.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        if (dragOvType !== "list" || dragOvId === l.id) return;
+        const from = lists.findIndex((x) => x.id === dragOvId);
+        const [m] = lists.splice(from, 1);
+        lists.splice(lists.indexOf(l), 0, m);
+        if (GUEST) saveListsGuest();
+        else for (let k = 0; k < lists.length; k++) await supabase.from("lists").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", lists[k].id);
+        renderOverview();
+      });
       box.appendChild(row);
     };
     folders.forEach((f) => {
@@ -403,11 +421,37 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       });
       row.appendChild(fedit);
       row.appendChild(fdel);
+      const sA = document.createElement("button");
+      sA.className = "btn secondary row-order-btn";
+      sA.textContent = "A-Z";
+      sA.addEventListener("click", (e) => { e.stopPropagation(); sortFolderLists(f, "a"); });
+      const sZ = document.createElement("button");
+      sZ.className = "btn secondary row-order-btn";
+      sZ.textContent = "Z-A";
+      sZ.addEventListener("click", (e) => { e.stopPropagation(); sortFolderLists(f, "z"); });
+      row.appendChild(sA); row.appendChild(sZ);
       const addBtn = document.createElement("button");
       addBtn.className = "btn secondary";
       addBtn.textContent = "Manage lists";
       addBtn.addEventListener("click", (e) => { e.stopPropagation(); addListsToFolder(f); });
       row.appendChild(addBtn);
+            const ford = document.createElement("span");
+      ford.className = "row-order";
+      ford.textContent = "☰";
+      row.insertBefore(ford, row.firstChild);
+      row.draggable = $("panel-overview").classList.contains("show-ov-order");
+      row.addEventListener("dragstart", (e) => { dragOvType = "folder"; dragOvId = f.id; e.dataTransfer.effectAllowed = "move"; });
+      row.addEventListener("dragover", (e) => e.preventDefault());
+      row.addEventListener("drop", (e) => {
+        e.preventDefault();
+        if (dragOvType !== "folder" || dragOvId === f.id) return;
+        const from = folders.findIndex((x) => x.id === dragOvId);
+        const [m] = folders.splice(from, 1);
+        folders.splice(folders.indexOf(f), 0, m);
+        if (GUEST) saveFoldersGuest();
+        else localStorage.setItem("hippo-folder-order", JSON.stringify(folders.map((x) => x.id)));
+        renderOverview();
+      });
       box.appendChild(row);
       if (openFolders.has(f.id)) lists.filter((l) => l.folder === f.id).forEach(addListRow);
     });
@@ -614,6 +658,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     });
     $("emptyMsg").style.display = words.length ? "none" : "block";
   }
+
+  function updateOvOrderBtn() {
+    const on = $("panel-overview").classList.contains("show-ov-order");
+    const b = $("ovOrderBtn");
+    b.textContent = on ? "☰ Order ✅" : "☰ Order";
+    b.style.color = on ? "#43d17c" : "";
+  }
+  $("ovOrderBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-order"); updateOvOrderBtn(); renderOverview(); });
 
   $("addRow").addEventListener("click", async () => {
     if (GUEST) {
@@ -1196,6 +1248,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   $("sortA").addEventListener("click", () => sortWords("a"));
   $("sortB").addEventListener("click", () => sortWords("b"));
+  async function sortFolderLists(f, dir) {
+    const inFolder = lists.filter((l) => l.folder === f.id);
+    inFolder.sort((x, y) => dir === "a" ? x.name.localeCompare(y.name, "nl") : y.name.localeCompare(x.name, "nl"));
+    let j = 0;
+    lists = lists.map((l) => l.folder === f.id ? inFolder[j++] : l);
+    if (GUEST) saveListsGuest();
+    else for (let k = 0; k < lists.length; k++) await supabase.from("lists").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", lists[k].id);
+    renderOverview();
+  }
   
   // ---------- Init ----------
   async function startGuest() {
