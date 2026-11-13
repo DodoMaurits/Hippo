@@ -467,6 +467,21 @@ th input { width: 100%; }
   white-space: nowrap; 
 }
 
+.row-eye { 
+  display: none; 
+  cursor: pointer; 
+  padding: 0 6px; 
+  user-select: none; 
+}
+
+#panel-list.show-hide .row-eye { 
+  display: inline-block; 
+}
+
+.row-eye.closed { 
+  opacity: .35;
+}
+
 /* ================= Quiz ================= */
 .quiz-controls { 
   display: flex; 
