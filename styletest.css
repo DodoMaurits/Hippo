@@ -509,6 +509,10 @@ th input { width: 100%; }
   display: inline-block; 
 }
 
+#panel-list > .panel-title { 
+  margin-left: 10px; 
+}
+
 /* ================= Quiz ================= */
 .quiz-controls { 
   display: flex; 
