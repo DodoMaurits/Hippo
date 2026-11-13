@@ -586,6 +586,7 @@ function bumpStat(id, key) {
     body.innerHTML = "";
     words.forEach((w, i) => {
       const tr = document.createElement("tr");
+      if (w.hidden) tr.classList.add("row-hidden");
       const td1 = document.createElement("td");
       const td2 = document.createElement("td");
       const tdDel = document.createElement("td");
