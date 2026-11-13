@@ -266,6 +266,17 @@ h1 {
   margin-left: 26px; 
 }
 
+.list-item:not(.folder-item) .btn {
+  padding: 2px 7px;
+  font-size: .72rem; 
+  line-height: 1.2; 
+  box-shadow: none; 
+}
+
+.list-item:not(.folder-item) { 
+  align-items: center; 
+}
+
 .folder-item.folder-open { 
   background: var(--water-light); 
   border-color: #7ec8e3; 
