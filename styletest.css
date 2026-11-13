@@ -482,6 +482,16 @@ th input { width: 100%; }
   opacity: .35;
 }
 
+.row-stats { 
+  display: none; 
+  font-size: .78rem; 
+  white-space: nowrap; 
+}
+
+#panel-list.show-stats .row-stats { 
+  display: inline-block; 
+}
+
 /* ================= Quiz ================= */
 .quiz-controls { 
   display: flex; 
