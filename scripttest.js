@@ -11,6 +11,15 @@ let currentList = null;
 const GUEST_LISTS_KEY = "hippo-guest-lists";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let wordStats = {};
+try { wordStats = JSON.parse(localStorage.getItem("hippo-word-stats") || "{}"); } catch (e) {}
+function bumpStat(id, key) {
+  if (!id) return;
+  if (!wordStats[id]) wordStats[id] = { wrong: 0, right: 0 };
+  wordStats[id][key]++;
+  try { localStorage.setItem("hippo-word-stats", JSON.stringify(wordStats)); } catch (e) {}
+}
+
 (function () {
   "use strict";
 
@@ -503,6 +512,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     updateDelBtn();
     $("panel-list").classList.remove("show-order"); updateOrderBtn();
     $("panel-list").classList.remove("show-hide"); updateHideBtn();
+    $("panel-list").classList.remove("show-stats"); updateStatsBtn();
     const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
     $("mcMax").value = filled;
     $("typeMax").value = filled;
@@ -648,6 +658,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         else await supabase.from("words").update({ hidden: w.hidden }).eq("id", w.id);
         renderList();
       });
+      const st = wordStats[w.id] || { wrong: 0, right: 0 };
+      const stEl = document.createElement("span");
+      stEl.className = "row-stats";
+      stEl.textContent = "✘ " + st.wrong + " ✔ " + st.right;
+      tdDel.insertBefore(stEl, eye);
       tdDel.insertBefore(eye, ord);
       tdDel.insertBefore(ord, del);
       tr.draggable = $("panel-list").classList.contains("show-order");
@@ -679,6 +694,18 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $("hideBtn").addEventListener("click", () => {
     $("panel-list").classList.toggle("show-hide");
     updateHideBtn();
+    renderList();
+  });
+
+  function updateStatsBtn() {
+    const on = $("panel-list").classList.contains("show-stats");
+    const b = $("statsBtn");
+    b.textContent = on ? "📊 Stats ✅" : "📊 Stats";
+    b.style.color = on ? "#43d17c" : "";
+  }
+  $("statsBtn").addEventListener("click", () => {
+    $("panel-list").classList.toggle("show-stats");
+    updateStatsBtn();
     renderList();
   });
   
@@ -870,12 +897,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const img = !!(currentList && currentList.imgMode);
         if (direction === "both") {
           return Math.random() < 0.5
-            ? { prompt: w.a, answer: w.b, answerImg: false }
-            : { prompt: w.b, answer: w.a, answerImg: img };
+            ? { id: w.id, prompt: w.a, answer: w.b, answerImg: false }
+            : { id: w.id, prompt: w.b, answer: w.a, answerImg: img };
         }
         return direction === "2to1"
-          ? { prompt: w.b, answer: w.a, answerImg: img }
-          : { prompt: w.a, answer: w.b, answerImg: false };
+          ? { id: w.id, prompt: w.b, answer: w.a, answerImg: img }
+          : { id: w.id, prompt: w.a, answer: w.b, answerImg: false };
       });
   }
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
@@ -946,11 +973,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (normalize(opt) === normalize(item.answer)) {
           btn.classList.add("correct");
           if (!item.missed) mc.score++;
+          bumpStat(item.id, "right");
           $("mcFeedback").textContent = "✔ Correct!";
           $("mcFeedback").classList.add("good");
         } else {
           btn.classList.add("wrong");
           item.missed = true;
+          bumpStat(item.id, "wrong");
           const back = 2 + Math.floor(Math.random() * 3); // 2, 3 of 4
           mc.queue.splice(Math.min(mc.idx + back, mc.queue.length), 0, item);
           $("mcFeedback").textContent = "✘ Oops! It was: " + item.answer;
@@ -1048,12 +1077,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       || (quizOpts.fuzzy && acceptedAnswers(item.answer).some((a) => levenshtein(givenN, a) <= 1));
     if (ok) {
       if (!item.missed) ty.score++;
+      bumpStat(item.id, "right");
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
       $("typeFeedback").classList.remove("bad");
       typeAdvance();
     } else {
       item.missed = true;
+      bumpStat(item.id, "wrong");
       const back = 2 + Math.floor(Math.random() * 3);
       ty.queue.splice(Math.min(ty.idx + back, ty.queue.length), 0, item);
       $("typeFeedback").classList.add("bad");
@@ -1128,8 +1159,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   saveQuiz("fl");
   }, 250);
   }
-  $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
-  $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
+  $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "right");});
+  $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "wrong");});
   $("flashDone").addEventListener("click", async () => {
     const vals = Object.values(fl.marks);
     const good = vals.filter((v) => v === "good").length;
