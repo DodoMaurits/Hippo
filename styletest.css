@@ -482,6 +482,15 @@ th input { width: 100%; }
   opacity: .35;
 }
 
+#listBody tr.row-hidden { 
+  opacity: .45;
+}
+
+#listBody tr.row-hidden input { 
+  background: rgba(255,255,255,.05); 
+  color: var(--muted); 
+}
+
 .row-stats { 
   display: none; 
   font-size: .78rem; 
