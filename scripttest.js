@@ -822,6 +822,9 @@ function bumpStat(id, key) {
       $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
       setQuizChrome("panel-flash", true);
     }
+    $("mcScore").textContent = "Score: 0/0"; $("mcCount").textContent = ""; $("mcProgress").style.width = "0%";
+    $("typeScore").textContent = "Score: 0/0"; $("typeCount").textContent = ""; $("typeProgress").style.width = "0%";
+    $("flashCount").textContent = "Card 0/0";
     updateNewlistTab();
   }
   function setQuizChrome(panelId, show) {
