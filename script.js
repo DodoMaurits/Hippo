@@ -715,6 +715,16 @@ function bumpStat(id, key) {
     updateStatsBtn();
     renderList();
   });
+
+  async function sortByScore(bestFirst) {
+    const key = (w) => { const s = wordStats[w.id] || { wrong: 0, right: 0 }; return s.wrong - s.right; };
+    words.sort((a, b) => bestFirst ? key(a) - key(b) : key(b) - key(a));
+    if (GUEST) save();
+    else for (let k = 0; k < words.length; k++) await supabase.from("words").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", words[k].id);
+    renderList();
+  }
+  $("sortWorst").addEventListener("click", () => sortByScore(false));
+  $("sortBest").addEventListener("click", () => sortByScore(true));
   
   function updateOvOrderBtn() {
     const on = $("panel-overview").classList.contains("show-ov-order");
@@ -812,6 +822,9 @@ function bumpStat(id, key) {
       $("panel-flash").querySelector(".flash-nav").classList.add("hidden");
       setQuizChrome("panel-flash", true);
     }
+    $("mcScore").textContent = "Score: 0/0"; $("mcCount").textContent = ""; $("mcProgress").style.width = "0%";
+    $("typeScore").textContent = "Score: 0/0"; $("typeCount").textContent = ""; $("typeProgress").style.width = "0%";
+    $("flashCount").textContent = "Card 0/0";
     updateNewlistTab();
   }
   function setQuizChrome(panelId, show) {
