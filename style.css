@@ -467,6 +467,40 @@ th input { width: 100%; }
   white-space: nowrap; 
 }
 
+.row-eye { 
+  display: none; 
+  cursor: pointer; 
+  padding: 0 6px; 
+  user-select: none; 
+}
+
+#panel-list.show-hide .row-eye { 
+  display: inline-block; 
+}
+
+.row-eye.closed { 
+  opacity: .35;
+}
+
+#listBody tr.row-hidden { 
+  opacity: .45;
+}
+
+#listBody tr.row-hidden input { 
+  background: rgba(255,255,255,.05); 
+  color: var(--muted); 
+}
+
+.row-stats { 
+  display: none; 
+  font-size: .78rem; 
+  white-space: nowrap; 
+}
+
+#panel-list.show-stats .row-stats { 
+  display: inline-block; 
+}
+
 /* ================= Quiz ================= */
 .quiz-controls { 
   display: flex; 
