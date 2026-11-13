@@ -457,6 +457,14 @@ th input { width: 100%; }
   display: inline-block; 
 }
 
+.row-stats-btn { 
+  display: none; 
+}
+
+#panel-list.show-stats .row-stats-btn { 
+  display: inline-block; 
+}
+
 .tip-note { 
   color: #ff5a5a; 
   font-weight: 700; 
