@@ -666,6 +666,12 @@ function bumpStat(id, key) {
       tdDel.insertBefore(ord, del);
       tdDel.insertBefore(eye, ord);
       tdDel.insertBefore(stEl, eye);
+      const diff = st.wrong - st.right;
+      if ($("panel-list").classList.contains("show-stats")) {
+        if (diff > 0) tr.style.background = "rgba(255,123,123," + (0.12 + 0.28 * Math.min(1, diff / 10)).toFixed(2) + ")";
+        else if (diff < 0) tr.style.background = "rgba(126,231,135," + (0.12 + 0.28 * Math.min(1, -diff / 10)).toFixed(2) + ")";
+        else if (st.wrong > 0) tr.style.background = "rgba(244,201,93,0.28)";
+      } else tr.style.background = "";
       tr.draggable = $("panel-list").classList.contains("show-order");
       tr.addEventListener("dragstart", (e) => { dragIdx = i; e.dataTransfer.effectAllowed = "move"; });
       tr.addEventListener("dragover", (e) => e.preventDefault());
