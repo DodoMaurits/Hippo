@@ -356,7 +356,7 @@ function bumpStat(id, key) {
       edit.className = "btn secondary ov-edit";
       edit.textContent = "✏️";
       edit.addEventListener("click", async () => {
-        const name = await showModal({ title: "✏️ Rename list", inputPlaceholder: "New name", prefill: l.name, okText: "Save"});
+        const name = await showModal({ title: "Rename list", inputPlaceholder: "New name", prefill: l.name, okText: "Save"});
         if (!name || !name.trim()) return;
         l.name = name.trim();
         if (GUEST) saveListsGuest();
