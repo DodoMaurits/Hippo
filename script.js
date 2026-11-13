@@ -11,6 +11,15 @@ let currentList = null;
 const GUEST_LISTS_KEY = "hippo-guest-lists";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let wordStats = {};
+try { wordStats = JSON.parse(localStorage.getItem("hippo-word-stats") || "{}"); } catch (e) {}
+function bumpStat(id, key) {
+  if (!id) return;
+  if (!wordStats[id]) wordStats[id] = { wrong: 0, right: 0 };
+  wordStats[id][key]++;
+  try { localStorage.setItem("hippo-word-stats", JSON.stringify(wordStats)); } catch (e) {}
+}
+
 (function () {
   "use strict";
 
@@ -85,7 +94,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     if (!currentList) return;
     if (GUEST) { save(); return; }
     for (const w of words) {
-      await supabase.from("words").update({ lang1: w.a, lang2: w.b }).eq("id", w.id);
+      await supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id);
     }
   }
   
@@ -95,14 +104,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       try { raw = localStorage.getItem(GUEST_WORDS_KEY); } catch (e) {}
       words = (raw ? JSON.parse(raw) : [])
         .filter((w) => !currentList || w.listId === currentList.id)
-        .map((w, i) => ({ id: w.id || "g" + i, listId: w.listId, a: w.a || "", b: w.b || "" }));
+        .map((w, i) => ({ id: w.id || "g" + i, listId: w.listId, a: w.a || "", b: w.b || "", hidden: !!w.hidden }));
       return;
     }
     let all = [];
     for (let from = 0; ; from += 1000) {
       const { data, error } = await supabase
         .from("words")
-        .select("id, lang1, lang2")
+        .select("id, lang1, lang2, hidden")
         .eq("list_id", currentList.id)
         .order("created_at", { ascending: true })
         .range(from, from + 999);
@@ -110,7 +119,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       all = all.concat(data || []);
       if (!data || data.length < 1000) break;
     }
-    words = all.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2 }));
+    words = all.map((r) => ({ id: r.id, a: r.lang1, b: r.lang2, hidden: !!r.hidden }));
   }
 
   function loadColNames() {
@@ -502,6 +511,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("panel-list").classList.remove("show-del");
     updateDelBtn();
     $("panel-list").classList.remove("show-order"); updateOrderBtn();
+    $("panel-list").classList.remove("show-hide"); updateHideBtn();
+    $("panel-list").classList.remove("show-stats"); updateStatsBtn();
     const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
     $("mcMax").value = filled;
     $("typeMax").value = filled;
@@ -575,6 +586,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     body.innerHTML = "";
     words.forEach((w, i) => {
       const tr = document.createElement("tr");
+      if (w.hidden) tr.classList.add("row-hidden");
       const td1 = document.createElement("td");
       const td2 = document.createElement("td");
       const tdDel = document.createElement("td");
@@ -638,7 +650,22 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const ord = document.createElement("span");
       ord.className = "row-order";
       ord.textContent = "☰";
+      const eye = document.createElement("span");
+      eye.className = "row-eye" + (w.hidden ? " closed" : "");
+      eye.textContent = w.hidden ? "🙈" : "👁️";
+      eye.addEventListener("click", async () => {
+        w.hidden = !w.hidden;
+        if (GUEST) save();
+        else await supabase.from("words").update({ hidden: w.hidden }).eq("id", w.id);
+        renderList();
+      });
+      const st = wordStats[w.id] || { wrong: 0, right: 0 };
+      const stEl = document.createElement("span");
+      stEl.className = "row-stats";
+      stEl.textContent = "✘ " + st.wrong + " ✔ " + st.right;
       tdDel.insertBefore(ord, del);
+      tdDel.insertBefore(eye, ord);
+      tdDel.insertBefore(stEl, eye);
       tr.draggable = $("panel-list").classList.contains("show-order");
       tr.addEventListener("dragstart", (e) => { dragIdx = i; e.dataTransfer.effectAllowed = "move"; });
       tr.addEventListener("dragover", (e) => e.preventDefault());
@@ -659,6 +686,30 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     $("emptyMsg").style.display = words.length ? "none" : "block";
   }
 
+  function updateHideBtn() {
+    const on = $("panel-list").classList.contains("show-hide");
+    const b = $("hideBtn");
+    b.textContent = on ? "👁️ Hide ✅" : "👁️ Hide";
+    b.style.color = on ? "#43d17c" : "";
+  }
+  $("hideBtn").addEventListener("click", () => {
+    $("panel-list").classList.toggle("show-hide");
+    updateHideBtn();
+    renderList();
+  });
+
+  function updateStatsBtn() {
+    const on = $("panel-list").classList.contains("show-stats");
+    const b = $("statsBtn");
+    b.textContent = on ? "📊 Stats ✅" : "📊 Stats";
+    b.style.color = on ? "#43d17c" : "";
+  }
+  $("statsBtn").addEventListener("click", () => {
+    $("panel-list").classList.toggle("show-stats");
+    updateStatsBtn();
+    renderList();
+  });
+  
   function updateOvOrderBtn() {
     const on = $("panel-overview").classList.contains("show-ov-order");
     const b = $("ovOrderBtn");
@@ -842,17 +893,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   function getPairs(direction) {
     return words
-      .filter((w) => w.a.trim() && w.b.trim())
+      .filter((w) => w.a.trim() && w.b.trim() && !w.hidden)
       .map((w) => {
         const img = !!(currentList && currentList.imgMode);
         if (direction === "both") {
           return Math.random() < 0.5
-            ? { prompt: w.a, answer: w.b, answerImg: false }
-            : { prompt: w.b, answer: w.a, answerImg: img };
+            ? { id: w.id, prompt: w.a, answer: w.b, answerImg: false }
+            : { id: w.id, prompt: w.b, answer: w.a, answerImg: img };
         }
         return direction === "2to1"
-          ? { prompt: w.b, answer: w.a, answerImg: img }
-          : { prompt: w.a, answer: w.b, answerImg: false };
+          ? { id: w.id, prompt: w.b, answer: w.a, answerImg: img }
+          : { id: w.id, prompt: w.a, answer: w.b, answerImg: false };
       });
   }
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
@@ -923,11 +974,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         if (normalize(opt) === normalize(item.answer)) {
           btn.classList.add("correct");
           if (!item.missed) mc.score++;
+          bumpStat(item.id, "right");
           $("mcFeedback").textContent = "✔ Correct!";
           $("mcFeedback").classList.add("good");
         } else {
           btn.classList.add("wrong");
           item.missed = true;
+          bumpStat(item.id, "wrong");
           const back = 2 + Math.floor(Math.random() * 3); // 2, 3 of 4
           mc.queue.splice(Math.min(mc.idx + back, mc.queue.length), 0, item);
           $("mcFeedback").textContent = "✘ Oops! It was: " + item.answer;
@@ -1025,12 +1078,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       || (quizOpts.fuzzy && acceptedAnswers(item.answer).some((a) => levenshtein(givenN, a) <= 1));
     if (ok) {
       if (!item.missed) ty.score++;
+      bumpStat(item.id, "right");
       $("typeFeedback").textContent = "✔ Correct!";
       $("typeFeedback").classList.add("good");
       $("typeFeedback").classList.remove("bad");
       typeAdvance();
     } else {
       item.missed = true;
+      bumpStat(item.id, "wrong");
       const back = 2 + Math.floor(Math.random() * 3);
       ty.queue.splice(Math.min(ty.idx + back, ty.queue.length), 0, item);
       $("typeFeedback").classList.add("bad");
@@ -1105,8 +1160,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   saveQuiz("fl");
   }, 250);
   }
-  $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); });
-  $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); });
+  $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "right");});
+  $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "wrong");});
   $("flashDone").addEventListener("click", async () => {
     const vals = Object.values(fl.marks);
     const good = vals.filter((v) => v === "good").length;
