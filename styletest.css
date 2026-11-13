@@ -281,6 +281,7 @@ h1 {
 #panel-overview.show-ov-edit .ov-edit { display: inline-block; }
 #panel-overview.show-ov-del .ov-del { display: inline-block; }
 #panel-overview.show-ov-order .row-order { display: inline-block; }
+#panel-overview.show-ov-order .row-order-btn { display: inline-block; }
 
 /* ================= Buttons & inputs ================= */
 .btn { 
