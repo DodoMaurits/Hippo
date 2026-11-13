@@ -662,9 +662,9 @@ function bumpStat(id, key) {
       const stEl = document.createElement("span");
       stEl.className = "row-stats";
       stEl.textContent = "✘ " + st.wrong + " ✔ " + st.right;
-      tdDel.insertBefore(stEl, eye);
-      tdDel.insertBefore(eye, ord);
       tdDel.insertBefore(ord, del);
+      tdDel.insertBefore(eye, ord);
+      tdDel.insertBefore(stEl, eye);
       tr.draggable = $("panel-list").classList.contains("show-order");
       tr.addEventListener("dragstart", (e) => { dragIdx = i; e.dataTransfer.effectAllowed = "move"; });
       tr.addEventListener("dragover", (e) => e.preventDefault());
