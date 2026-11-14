@@ -20,6 +20,16 @@ function bumpStat(id, key) {
   try { localStorage.setItem("hippo-word-stats", JSON.stringify(wordStats)); } catch (e) {}
 }
 
+let saveTimer = null;
+  function saveStatus(msg, ok) {
+    const el = $("saveStatus");
+    el.textContent = msg;
+    el.style.color = ok ? "#43d17c" : "";
+    el.classList.remove("hidden");
+    clearTimeout(saveTimer);
+    if (ok) saveTimer = setTimeout(() => el.classList.add("hidden"), 2000);
+  }
+
 (function () {
   "use strict";
 
@@ -625,16 +635,20 @@ function bumpStat(id, key) {
       };
       if (in1) {
         in1.addEventListener("input", async () => {
+          saveStatus("⏳ Saving…");
           words[i].a = in1.value;
-          if (GUEST) return save();
+          if (GUEST) { save(); saveStatus("✅ Saved", true); return; }
           await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
+          saveStatus("✅ Saved", true);
         });
         in1.addEventListener("focus", () => { lastRowIdx = i; });
       }
       in2.addEventListener("input", async () => {
+        saveStatus("⏳ Saving…");
         words[i].b = in2.value;
-        if (GUEST) return save();
+        if (GUEST) { save(); saveStatus("✅ Saved", true); return; }
         await supabase.from("words").update({ lang2: in2.value }).eq("id", w.id);
+        saveStatus("✅ Saved", true);
       });
       in2.addEventListener("focus", () => { lastRowIdx = i; });
       in2.addEventListener("keydown", tabGo);
