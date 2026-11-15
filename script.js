@@ -20,16 +20,6 @@ function bumpStat(id, key) {
   try { localStorage.setItem("hippo-word-stats", JSON.stringify(wordStats)); } catch (e) {}
 }
 
-let saveTimer = null;
-  function saveStatus(msg, ok) {
-    const el = $("saveStatus");
-    el.textContent = msg;
-    el.style.color = ok ? "#43d17c" : "";
-    el.classList.remove("hidden");
-    clearTimeout(saveTimer);
-    if (ok) saveTimer = setTimeout(() => el.classList.add("hidden"), 2000);
-  }
-
 (function () {
   "use strict";
 
@@ -41,6 +31,22 @@ let saveTimer = null;
   let dragOvType = null, dragOvId = null;
   let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief", punct: true };
   let activeQuiz = null;
+
+  let saveTimer = null;
+  const saveTimers = {};
+  const dirtyWords = new Set();
+  function saveStatus(msg, ok) {
+    const el = $("saveStatus");
+    el.textContent = msg;
+    el.style.color = ok ? "#43d17c" : "";
+    el.classList.remove("hidden");
+    clearTimeout(saveTimer);
+    if (ok) saveTimer = setTimeout(() => el.classList.add("hidden"), 2000);
+  }
+  function saveWordRow(w) {
+    if (GUEST) { save(); saveStatus("✅ Saved", true); return; }
+    supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id).then(() => { dirtyWords.delete(w.id); saveStatus("✅ Saved", true); });
+  }
 
   // ---------- Auth ----------
   function authMsg(text, ok) {
@@ -103,9 +109,15 @@ let saveTimer = null;
   async function flushList() {
     if (!currentList) return;
     if (GUEST) { save(); return; }
-    for (const w of words) {
-      await supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id);
+    const dirty = words.filter((w) => dirtyWords.has(w.id));
+    if (!dirty.length) { saveStatus("✅ Saved", true); return; }
+    saveStatus("⏳ Saving…");
+    for (let i = 0; i < dirty.length; i += 100) {
+      await Promise.all(dirty.slice(i, i + 100).map((w) =>
+        supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id).then(() => dirtyWords.delete(w.id))
+      ));
     }
+    saveStatus("✅ Saved", true);
   }
   
   async function loadWords() {
@@ -634,21 +646,21 @@ let saveTimer = null;
         }
       };
       if (in1) {
-        in1.addEventListener("input", async () => {
+        in1.addEventListener("input", () => {
           saveStatus("⏳ Saving…");
           words[i].a = in1.value;
-          if (GUEST) { save(); saveStatus("✅ Saved", true); return; }
-          await supabase.from("words").update({ lang1: in1.value }).eq("id", w.id);
-          saveStatus("✅ Saved", true);
+          dirtyWords.add(w.id);
+          clearTimeout(saveTimers[w.id]);
+          saveTimers[w.id] = setTimeout(() => saveWordRow(w), 600);
         });
         in1.addEventListener("focus", () => { lastRowIdx = i; });
       }
-      in2.addEventListener("input", async () => {
+      in2.addEventListener("input", () => {
         saveStatus("⏳ Saving…");
         words[i].b = in2.value;
-        if (GUEST) { save(); saveStatus("✅ Saved", true); return; }
-        await supabase.from("words").update({ lang2: in2.value }).eq("id", w.id);
-        saveStatus("✅ Saved", true);
+        dirtyWords.add(w.id);
+        clearTimeout(saveTimers[w.id]);
+        saveTimers[w.id] = setTimeout(() => saveWordRow(w), 600);
       });
       in2.addEventListener("focus", () => { lastRowIdx = i; });
       in2.addEventListener("keydown", tabGo);
@@ -781,6 +793,8 @@ let saveTimer = null;
     words.splice(i, 1);
     renderList();
   });
+
+  $("saveListBtn").addEventListener("click", () => flushList());
 
   $("clearList").addEventListener("click", async () => {
     const ok = await showModal({ title: "🧹 Clear list", text: "Remove all words from this list?", okText: "Clear" }); 
