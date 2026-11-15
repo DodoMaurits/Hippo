@@ -215,6 +215,7 @@ function bumpStat(id, key) {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
       if (tab.dataset.tab === "newlist") { newList(); return; }
+      if (tab.dataset.tab === "exam") { openExam(); return; }
       const fromList = document.querySelector(".tab.active") && 
         document.querySelector(".tab.active").dataset.tab === "list";
       if (fromList && currentList) await flushList();
@@ -1367,6 +1368,302 @@ function bumpStat(id, key) {
     else for (let k = 0; k < lists.length; k++) await supabase.from("lists").update({ created_at: new Date(1700000000000 + k * 1000).toISOString() }).eq("id", lists[k].id);
     renderOverview();
   }
+
+  // ---------- Exam ----------
+  const EXAM_LANGS = ["English","Spanish","French","German","Dutch","Italian","Portuguese","Russian","Chinese (Mandarin)","Japanese","Arabic","Hindi"];
+  const EXAM_LEVELS = ["A1","A2","B1","B2","C1","C2"];
+  const EXAM_PARTS = [
+    { id: "cases",   label: "Naamvallen / lidwoorden" },
+    { id: "verbs",   label: "Werkwoordvervoegingen" },
+    { id: "preps",   label: "Voorzetsels" },
+    { id: "grammar", label: "Grammatica" }
+  ];
+  const EXAM_QUESTION_COUNT = 30; // vast aantal vragen, ± 30 minuten
+  // Bank: [onderdeel, niveaus, vraag, goed antwoord, 3 foute opties]
+  const EXAM_BANK = {
+    "English": [
+      ["cases","A1,A2","I saw ___ elephant yesterday.","an","a","the","no"],
+      ["cases","A1,A2","___ sun is shining today.","The","A","An","This"],
+      ["cases","B1,B2","He is ___ honest man.","an","a","the","some"],
+      ["verbs","A1,A2","I ___ (to be) happy.","am","is","are","be"],
+      ["verbs","A1,A2","She ___ (to go) to school every day.","goes","go","going","went"],
+      ["verbs","B1,B2","They ___ (to have) a new car.","have","has","had","having"],
+      ["preps","A1,A2","She is interested ___ music.","in","on","at","to"],
+      ["preps","A2,B1","The book is ___ the table.","on","in","at","under"],
+      ["preps","B1,B2","He lives ___ London.","in","at","on","by"],
+      ["grammar","A1,A2","One child, two ___","children","childs","childes","child"],
+      ["grammar","A2,B1","This is ___ (good) than that.","better","gooder","best","more good"],
+      ["grammar","B1,B2","If I ___ (have) time, I will call you.","had","have","has","having"]
+    ],
+    "Dutch": [
+      ["cases","A1,A2","___ appel (de/het)","het","de","een","die"],
+      ["cases","A1,A2","___ tafel (de/het)","de","het","een","die"],
+      ["cases","A2,B1","___ huis (de/het)","het","de","een","dat"],
+      ["verbs","A1,A2","Ik ___ (zijn) moe.","ben","bent","is","zijn"],
+      ["verbs","A1,A2","Hij ___ (hebben) een fiets.","heeft","heb","hebben","hebt"],
+      ["verbs","A2,B1","Wij ___ (gaan) naar school.","gaan","gaat","ga","gingen"],
+      ["preps","A1,A2","Ik woon ___ Amsterdam.","in","op","aan","te"],
+      ["preps","A1,A2","Het boek ligt ___ tafel.","op","in","onder","aan"],
+      ["preps","A2,B1","Ik ben geïnteresseerd ___ muziek.","in","op","aan","voor"],
+      ["grammar","A1,A2","Een kind, twee ___","kinderen","kinds","kind","kinder"],
+      ["grammar","A2,B1","Dat is ___ (goed) dan dit.","beter","goeder","best","goed"],
+      ["grammar","B1,B2","Zij ___ (werken) elke dag.","werkt","werk","werken","werkte"]
+    ],
+    "German": [
+      ["cases","A1,A2","___ Apfel (der/die/das)","der","die","das","den"],
+      ["cases","A1,A2","___ Mädchen (der/die/das)","das","der","die","den"],
+      ["cases","A2,B1","Ich gebe ___ Mann das Buch. (der/die/das/den)","dem","der","das","den"],
+      ["cases","B1,B2","___ ist hier? (wer/wen/wem)","Wer","Wen","Wem","Was"],
+      ["verbs","A1,A2","ich ___ (sein)","bin","bist","ist","sind"],
+      ["verbs","A1,A2","du ___ (haben)","hast","habe","hat","habt"],
+      ["verbs","A2,B1","er ___ (gehen) nach Hause.","geht","gehst","gehe","gingen"],
+      ["preps","A1,A2","Ich fahre ___ dem Bus.","mit","in","auf","zu"],
+      ["preps","A1,A2","Das Geschenk ist ___ dich.","für","mit","von","zu"],
+      ["preps","A2,B1","Er wohnt ___ Berlin.","in","auf","zu","nach"],
+      ["grammar","A1,A2","ein Kind, zwei ___","Kinder","Kinds","Kindern","Kind"],
+      ["grammar","A2,B1","Das ist ___ (gut).","besser","guter","gut","am besten"],
+      ["grammar","B1,B2","___ du das gesehen? (haben)","Hast","Haben","Hat","Hattest"]
+    ],
+    "French": [
+      ["cases","A1,A2","___ table (la/le)","la","le","les","un"],
+      ["cases","A1,A2","___ livre (le/la)","le","la","les","un"],
+      ["cases","A2,B1","___ école (la/l')","la","l'","le","les"],
+      ["verbs","A1,A2","je ___ (être)","suis","es","est","sommes"],
+      ["verbs","A1,A2","tu ___ (avoir)","as","a","avons","avez"],
+      ["verbs","A2,B1","nous ___ (aller)","allons","allez","va","vais"],
+      ["preps","A1,A2","J'habite ___ Paris.","à","en","dans","sur"],
+      ["preps","A1,A2","Le livre est ___ la table.","sur","dans","sous","à"],
+      ["preps","A2,B1","Je suis intéressé ___ la musique.","à","de","en","sur"],
+      ["grammar","A1,A2","un enfant, deux ___","enfants","enfant","enfantss","enfans"],
+      ["grammar","A2,B1","C'est ___ (bon).","mieux","meilleur","bon","plus bon"],
+      ["grammar","B1,B2","Elle ___ (finir) ses devoirs.","finit","finis","finissons","finissez"]
+    ],
+    "Spanish": [
+      ["cases","A1,A2","___ mesa (la/el)","la","el","las","los"],
+      ["cases","A1,A2","___ libro (el/la)","el","la","los","las"],
+      ["cases","A2,B1","___ agua (el/la)","el","la","las","los"],
+      ["verbs","A1,A2","yo ___ (ser)","soy","eres","es","somos"],
+      ["verbs","A1,A2","tú ___ (tener)","tienes","tengo","tiene","tenéis"],
+      ["verbs","A2,B1","nosotros ___ (ir)","vamos","voy","vas","va"],
+      ["preps","A1,A2","Vivo ___ Madrid.","en","a","de","por"],
+      ["preps","A1,A2","El libro está ___ la mesa.","en","sobre","a","de"],
+      ["preps","A2,B1","Estoy interesado ___ la música.","en","a","de","por"],
+      ["grammar","A1,A2","un niño, dos ___","niños","niño","niñoss","niñes"],
+      ["grammar","A2,B1","Esto es ___ (bueno).","mejor","bueno","más bueno","buena"],
+      ["grammar","B1,B2","Ella ___ (comer) ahora.","come","como","comes","comemos"]
+    ]
+  };
+  let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", level: "B1", parts: [], includeWords: true };
+  let examOptsFilled = false;
+
+  function examStep(name) {
+    exam.step = name;
+    ["examPick", "examOpts", "examRun"].forEach((id) =>
+      $(id).classList.toggle("hidden", id !== "exam" + name[0].toUpperCase() + name.slice(1)));
+  }
+  function partLabel(id) {
+    if (id === "words") return "Woorden uit lijsten";
+    const p = EXAM_PARTS.find((x) => x.id === id);
+    return p ? p.label : id;
+  }
+  function openExam() {
+    activateTab("exam");
+    examStep("pick");
+    renderExamPick();
+  }
+  function renderExamPick() {
+    const box = $("examPickList");
+    box.innerHTML = "";
+    const mk = (attrs, label, onChange) => {
+      const lab = document.createElement("label");
+      lab.className = "opt-pill";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      Object.entries(attrs).forEach(([k, v]) => { cb.dataset[k] = v; });
+      cb.addEventListener("change", onChange);
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(" " + label));
+      box.appendChild(lab);
+      return cb;
+    };
+    folders.forEach((f) => {
+      mk({ folder: f.id }, "📁 " + f.name + "  (alle lijsten in deze map)", (e) => {
+        const ids = lists.filter((l) => l.folder === f.id).map((l) => l.id);
+        box.querySelectorAll("input[data-list]").forEach((cb) => { if (ids.includes(cb.dataset.list)) cb.checked = e.target.checked; });
+      });
+    });
+    lists.forEach((l) => {
+      const fname = l.folder ? ((folders.find((f) => f.id === l.folder) || {}).name || "") : "";
+      mk({ list: l.id }, "📋 " + l.name + (fname ? "  —  in map: " + fname : ""), () => {});
+    });
+    if (!lists.length) box.innerHTML = '<p class="empty">Nog geen lijsten — maak er eerst een aan via ➕ New list.</p>';
+  }
+  function fillExamOpts() {
+    if (examOptsFilled) return;
+    examOptsFilled = true;
+    $("examLang").innerHTML = '<option value="">— kies een taal —</option>' + EXAM_LANGS.map((l) => "<option>" + l + "</option>").join("");
+    $("examLevel").innerHTML = EXAM_LEVELS.map((l) => '<option' + (l === "B1" ? " selected" : "") + ">" + l + "</option>").join("");
+    const pbox = $("examParts");
+    EXAM_PARTS.forEach((p) => {
+      const lab = document.createElement("label");
+      lab.className = "opt-pill";
+      lab.innerHTML = '<input type="checkbox" value="' + p.id + '" checked> ' + p.label;
+      pbox.appendChild(lab);
+    });
+  }
+  async function loadExamWords(listIds) {
+    if (GUEST) {
+      let all = [];
+      try { all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]"); } catch (e) {}
+      return all.filter((w) => listIds.includes(w.listId) && w.a && w.b && w.a.trim() && w.b.trim() && !w.hidden)
+        .map((w) => ({ id: w.id, a: w.a, b: w.b }));
+    }
+    const { data, error } = await supabase.from("words")
+      .select("id, lang1, lang2, hidden, list_id").in("list_id", listIds);
+    if (error) { console.error(error); return []; }
+    return (data || []).filter((w) => w.lang1 && w.lang2 && w.lang1.trim() && w.lang2.trim() && !w.hidden)
+      .map((w) => ({ id: w.id, a: w.lang1, b: w.lang2 }));
+  }
+  function buildExamQueue() {
+    const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"];
+    const compQs = [];
+    exam.parts.forEach((pid) => {
+      let entries = bank.filter((e) => e[0] === pid);
+      const lv = entries.filter((e) => e[1].split(",").map((s) => s.trim()).includes(exam.level));
+      if (lv.length) entries = lv;
+      entries.forEach((e) => compQs.push({ part: pid, prompt: e[2], answer: e[3], options: shuffle([e[3], e[4], e[5], e[6]]) }));
+    });
+    const wordQs = [];
+    if (exam.includeWords && exam.pool.length) {
+      exam.pool.forEach((w) => {
+        const toB = Math.random() < 0.5;
+        const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
+        const wrong = shuffle(exam.pool.filter((x) => x !== w && (toB ? x.b : x.a) !== answer))
+          .slice(0, 3).map((x) => (toB ? x.b : x.a));
+        const options = shuffle([answer, ...wrong]);
+        while (options.length < 4) options.push("—");
+        wordQs.push({ part: "words", prompt, answer, options: options.slice(0, 4), id: w.id });
+      });
+    }
+    const total = EXAM_QUESTION_COUNT;
+    const c = shuffle(compQs), wq = shuffle(wordQs);
+    const nW = wq.length ? Math.min(wq.length, Math.round(total / 2)) : 0;
+    const nC = c.length ? Math.min(c.length, total - nW) : 0;
+    const queue = [];
+    for (let i = 0; i < nW; i++) queue.push(wq[i]);
+    for (let i = 0; i < nC; i++) queue.push(c[i]);
+    let guard = 0;
+    while (queue.length < total && (c.length || wq.length) && guard++ < 500) {
+      const src = (wq.length && (queue.length % 2 === 0 || !c.length)) ? wq : c;
+      queue.push(src[Math.floor(Math.random() * src.length)]);
+    }
+    return shuffle(queue).slice(0, total);
+  }
+  function startExamTimer() {
+    let secs = 30 * 60;
+    clearInterval(exam.timer);
+    $("examTimer").textContent = "30:00";
+    exam.timer = setInterval(() => {
+      secs--;
+      const m = Math.floor(Math.max(0, secs) / 60), s = Math.max(0, secs) % 60;
+      $("examTimer").textContent = m + ":" + String(s).padStart(2, "0");
+      if (secs <= 0) examFinish();
+    }, 1000);
+  }
+  function examNext() {
+    $("examFeedback").textContent = "";
+    $("examFeedback").className = "feedback";
+    if (exam.idx >= exam.queue.length) return examFinish();
+    exam.locked = false;
+    const item = exam.queue[exam.idx];
+    $("examPart").textContent = "Onderdeel: " + partLabel(item.part) + "  •  " + exam.lang + " " + exam.level;
+    $("examPrompt").style.fontSize = "";
+    $("examPrompt").textContent = item.prompt;
+    $("examHint").textContent = "Kies het juiste antwoord";
+    const box = $("examChoices");
+    box.innerHTML = "";
+    item.options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.className = "choice";
+      btn.textContent = opt;
+      btn.addEventListener("click", () => {
+        if (exam.locked) return;
+        exam.locked = true;
+        if (normalize(opt) === normalize(item.answer)) {
+          btn.classList.add("correct");
+          exam.score++;
+          if (item.id) bumpStat(item.id, "right");
+          $("examFeedback").textContent = "✔ Correct!";
+          $("examFeedback").classList.add("good");
+        } else {
+          btn.classList.add("wrong");
+          if (item.id) bumpStat(item.id, "wrong");
+          $("examFeedback").textContent = "✘ Het was: " + item.answer;
+          $("examFeedback").classList.add("bad");
+          box.querySelectorAll(".choice").forEach((b) => {
+            if (normalize(b.textContent) === normalize(item.answer)) b.classList.add("correct");
+          });
+        }
+        updateScore($("examProgress"), $("examScore"), $("examCount"), exam.queue.length, exam.idx + 1, exam.score);
+        exam.idx++;
+        setTimeout(examNext, 1200);
+      });
+      box.appendChild(btn);
+    });
+    updateScore($("examProgress"), $("examScore"), $("examCount"), exam.queue.length, exam.idx, exam.score);
+  }
+  function examFinish() {
+    clearInterval(exam.timer);
+    exam.timer = null;
+    const total = exam.queue.length, score = exam.score;
+    const grade = total ? Math.max(1, Math.min(10, Math.round((1 + 9 * (score / total)) * 10) / 10)) : 0;
+    $("examPart").textContent = "📝 Examen afgelopen — " + exam.lang + " " + exam.level;
+    $("examPrompt").style.fontSize = "4.5rem";
+    $("examPrompt").textContent = grade.toFixed(1);
+    $("examHint").textContent = "Score " + score + "/" + total + " — " + gradeFeedback(grade);
+    $("examChoices").innerHTML = "";
+    $("examFeedback").textContent = "";
+    $("examDoneBar").classList.remove("hidden");
+    updateScore($("examProgress"), $("examScore"), $("examCount"), total, total, score);
+  }
+  $("examCancelBtn").addEventListener("click", () => activateTab("overview"));
+  $("examToOpts").addEventListener("click", () => {
+    const ids = [...$("examPickList").querySelectorAll("input[data-list]:checked")].map((cb) => cb.dataset.list);
+    if (!ids.length) { showModal({ title: "📝 Exam", text: "Vink eerst minstens één lijst of map aan.", okText: "OK" }); return; }
+    exam.listIds = ids;
+    fillExamOpts();
+    examStep("opts");
+  });
+  $("examOptsBack").addEventListener("click", () => examStep("pick"));
+  $("examStart").addEventListener("click", async () => {
+    const lang = $("examLang").value;
+    if (!lang) { showModal({ title: "📝 Exam", text: "Kies eerst een taal.", okText: "OK" }); return; }
+    exam.lang = lang;
+    exam.level = $("examLevel").value;
+    exam.parts = [...$("examParts").querySelectorAll("input:checked")].map((cb) => cb.value);
+    exam.includeWords = $("examWords").checked;
+    if (!exam.parts.length && !exam.includeWords) {
+      showModal({ title: "📝 Exam", text: "Kies minstens één toetsonderdeel of vink 'Woorden uit lijsten' aan.", okText: "OK" });
+      return;
+    }
+    exam.pool = await loadExamWords(exam.listIds);
+    if (exam.includeWords && !exam.pool.length) {
+      showModal({ title: "📝 Exam", text: "De geselecteerde lijsten bevatten geen woorden.", okText: "OK" });
+      return;
+    }
+    exam.queue = buildExamQueue();
+    if (!exam.queue.length) {
+      showModal({ title: "📝 Exam", text: "Geen vragen beschikbaar voor deze combinatie.", okText: "OK" });
+      return;
+    }
+    exam.idx = 0; exam.score = 0; exam.locked = false;
+    $("examDoneBar").classList.add("hidden");
+    examStep("run");
+    startExamTimer();
+    examNext();
+  });
+  $("examQuit").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
+  $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
   
   // ---------- Init ----------
   async function startGuest() {
