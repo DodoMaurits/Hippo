@@ -1595,7 +1595,7 @@ function bumpStat(id, key) {
       const inp = w.querySelector("input.exam-answer");
       return q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked;
     }).length;
-    $("examCount").textContent = "Beantwoord: " + n + "/" + exam.queue.length;
+    $("examCount").textContent = " Answered: " + n + "/" + exam.queue.length;
     $("examProgress").style.width = (exam.queue.length ? (n / exam.queue.length * 100) : 0) + "%";
   }
   function renderExamQuestions() {
