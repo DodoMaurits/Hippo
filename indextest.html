@@ -139,22 +139,23 @@
 
       <div id="examRun" class="hidden">
         <div class="quiz-controls">
-          <button class="btn secondary" id="examQuit">← Quit</button>
+          <button class="btn secondary" id="examQuit">← Stoppen</button>
+          <button class="btn" id="examSubmit">✔ Inleveren</button>
         </div>
-        <div class="score-bar"><span id="examScore">Score: 0/0</span><span id="examCount">0/30</span><span id="examTimer">30:00</span></div>
+        <div class="score-bar"><span id="examScore">Score: 0/0</span><span id="examCount">Beantwoord: 0/30</span><span id="examTimer">30:00</span></div>
         <div class="progress"><div id="examProgress"></div></div>
-        <div class="quiz-box">
-          <p class="hint" id="examPart"></p>
-          <div class="prompt" id="examPrompt"></div>
-          <div class="hint" id="examHint"></div>
-          <div class="choices" id="examChoices"></div>
-          <div class="feedback" id="examFeedback"></div>
+        <div id="examQuestions"></div>
+        <div class="quiz-controls" style="margin-top:12px">
+          <button class="btn" id="examSubmit2">✔ Inleveren</button>
+        </div>
+        <div class="quiz-box hidden" id="examResult" style="text-align:center">
+          <div class="prompt" id="examGrade"></div>
+          <div class="hint" id="examResultText"></div>
         </div>
         <div class="quiz-controls hidden" id="examDoneBar" style="margin-top:12px">
-          <button class="btn" id="examToOverview">← Back to list overview</button>
+          <button class="btn" id="examToOverview">← Terug naar lijstenoverzicht</button>
         </div>
       </div>
-    </div>
     
     <!-- FLASHCARDS -->
     <div class="panel" id="panel-flash">
