@@ -1519,7 +1519,7 @@ function bumpStat(id, key) {
   function fillExamOpts() {
     if (examOptsFilled) return;
     examOptsFilled = true;
-    $("examLang").innerHTML = '<option value="">— kies een taal —</option>' + EXAM_LANGS.map((l) => "<option>" + l + "</option>").join("");
+    $("examLang").innerHTML = '<option value="">— Choose a language —</option>' + EXAM_LANGS.slice().sort((a, b) => a.localeCompare(b, "en")).map((l) => "<option>" + l + "</option>").join("");
     $("examLevel").innerHTML = EXAM_LEVELS.map((l) => '<option' + (l === "B1" ? " selected" : "") + ">" + l + "</option>").join("");
     const pbox = $("examParts");
     EXAM_PARTS.forEach((p) => {
