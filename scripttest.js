@@ -1373,10 +1373,10 @@ function bumpStat(id, key) {
   const EXAM_LANGS = ["English","Spanish","French","German","Dutch","Italian","Portuguese","Russian","Chinese (Mandarin)","Japanese","Arabic","Hindi"];
   const EXAM_LEVELS = ["A1","A2","B1","B2","C1","C2"];
   const EXAM_PARTS = [
-    { id: "cases",   label: "Naamvallen / lidwoorden" },
-    { id: "verbs",   label: "Werkwoordvervoegingen" },
-    { id: "preps",   label: "Voorzetsels" },
-    { id: "grammar", label: "Grammatica" }
+    { id: "cases",   label: "Cases" },
+    { id: "verbs",   label: "Verb conjugations" },
+    { id: "preps",   label: "Prepositions" },
+    { id: "grammar", label: "Grammar" }
   ];
   const EXAM_QUESTION_COUNT = 30; // vast aantal vragen, ± 30 minuten
   // Bank: [onderdeel, niveaus, vraag, goed antwoord, 3 foute opties]
@@ -1480,7 +1480,7 @@ function bumpStat(id, key) {
       $(id).classList.toggle("hidden", id !== "exam" + name[0].toUpperCase() + name.slice(1)));
   }
   function partLabel(id) {
-    if (id === "words") return "Woorden uit lijsten";
+    if (id === "words") return "Vocabulary from lists";
     const p = EXAM_PARTS.find((x) => x.id === id);
     return p ? p.label : id;
   }
@@ -1505,7 +1505,7 @@ function bumpStat(id, key) {
       return cb;
     };
     folders.forEach((f) => {
-      mk({ folder: f.id }, "📁 " + f.name + "  (alle lijsten in deze map)", (e) => {
+      mk({ folder: f.id }, "📁 " + f.name + "  (all lists in this folder)", (e) => {
         const ids = lists.filter((l) => l.folder === f.id).map((l) => l.id);
         box.querySelectorAll("input[data-list]").forEach((cb) => { if (ids.includes(cb.dataset.list)) cb.checked = e.target.checked; });
       });
@@ -1514,7 +1514,7 @@ function bumpStat(id, key) {
       const fname = l.folder ? ((folders.find((f) => f.id === l.folder) || {}).name || "") : "";
       mk({ list: l.id }, "📋 " + l.name + (fname ? "  —  in map: " + fname : ""), () => {});
     });
-    if (!lists.length) box.innerHTML = '<p class="empty">Nog geen lijsten — maak er eerst een aan via ➕ New list.</p>';
+    if (!lists.length) box.innerHTML = '<p class="empty">No lists yet — create one first with ➕ New list.</p>';
   }
   function fillExamOpts() {
     if (examOptsFilled) return;
@@ -1616,7 +1616,7 @@ function bumpStat(id, key) {
         const inp = document.createElement("input");
         inp.type = "text";
         inp.className = "answer-input exam-answer";
-        inp.placeholder = "Typ hier je antwoord…";
+        inp.placeholder = "Type your answer…";
         inp.addEventListener("input", examUpdCount);
         wrap.appendChild(inp);
       } else {
@@ -1657,7 +1657,7 @@ function bumpStat(id, key) {
       if (item.id) bumpStat(item.id, ok ? "right" : "wrong");
       const fb = document.createElement("div");
       fb.className = "feedback " + (ok ? "good" : "bad");
-      fb.textContent = ok ? "✔ Correct!" : "✘ Juiste antwoord: " + item.answer;
+      fb.textContent = ok ? "✔ Correct!" : "✘ Correct answer: " + item.answer;
       wrap.appendChild(fb);
       wrap.querySelectorAll(".choice").forEach((b) => {
         b.disabled = true;
@@ -1685,7 +1685,7 @@ function bumpStat(id, key) {
   $("examCancelBtn").addEventListener("click", () => activateTab("overview"));
   $("examToOpts").addEventListener("click", () => {
     const ids = [...$("examPickList").querySelectorAll("input[data-list]:checked")].map((cb) => cb.dataset.list);
-    if (!ids.length) { showModal({ title: "📝 Exam", text: "Vink eerst minstens één lijst of map aan.", okText: "OK" }); return; }
+    if (!ids.length) { showModal({ title: "📝 Exam", text: "Check at least one list first.", okText: "OK" }); return; }
     exam.listIds = ids;
     fillExamOpts();
     examStep("opts");
@@ -1693,23 +1693,23 @@ function bumpStat(id, key) {
   $("examOptsBack").addEventListener("click", () => examStep("pick"));
   $("examStart").addEventListener("click", async () => {
     const lang = $("examLang").value;
-    if (!lang) { showModal({ title: "📝 Exam", text: "Kies eerst een taal.", okText: "OK" }); return; }
+    if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
     exam.lang = lang;
     exam.level = $("examLevel").value;
     exam.parts = [...$("examParts").querySelectorAll("input:checked")].map((cb) => cb.value);
     exam.includeWords = $("examWords").checked;
     if (!exam.parts.length && !exam.includeWords) {
-      showModal({ title: "📝 Exam", text: "Kies minstens één toetsonderdeel of vink 'Woorden uit lijsten' aan.", okText: "OK" });
+      showModal({ title: "📝 Exam", text: "Choose at least one exam part or check 'Include words from lists'.", okText: "OK" });
       return;
     }
     exam.pool = await loadExamWords(exam.listIds);
     if (exam.includeWords && !exam.pool.length) {
-      showModal({ title: "📝 Exam", text: "De geselecteerde lijsten bevatten geen woorden.", okText: "OK" });
+      showModal({ title: "📝 Exam", text: "The selected lists contain no words.", okText: "OK" });
       return;
     }
     exam.queue = buildExamQueue();
     if (!exam.queue.length) {
-      showModal({ title: "📝 Exam", text: "Geen vragen beschikbaar voor deze combinatie.", okText: "OK" });
+      showModal({ title: "📝 Exam", text: "No questions available for this combination.", okText: "OK" });
       return;
     }
     exam.idx = 0; exam.score = 0; exam.locked = false;
