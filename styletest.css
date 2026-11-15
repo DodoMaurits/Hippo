@@ -685,6 +685,31 @@ th input { width: 100%; }
   font: inherit; 
 }
 
+/* ================= Exam ================= */
+.exam-pick-list { 
+  text-align: left;
+  max-height: 46vh; 
+  overflow: auto; 
+  margin: 10px 0; 
+}
+
+.exam-pick-list .opt-pill { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  margin-bottom: 6px; 
+  width: fit-content; 
+}
+
+#examTimer { 
+  margin-left: auto; 
+  font-variant-numeric: tabular-nums;
+}
+
+#panel-exam .prompt { 
+  font-size: 1.35rem; 
+}
+
 /* ================= Flashcards ================= */
 .flashcard { 
   max-width: 480px; 
