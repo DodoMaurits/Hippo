@@ -34,6 +34,7 @@ function bumpStat(id, key) {
 
   let saveTimer = null;
   const saveTimers = {};
+  const dirtyWords = new Set();
   function saveStatus(msg, ok) {
     const el = $("saveStatus");
     el.textContent = msg;
@@ -44,7 +45,7 @@ function bumpStat(id, key) {
   }
   function saveWordRow(w) {
     if (GUEST) { save(); saveStatus("✅ Saved", true); return; }
-    supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id).then(() => saveStatus("✅ Saved", true));
+    supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id).then(() => { dirtyWords.delete(w.id); saveStatus("✅ Saved", true); });
   }
 
   // ---------- Auth ----------
@@ -108,10 +109,13 @@ function bumpStat(id, key) {
   async function flushList() {
     if (!currentList) return;
     if (GUEST) { save(); return; }
+    const dirty = words.filter((w) => dirtyWords.has(w.id));
+    if (!dirty.length) { saveStatus("✅ Saved", true); return; }
     saveStatus("⏳ Saving…");
-    const rows = words.map((w) => ({ id: w.id, lang1: w.a, lang2: w.b, hidden: !!w.hidden, list_id: currentList.id }));
-    for (let i = 0; i < rows.length; i += 500) {
-      await supabase.from("words").upsert(rows.slice(i, i + 500));
+    for (let i = 0; i < dirty.length; i += 100) {
+      await Promise.all(dirty.slice(i, i + 100).map((w) =>
+        supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id).then(() => dirtyWords.delete(w.id))
+      ));
     }
     saveStatus("✅ Saved", true);
   }
@@ -645,6 +649,7 @@ function bumpStat(id, key) {
         in1.addEventListener("input", () => {
           saveStatus("⏳ Saving…");
           words[i].a = in1.value;
+          dirtyWords.add(w.id);
           clearTimeout(saveTimers[w.id]);
           saveTimers[w.id] = setTimeout(() => saveWordRow(w), 600);
         });
@@ -653,6 +658,7 @@ function bumpStat(id, key) {
       in2.addEventListener("input", () => {
         saveStatus("⏳ Saving…");
         words[i].b = in2.value;
+        dirtyWords.add(w.id);
         clearTimeout(saveTimers[w.id]);
         saveTimers[w.id] = setTimeout(() => saveWordRow(w), 600);
       });
