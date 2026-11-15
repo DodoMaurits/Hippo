@@ -267,6 +267,13 @@ function bumpStat(id, key) {
     if (error) { console.error(error); return; }
     lists = data || [];
     folders = [...new Set(lists.map((l) => l.folder).filter(Boolean))].map((name) => ({ id: name, name }));
+    try {
+      const order = JSON.parse(localStorage.getItem("hippo-folder-order") || "[]");
+      folders.sort((a, b) => {
+        const ia = order.indexOf(a.id), ib = order.indexOf(b.id);
+        return (ia === -1 ? folders.length : ia) - (ib === -1 ? folders.length : ib);
+      });
+    } catch (e) {}
   }
 
   function saveFoldersGuest() { localStorage.setItem("hippo-guest-folders", JSON.stringify(folders)); }
