@@ -1585,65 +1585,103 @@ function bumpStat(id, key) {
       secs--;
       const m = Math.floor(Math.max(0, secs) / 60), s = Math.max(0, secs) % 60;
       $("examTimer").textContent = m + ":" + String(s).padStart(2, "0");
-      if (secs <= 0) examFinish();
+      if (secs <= 0) examSubmit();
     }, 1000);
   }
-  function examNext() {
-    $("examFeedback").textContent = "";
-    $("examFeedback").className = "feedback";
-    if (exam.idx >= exam.queue.length) return examFinish();
-    exam.locked = false;
-    const item = exam.queue[exam.idx];
-    $("examPart").textContent = "Onderdeel: " + partLabel(item.part) + "  •  " + exam.lang + " " + exam.level;
-    $("examPrompt").style.fontSize = "";
-    $("examPrompt").textContent = item.prompt;
-    $("examHint").textContent = "Kies het juiste antwoord";
-    const box = $("examChoices");
-    box.innerHTML = "";
-    item.options.forEach((opt) => {
-      const btn = document.createElement("button");
-      btn.className = "choice";
-      btn.textContent = opt;
-      btn.addEventListener("click", () => {
-        if (exam.locked) return;
-        exam.locked = true;
-        if (normalize(opt) === normalize(item.answer)) {
-          btn.classList.add("correct");
-          exam.score++;
-          if (item.id) bumpStat(item.id, "right");
-          $("examFeedback").textContent = "✔ Correct!";
-          $("examFeedback").classList.add("good");
-        } else {
-          btn.classList.add("wrong");
-          if (item.id) bumpStat(item.id, "wrong");
-          $("examFeedback").textContent = "✘ Het was: " + item.answer;
-          $("examFeedback").classList.add("bad");
-          box.querySelectorAll(".choice").forEach((b) => {
-            if (normalize(b.textContent) === normalize(item.answer)) b.classList.add("correct");
-          });
-        }
-        updateScore($("examProgress"), $("examScore"), $("examCount"), exam.queue.length, exam.idx + 1, exam.score);
-        exam.idx++;
-        setTimeout(examNext, 1200);
-      });
-      box.appendChild(btn);
-    });
-    updateScore($("examProgress"), $("examScore"), $("examCount"), exam.queue.length, exam.idx, exam.score);
+  function examUpdCount() {
+    const n = exam.queue.filter((q, j) => {
+      const w = $("examQuestions").children[j];
+      if (!w) return false;
+      const inp = w.querySelector("input.exam-answer");
+      return q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked;
+    }).length;
+    $("examCount").textContent = "Beantwoord: " + n + "/" + exam.queue.length;
+    $("examProgress").style.width = (exam.queue.length ? (n / exam.queue.length * 100) : 0) + "%";
   }
-  function examFinish() {
+  function renderExamQuestions() {
+    const box = $("examQuestions");
+    box.innerHTML = "";
+    exam.queue.forEach((item, i) => {
+      const wrap = document.createElement("div");
+      wrap.className = "exam-q";
+      const head = document.createElement("p");
+      head.className = "hint";
+      head.textContent = (i + 1) + ". [" + partLabel(item.part) + "]  •  " + exam.lang + " " + exam.level;
+      const pr = document.createElement("div");
+      pr.className = "prompt exam-prompt";
+      pr.textContent = item.prompt;
+      wrap.appendChild(head);
+      wrap.appendChild(pr);
+      if (item.part === "words") {
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.className = "answer-input exam-answer";
+        inp.placeholder = "Typ hier je antwoord…";
+        inp.addEventListener("input", examUpdCount);
+        wrap.appendChild(inp);
+      } else {
+        const ch = document.createElement("div");
+        ch.className = "choices";
+        item.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.className = "choice";
+          btn.textContent = opt;
+          btn.addEventListener("click", () => {
+            if (exam.done) return;
+            ch.querySelectorAll(".choice").forEach((b) => b.classList.remove("selected"));
+            btn.classList.add("selected");
+            item.picked = opt;
+            examUpdCount();
+          });
+          ch.appendChild(btn);
+        });
+        wrap.appendChild(ch);
+      }
+      box.appendChild(wrap);
+    });
+    examUpdCount();
+  }
+  function examSubmit() {
+    if (exam.done) return;
+    exam.done = true;
     clearInterval(exam.timer);
     exam.timer = null;
-    const total = exam.queue.length, score = exam.score;
+    let score = 0;
+    exam.queue.forEach((item, i) => {
+      const wrap = $("examQuestions").children[i];
+      let given = item.picked || "";
+      const inp = wrap.querySelector("input.exam-answer");
+      if (inp) { given = inp.value.trim(); inp.disabled = true; }
+      const ok = !!given && normalize(given) === normalize(item.answer);
+      if (ok) score++;
+      if (item.id) bumpStat(item.id, ok ? "right" : "wrong");
+      const fb = document.createElement("div");
+      fb.className = "feedback " + (ok ? "good" : "bad");
+      fb.textContent = ok ? "✔ Correct!" : "✘ Juiste antwoord: " + item.answer;
+      wrap.appendChild(fb);
+      wrap.querySelectorAll(".choice").forEach((b) => {
+        b.disabled = true;
+        if (normalize(b.textContent) === normalize(item.answer)) b.classList.add("correct");
+        else if (b.classList.contains("selected")) b.classList.add("wrong");
+      });
+      if (inp) inp.classList.add(ok ? "correct" : "wrong");
+    });
+    exam.score = score;
+    const total = exam.queue.length;
     const grade = total ? Math.max(1, Math.min(10, Math.round((1 + 9 * (score / total)) * 10) / 10)) : 0;
-    $("examPart").textContent = "📝 Examen afgelopen — " + exam.lang + " " + exam.level;
-    $("examPrompt").style.fontSize = "4.5rem";
-    $("examPrompt").textContent = grade.toFixed(1);
-    $("examHint").textContent = "Score " + score + "/" + total + " — " + gradeFeedback(grade);
-    $("examChoices").innerHTML = "";
-    $("examFeedback").textContent = "";
+    $("examResult").classList.remove("hidden");
+    $("examGrade").style.fontSize = "4.5rem";
+    $("examGrade").textContent = grade.toFixed(1);
+    $("examResultText").textContent = "Score " + score + "/" + total + " — " + gradeFeedback(grade);
     $("examDoneBar").classList.remove("hidden");
-    updateScore($("examProgress"), $("examScore"), $("examCount"), total, total, score);
+    $("examSubmit").disabled = true;
+    $("examSubmit2").disabled = true;
+    $("examScore").textContent = "Score: " + score + "/" + total;
+    $("examCount").textContent = total + "/" + total;
+    $("examProgress").style.width = "100%";
   }
+  $("examSubmit").addEventListener("click", examSubmit);
+  $("examSubmit2").addEventListener("click", examSubmit);
   $("examCancelBtn").addEventListener("click", () => activateTab("overview"));
   $("examToOpts").addEventListener("click", () => {
     const ids = [...$("examPickList").querySelectorAll("input[data-list]:checked")].map((cb) => cb.dataset.list);
@@ -1676,9 +1714,14 @@ function bumpStat(id, key) {
     }
     exam.idx = 0; exam.score = 0; exam.locked = false;
     $("examDoneBar").classList.add("hidden");
+    exam.done = false;
     examStep("run");
+    $("examResult").classList.add("hidden");
+    $("examDoneBar").classList.add("hidden");
+    $("examSubmit").disabled = false;
+    $("examSubmit2").disabled = false;
     startExamTimer();
-    examNext();
+    renderExamQuestions();
   });
   $("examQuit").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
   $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
