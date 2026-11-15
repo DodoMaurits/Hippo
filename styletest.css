@@ -710,6 +710,44 @@ th input { width: 100%; }
   font-size: 1.35rem; 
 }
 
+.exam-q { 
+  text-align: left; 
+  background: rgba(255,255,255,.05); 
+  border-radius: 12px; 
+  padding: 12px 14px; 
+  margin-bottom: 12px; 
+}
+
+.exam-q .exam-prompt { 
+  font-size: 1.15rem; 
+  margin: 4px 0 10px; 
+}
+
+.exam-q .choices { 
+  margin: 4px 0 2px; 
+}
+
+.choice.selected { 
+  outline: 2px solid #4aa3ff; 
+  background: rgba(74,163,255,.18); 
+}
+
+.exam-answer { 
+  width: 100%; 
+}
+
+input.exam-answer.correct { 
+  border-color: #43d17c; 
+}
+
+input.exam-answer.wrong { 
+  border-color: #ff7b7b; 
+}
+
+#examResult {
+  text-align: center; 
+}
+
 /* ================= Flashcards ================= */
 .flashcard { 
   max-width: 480px; 
