@@ -752,8 +752,11 @@ input.exam-answer.wrong {
 .exam-section { width: 100%; max-width: 620px; text-align: center; padding: 14px 0; border-top: 1px solid var(--border); }
 .exam-section:first-child { border-top: none; padding-top: 0; }
 .exam-section-title { font-weight: 700; margin-bottom: 8px; }
-#examParts { justify-content: center; }
-.exam-subrow { justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+#examParts { width: 100%; max-width: 620px; }
+.exam-part { padding: 12px 0; border-top: 1px solid var(--border); text-align: center; }
+.exam-part:first-child { border-top: none; padding-top: 4px; }
+.exam-part > .opt-pill { font-size: 1rem; padding: 10px 18px; }
+.exam-subrow { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
 
 #panel-exam .quiz-controls { justify-content: center; }
 
