@@ -1627,7 +1627,7 @@ function bumpStat(id, key) {
     return (data || []).filter((w) => w.lang1 && w.lang2 && w.lang1.trim() && w.lang2.trim() && !w.hidden)
       .map((w) => ({ id: w.id, a: w.lang1, b: w.lang2 }));
   }
-  function buildExamQueue() {
+  function buildExamQueue(aiQs) {
     const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"];
     const compQs = [];
     exam.parts.forEach((pid) => {
@@ -1650,9 +1650,21 @@ function bumpStat(id, key) {
         });
       });
     }
-    const all = shuffle(compQs.concat(wordQs));
-    if (!all.length) return [];
-    return all.slice(0, Math.min(EXAM_QUESTION_COUNT, all.length));
+    const seen = new Set();
+    const queue = [];
+    for (const q of shuffle(aiQs || [])) {
+      const key = (q.prompt || "").trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      queue.push(q);
+      if (queue.length >= EXAM_QUESTION_COUNT) break;
+    }
+    for (const q of shuffle(compQs.concat(wordQs))) {
+      if (queue.length >= EXAM_QUESTION_COUNT) break;
+      const key = (q.prompt || "").trim().toLowerCase();
+      if (!seen.has(key)) { seen.add(key); queue.push(q); }
+    }
+    return shuffle(queue);
   }
   function startExamTimer() {
     let secs = 30 * 60;
@@ -1784,7 +1796,24 @@ function bumpStat(id, key) {
       showModal({ title: "📝 Exam", text: "The selected lists contain no words.", okText: "OK" });
       return;
     }
-    exam.queue = buildExamQueue();
+    let aiQs = [];
+    if (!GUEST) {
+      try {
+        saveStatus("🤖 Generating exam with AI…");
+        const { data, error } = await supabase.functions.invoke("generate-exam", {
+          body: {
+            lang: exam.lang,
+            level: exam.level,
+            parts: exam.includeWords ? exam.parts.concat("words") : exam.parts,
+            count: EXAM_QUESTION_COUNT,
+            words: exam.includeWords ? exam.pool.slice(0, 60).map((w) => [w.a, w.b]) : []
+          }
+        });
+        if (!error && data && Array.isArray(data.questions)) aiQs = data.questions;
+        else console.error("AI exam failed, using local bank", error || data);
+      } catch (e) { console.error("AI exam failed, using local bank", e); }
+    }
+    exam.queue = buildExamQueue(aiQs);
     if (!exam.queue.length) {
       showModal({ title: "📝 Exam", text: "No questions available for this combination.", okText: "OK" });
       return;
