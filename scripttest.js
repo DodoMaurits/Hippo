@@ -1480,12 +1480,12 @@ function bumpStat(id, key) {
       const lab = document.createElement("label");
       lab.className = "opt-pill";
       const cb = document.createElement("input");
-      cb.type = "checkbox"; cb.value = p.id; cb.dataset.part = p.id; cb.checked = true;
+      cb.type = "checkbox"; cb.value = p.id; cb.dataset.part = p.id; cb.checked = false;
       lab.appendChild(cb);
       lab.appendChild(document.createTextNode(" " + p.label));
       wrap.appendChild(lab);
       const subRow = document.createElement("div");
-      subRow.className = "exam-subrow";
+      subRow.className = "exam-subrow hidden";
       exam.subs[p.id] = [];
       (p.subs || []).forEach((s) => {
         const sl = document.createElement("label");
