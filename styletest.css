@@ -748,32 +748,13 @@ input.exam-answer.wrong {
   text-align: center; 
 }
 
-#examOpts .quiz-options { 
-  flex-direction: column; 
-  align-items: stretch; 
-  gap: 8px; 
-  margin-bottom: 24px; 
-}
+.exam-opts { flex-direction: column; align-items: center; gap: 0; margin-bottom: 24px; }
+.exam-section { width: 100%; max-width: 620px; text-align: center; padding: 14px 0; border-top: 1px solid var(--border); }
+.exam-section:first-child { border-top: none; padding-top: 0; }
+.exam-section-title { font-weight: 700; margin-bottom: 8px; }
+#examParts { justify-content: center; }
+.exam-subrow { justify-content: center; margin-top: 8px; flex-wrap: wrap; }
 
-#examOpts .quiz-options > .hint { 
-  width: 100%; 
-  text-align: left; 
-  margin: 10px 0 2px; 
-}
-
-#examOpts .opt-row { 
-  display: flex; 
-  flex-wrap: wrap; 
-  align-items: center; 
-  gap: 8px; 
-}
-
-#examOpts .opt-pill {
-  width: auto; 
-  padding: 8px 14px; 
-}
-
-#examOpts .opt-row:last-of-type { margin-top: 6px; }
 #panel-exam .quiz-controls { justify-content: center; }
 
 #panel-exam:has(#examRun:not(.hidden)) { 
