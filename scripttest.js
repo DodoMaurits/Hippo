@@ -1371,7 +1371,7 @@ function bumpStat(id, key) {
   }
 
   // ---------- Exam ----------
-  const EXAM_LANGS = ["English","French","Dutch","Russian"];
+  const EXAM_LANGS = ["French","Russian"];
   const CASE_SUBS = ["1","2","3","4","5","6"];
   const CASE_LABELS = { "1":"1 Nominative", "2":"2 Genitive", "3":"3 Dative", "4":"4 Accusative", "5":"5 Instrumental", "6":"6 Prepositional" };
   const VERB_SUBS = ["pres","past-impf","past-pf","fut-comp","fut-simple","imperative"];
