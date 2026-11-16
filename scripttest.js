@@ -1388,10 +1388,13 @@ function bumpStat(id, key) {
     ["examPick", "examOpts", "examRun"].forEach((id) =>
       $(id).classList.toggle("hidden", id !== "exam" + name[0].toUpperCase() + name.slice(1)));
   }
-  function partLabel(id) {
+  function partLabel(id, sub) {
     if (id === "words") return "Vocabulary from lists";
     const p = EXAM_PARTS.find((x) => x.id === id);
-    return p ? p.label : id;
+    if (!p) return id;
+    let s = p.label;
+    if (sub && p.subLabels && p.subLabels[sub]) s += " — " + p.subLabels[sub];
+    return s;
   }
   function openExam() {
     activateTab("exam");
