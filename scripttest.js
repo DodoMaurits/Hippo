@@ -283,6 +283,7 @@ function bumpStat(id, key) {
     if (!name || !name.trim()) return;
     folders.unshift({ id: "f" + Date.now(), name: name.trim() });
     if (GUEST) saveFoldersGuest();
+    else localStorage.setItem("hippo-folder-order", JSON.stringify(folders.map((x) => x.id)));
     renderOverview();
   }
   $("newFolderBtn").addEventListener("click", newFolder);
@@ -1509,7 +1510,7 @@ function bumpStat(id, key) {
       ["preps","A1,A2","मैं ___ से आता हूँ (from Delhi)","दिल्ली","मुंबई","घर","दुकान"],
       ["preps","A2,B1","___ को (to him)","उसे","उस","वह","मुझे"],
       ["grammar","A1,A2","एक ___ (boy), दो लड़के","लड़का","लड़की","लड़के","लड़कों"],
-      ["grammar","A2,B1","यह ___ है (this is good)","अच्छा","अच्छी","अच्छे","अच्छा们"],
+      ["grammar","A2,B1","यह ___ है (this is good)","अच्छा","अच्छी","अच्छे","बورا"],
       ["grammar","B1,B2","वह ___ है (where)","कहाँ","क्या","कौन","कब"]
     ],
     "Arabic": [
@@ -1596,7 +1597,7 @@ function bumpStat(id, key) {
     });
     lists.forEach((l) => {
       const fname = l.folder ? ((folders.find((f) => f.id === l.folder) || {}).name || "") : "";
-      mk({ list: l.id }, "📋 " + l.name + (fname ? "  —  in map: " + fname : ""), () => {});
+      mk({ list: l.id }, "📋 " + l.name + (fname ? "  —  in folder: " + fname : ""), () => {});
     });
     if (!lists.length) box.innerHTML = '<p class="empty">No lists yet — create one first with ➕ New list.</p>';
   }
@@ -1671,7 +1672,7 @@ function bumpStat(id, key) {
       const inp = w.querySelector("input.exam-answer");
       return q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked;
     }).length;
-    $("examCount").textContent = " Answered: " + n + "/" + exam.queue.length;
+    $("examCount").textContent = "Answered: " + n + "/" + exam.queue.length;
     $("examProgress").style.width = (exam.queue.length ? (n / exam.queue.length * 100) : 0) + "%";
   }
   function renderExamQuestions() {
@@ -1788,9 +1789,7 @@ function bumpStat(id, key) {
       showModal({ title: "📝 Exam", text: "No questions available for this combination.", okText: "OK" });
       return;
     }
-    exam.idx = 0; exam.score = 0; exam.locked = false;
-    $("examDoneBar").classList.add("hidden");
-    exam.done = false;
+    exam.idx = 0; exam.score = 0; exam.locked = false; exam.done = false;
     examStep("run");
     $("examResult").classList.add("hidden");
     $("examDoneBar").classList.add("hidden");
