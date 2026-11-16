@@ -1371,7 +1371,7 @@ function bumpStat(id, key) {
   }
 
   // ---------- Exam ----------
-  const EXAM_LANGS = ["English","Spanish","French","German","Dutch","Italian","Portuguese","Russian","Chinese (Mandarin)","Japanese","Arabic","Hindi"];
+  const EXAM_LANGS = ["English","French","Dutch","Russian"];
   const EXAM_PARTS = [
     { id: "cases",   label: "Cases" },
     { id: "verbs",   label: "Verb conjugations" },
