@@ -1,7 +1,3 @@
-// Exam question bank — Russian
-// Formaat per vraag: [onderdeel, niveaus, vraag, goed antwoord, fout1, fout2, fout3]
-// Onderdelen: "cases" | "verbs" | "preps" | "grammar"   Niveaus: bijv. "A1,A2" t/m "C1,C2"
-// Gewoon regels bijplakken om uit te breiden.
 window.EXAM_BANK = window.EXAM_BANK || {};
 window.EXAM_BANK["Russian"] = [
   ["cases","A1,A2","Я читаю ___ (книга).","книгу","книги","книге","книга"],
