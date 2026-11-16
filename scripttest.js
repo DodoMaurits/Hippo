@@ -1638,28 +1638,20 @@ function bumpStat(id, key) {
     const wordQs = [];
     if (exam.includeWords && exam.pool.length) {
       exam.pool.forEach((w) => {
-        const toB = Math.random() < 0.5;
-        const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
-        const wrong = shuffle(exam.pool.filter((x) => x !== w && (toB ? x.b : x.a) !== answer))
-          .slice(0, 3).map((x) => (toB ? x.b : x.a));
-        const options = shuffle([answer, ...wrong]);
-        while (options.length < 4) options.push("—");
-        wordQs.push({ part: "words", prompt, answer, options: options.slice(0, 4), id: w.id });
+        [true, false].forEach((toB) => {
+          const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
+          if (prompt === answer) return;
+          const wrong = shuffle(exam.pool.filter((x) => x !== w && (toB ? x.b : x.a) !== answer))
+            .slice(0, 3).map((x) => (toB ? x.b : x.a));
+          const options = shuffle([answer, ...wrong]);
+          while (options.length < 4) options.push("—");
+          wordQs.push({ part: "words", prompt, answer, options: options.slice(0, 4), id: w.id });
+        });
       });
     }
-    const total = EXAM_QUESTION_COUNT;
-    const c = shuffle(compQs), wq = shuffle(wordQs);
-    const nW = wq.length ? Math.min(wq.length, Math.round(total / 2)) : 0;
-    const nC = c.length ? Math.min(c.length, total - nW) : 0;
-    const queue = [];
-    for (let i = 0; i < nW; i++) queue.push(wq[i]);
-    for (let i = 0; i < nC; i++) queue.push(c[i]);
-    let guard = 0;
-    while (queue.length < total && (c.length || wq.length) && guard++ < 500) {
-      const src = (wq.length && (queue.length % 2 === 0 || !c.length)) ? wq : c;
-      queue.push(src[Math.floor(Math.random() * src.length)]);
-    }
-    return shuffle(queue).slice(0, total);
+    const all = shuffle(compQs.concat(wordQs));
+    if (!all.length) return [];
+    return all.slice(0, Math.min(EXAM_QUESTION_COUNT, all.length));
   }
   function startExamTimer() {
     let secs = 30 * 60;
