@@ -1372,15 +1372,31 @@ function bumpStat(id, key) {
 
   // ---------- Exam ----------
   const EXAM_LANGS = ["English","French","Dutch","Russian"];
+  const CASE_SUBS = ["1","2","3","4","5","6"];
+  const CASE_LABELS = { "1":"1 Nominative", "2":"2 Genitive", "3":"3 Dative", "4":"4 Accusative", "5":"5 Instrumental", "6":"6 Prepositional" };
+  const VERB_SUBS = ["pres","past-impf","past-pf","fut-comp","fut-simple","imperative"];
+  const VERB_LABELS = {
+    pres: "present (imperfective)", "past-impf": "past imperfective", "past-pf": "past perfective",
+    "fut-comp": "compound future (imperfective)", "fut-simple": "simple future (perfective)", imperative: "imperative mood"
+  };
   const EXAM_PARTS = [
-    { id: "cases",   label: "Cases" },
-    { id: "verbs",   label: "Verb conjugations" },
-    { id: "preps",   label: "Prepositions" },
-    { id: "grammar", label: "Grammar" }
+    { id: "cases",    label: "Cases",              subs: CASE_SUBS, subLabels: CASE_LABELS },
+    { id: "verbs",    label: "Verb conjugations",  subs: VERB_SUBS, subLabels: VERB_LABELS },
+    { id: "pronouns", label: "Pronoun declension", subs: CASE_SUBS, subLabels: CASE_LABELS, needsPronouns: true }
   ];
+  const EXAM_PRONOUNS = {
+    "Russian": [
+      { nom: "я",   forms: ["я","меня","мне","меня","мной","обо мне"] },
+      { nom: "ты",  forms: ["ты","тебя","тебе","тебя","тобой","о тебе"] },
+      { nom: "он",  forms: ["он","его","ему","его","им","о нём"] },
+      { nom: "мы",  forms: ["мы","нас","нам","нас","нами","о нас"] },
+      { nom: "вы",  forms: ["вы","вас","вам","вас","вами","о вас"] },
+      { nom: "они", forms: ["они","их","им","их","ими","о них"] }
+    ]
+  };
   const EXAM_QUESTION_COUNT = 30;
   const EXAM_BANK = window.EXAM_BANK || {};
-  let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", parts: [], includeWords: true };
+  let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", subs: {}, parts: [], includeWords: true };
   let examOptsFilled = false;
 
   function examStep(name) {
@@ -1432,13 +1448,62 @@ function bumpStat(id, key) {
     if (examOptsFilled) return;
     examOptsFilled = true;
     $("examLang").innerHTML = '<option value="">Choose a language</option>' + EXAM_LANGS.slice().sort((a, b) => a.localeCompare(b, "en")).map((l) => "<option>" + l + "</option>").join("");
+    $("examLang").addEventListener("change", () => {
+      const v = $("examLang").value;
+      $("examPartsSection").classList.toggle("hidden", !v);
+      if (v) { exam.lang = v; renderExamParts(); }
+    });
+  }
+  function renderExamParts() {
     const pbox = $("examParts");
+    const sbox = $("examSubParts");
+    pbox.innerHTML = "";
+    sbox.innerHTML = "";
+    exam.subs = {};
     EXAM_PARTS.forEach((p) => {
+      if (p.needsPronouns && !(EXAM_PRONOUNS[exam.lang] || []).length) return;
       const lab = document.createElement("label");
       lab.className = "opt-pill";
-      lab.innerHTML = '<input type="checkbox" value="' + p.id + '" checked> ' + p.label;
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.value = p.id; cb.checked = true;
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(" " + p.label));
       pbox.appendChild(lab);
+      const subRow = document.createElement("div");
+      subRow.className = "opt-row exam-subrow";
+      subRow.id = "examSub-" + p.id;
+      exam.subs[p.id] = [];
+      (p.subs || []).forEach((s) => {
+        const sl = document.createElement("label");
+        sl.className = "opt-pill";
+        const sc = document.createElement("input");
+        sc.type = "checkbox"; sc.value = s; sc.checked = true;
+        sl.appendChild(sc);
+        sl.appendChild(document.createTextNode(" " + (p.subLabels[s] || s)));
+        subRow.appendChild(sl);
+        sc.addEventListener("change", () => {
+          exam.subs[p.id] = [...subRow.querySelectorAll("input:checked")].map((x) => x.value);
+        });
+        exam.subs[p.id].push(s);
+      });
+      sbox.appendChild(subRow);
+      cb.addEventListener("change", () => subRow.classList.toggle("hidden", !cb.checked));
     });
+  }
+  function genPronounQuestions(lang, selSubs) {
+    const table = EXAM_PRONOUNS[lang] || [];
+    const subs = selSubs && selSubs.length ? selSubs : CASE_SUBS;
+    const qs = [];
+    table.forEach((pr) => {
+      subs.forEach((c) => {
+        const idx = parseInt(c, 10) - 1;
+        if (idx < 0 || idx > 5) return;
+        const answer = pr.forms[idx];
+        const wrong = shuffle(pr.forms.filter((f, j) => j !== idx)).slice(0, 3);
+        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer, options: shuffle([answer, ...wrong]) });
+      });
+    });
+    return qs;
   }
   async function loadExamWords(listIds) {
     if (GUEST) {
@@ -1457,8 +1522,14 @@ function bumpStat(id, key) {
     const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"] || [];
     const compQs = [];
     exam.parts.forEach((pid) => {
-      const entries = bank.filter((e) => e[0] === pid);
-      entries.forEach((e) => compQs.push({ part: pid, prompt: e[2], answer: e[3], options: shuffle([e[3], e[4], e[5], e[6]]) }));
+      const p = EXAM_PARTS.find((x) => x.id === pid);
+      const selSubs = exam.subs[pid] || [];
+      bank.filter((e) => e[0] === pid).forEach((e) => {
+        const sub = e[1] || "";
+        if (sub && !selSubs.includes(sub)) return;
+        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3], options: shuffle([e[3], e[4], e[5], e[6]]) });
+      });
+      if (pid === "pronouns") compQs.push(...genPronounQuestions(exam.lang, selSubs));
     });
     const wordQs = [];
     if (exam.includeWords && exam.pool.length) {
@@ -1512,7 +1583,7 @@ function bumpStat(id, key) {
       wrap.className = "exam-q";
       const head = document.createElement("p");
       head.className = "hint";
-      head.textContent = (i + 1) + ". [" + partLabel(item.part) + "] • " + exam.lang;
+      head.textContent = (i + 1) + ". [" + partLabel(item.part, item.sub) + "] • " + exam.lang;
       const pr = document.createElement("div");
       pr.className = "prompt exam-prompt";
       pr.textContent = item.prompt;
