@@ -111,28 +111,29 @@
         <p class="hint">Select one or more lists or a folder to include in your exam.</p>
         <div id="examPickList" class="exam-pick-list"></div>
         <div class="quiz-controls" style="margin-top:12px">
-          <button class="btn secondary" id="examCancelBtn">← Cancel</button>
-          <button class="btn" id="examToOpts">Start exam ➜</button>
+          <button class="btn secondary" id="examCancelBtn">← Go back</button>
+          <button class="btn" id="examToOpts">▶ Start exam</button>
         </div>
       </div>
 
       <div id="examOpts" class="hidden">
         <h2 class="panel-title">📝 Exam settings</h2>
         <div class="quiz-box">
-          <div class="quiz-options">
-            <div class="opt-row">
+          <div class="quiz-options exam-opts">
+            <div class="exam-section">
               <label class="opt-pill">Language <select id="examLang"></select></label>
-              <label class="opt-pill">Level <select id="examLevel"></select></label>
             </div>
-            <p class="hint" style="margin:10px 0 4px">Assessment components:</p>
-            <div class="opt-row" id="examParts"></div>
-            <div class="opt-row" style="margin-top:8px">
+            <div class="exam-section">
               <label class="opt-pill"><input type="checkbox" id="examWords" checked> Include words/phrases from the selected lists</label>
+            </div>
+            <div class="exam-section hidden" id="examPartsSection">
+              <p class="exam-section-title">Assessment components:</p>
+              <div id="examParts"></div>
             </div>
           </div>
         </div>
         <div class="quiz-controls" style="margin-top:12px">
-          <button class="btn secondary" id="examOptsBack">← Cancel</button>
+          <button class="btn secondary" id="examOptsBack">← Go back</button>
           <button class="btn" id="examStart">▶ Start exam</button>
         </div>
       </div>
@@ -283,6 +284,9 @@
     </div>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script type="module" src="script.js"></script
+  <script src="z-exam-russian.js"></script>
+  <script src="z-exam-french.js"></script>
+
 </body>
 </html>
