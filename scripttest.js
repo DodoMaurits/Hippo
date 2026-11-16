@@ -1379,11 +1379,24 @@ function bumpStat(id, key) {
     pres: "present (imperfective)", "past-impf": "past imperfective", "past-pf": "past perfective",
     "fut-comp": "compound future (imperfective)", "fut-simple": "simple future (perfective)", imperative: "imperative mood"
   };
-  const EXAM_PARTS = [
-    { id: "cases",    label: "Cases",              subs: CASE_SUBS, subLabels: CASE_LABELS },
-    { id: "verbs",    label: "Verb conjugations",  subs: VERB_SUBS, subLabels: VERB_LABELS },
-    { id: "pronouns", label: "Pronoun declension", subs: CASE_SUBS, subLabels: CASE_LABELS, needsPronouns: true }
-  ];
+  const EXAM_PARTS_BY_LANG = {
+    "Russian": [
+      { id: "cases",    label: "Cases",              subs: CASE_SUBS, subLabels: CASE_LABELS },
+      { id: "verbs",    label: "Verb conjugations",  subs: VERB_SUBS, subLabels: VERB_LABELS },
+      { id: "pronouns", label: "Pronoun declension", subs: CASE_SUBS, subLabels: CASE_LABELS, needsPronouns: true }
+    ],
+    "French": [
+      { id: "articles",   label: "Articles & gender",    subs: ["def","ind","part","mf"], subLabels: { def: "défini (le/la/les)", ind: "indéfini (un/une/des)", part: "partitif (du/de la)", mf: "gender (m/f)" } },
+      { id: "adjectives", label: "Adjectives",           subs: ["agree","place"], subLabels: { agree: "accord (m/f/sg/pl)", place: "plaats (vóór/na)" } },
+      { id: "tenses",     label: "Verb tenses",          subs: ["pres","impf","pc","fp","fs","imp","cond","subj"], subLabels: { pres: "présent", impf: "imparfait", pc: "passé composé", fp: "futur proche", fs: "futur simple", imp: "impératif", cond: "conditionnel", subj: "subjonctif" } },
+      { id: "pronouns",   label: "Pronouns",             subs: ["cod","coi","yen","poss","refl","ton"], subLabels: { cod: "COD (le/la/me)", coi: "COI (lui/leur)", yen: "y / en", poss: "possessif (mon/ton)", refl: "réfléchi (me/se)", ton: "tonique (moi/toi)" } },
+      { id: "negation",   label: "Negation",             subs: ["pas","plus","jamais","personne"], subLabels: { pas: "ne…pas", plus: "ne…plus", jamais: "ne…jamais", personne: "ne…personne" } },
+      { id: "questions",  label: "Questions",            subs: ["estceque","inversion","words"], subLabels: { estceque: "est-ce que", inversion: "inversie", words: "vraagwoorden" } },
+      { id: "partitive",  label: "Partitive & quantity", subs: ["du","beaucoup","peu"], subLabels: { du: "du/de la/de l'", beaucoup: "beaucoup de", peu: "peu de" } },
+      { id: "relatives",  label: "Relative clauses",     subs: ["qui","que","dont","ou"], subLabels: { qui: "qui (sujet)", que: "que (COD)", dont: "dont (de)", ou: "où" } }
+    ]
+  };
+  function examParts() { return EXAM_PARTS_BY_LANG[exam.lang] || []; }
   const EXAM_PRONOUNS = {
     "Russian": [
       { nom: "я",   forms: ["я","меня","мне","меня","мной","обо мне"] },
@@ -1406,7 +1419,7 @@ function bumpStat(id, key) {
   }
   function partLabel(id, sub) {
     if (id === "words") return "Vocabulary from lists";
-    const p = EXAM_PARTS.find((x) => x.id === id);
+    examParts().find((x) => x.id === id)
     if (!p) return id;
     let s = p.label;
     if (sub && p.subLabels && p.subLabels[sub]) s += " — " + p.subLabels[sub];
@@ -1460,7 +1473,9 @@ function bumpStat(id, key) {
     pbox.innerHTML = "";
     sbox.innerHTML = "";
     exam.subs = {};
-    EXAM_PARTS.forEach((p) => {
+        const parts = examParts();
+    if (!parts.length) { pbox.innerHTML = '<p class="hint">No exam components for this language yet — add them in its z-exam file.</p>'; return; }
+    parts.forEach((p) => {
       if (p.needsPronouns && !(EXAM_PRONOUNS[exam.lang] || []).length) return;
       const lab = document.createElement("label");
       lab.className = "opt-pill";
@@ -1519,10 +1534,10 @@ function bumpStat(id, key) {
       .map((w) => ({ id: w.id, a: w.lang1, b: w.lang2 }));
   }
   function buildExamQueue() {
-    const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"] || [];
+    const bank = EXAM_BANK[exam.lang] || [];
     const compQs = [];
     exam.parts.forEach((pid) => {
-      const p = EXAM_PARTS.find((x) => x.id === pid);
+      const p = examParts().find((x) => x.id === pid);
       const selSubs = exam.subs[pid] || [];
       bank.filter((e) => e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
