@@ -776,6 +776,15 @@ input.exam-answer.wrong {
 #examOpts .opt-row:last-of-type { margin-top: 6px; }
 #panel-exam .quiz-controls { justify-content: center; }
 
+#panel-exam:has(#examRun:not(.hidden)) { 
+  background: #000; 
+  border-color: #2a2a2a; 
+}
+
+#panel-exam .score-bar { gap: 16px; }
+
+#app:has(#panel-exam.active #examRun:not(.hidden)) .tabs { display: none; }
+
 /* ================= Flashcards ================= */
 .flashcard { 
   max-width: 480px; 
