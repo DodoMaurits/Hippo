@@ -283,6 +283,7 @@ function bumpStat(id, key) {
     if (!name || !name.trim()) return;
     folders.unshift({ id: "f" + Date.now(), name: name.trim() });
     if (GUEST) saveFoldersGuest();
+    else localStorage.setItem("hippo-folder-order", JSON.stringify(folders.map((x) => x.id)));
     renderOverview();
   }
   $("newFolderBtn").addEventListener("click", newFolder);
@@ -1370,192 +1371,45 @@ function bumpStat(id, key) {
   }
 
   // ---------- Exam ----------
-  const EXAM_LANGS = ["English","Spanish","French","German","Dutch","Italian","Portuguese","Russian","Chinese (Mandarin)","Japanese","Arabic","Hindi"];
-  const EXAM_LEVELS = ["A1","A2","B1","B2","C1","C2"];
-  const EXAM_PARTS = [
-    { id: "cases",   label: "Cases" },
-    { id: "verbs",   label: "Verb conjugations" },
-    { id: "preps",   label: "Prepositions" },
-    { id: "grammar", label: "Grammar" }
-  ];
-  const EXAM_QUESTION_COUNT = 30; // vast aantal vragen, ± 30 minuten
-  // Bank: [onderdeel, niveaus, vraag, goed antwoord, 3 foute opties]
-  const EXAM_BANK = {
-    "English": [
-      ["cases","A1,A2","I saw ___ elephant yesterday.","an","a","the","no"],
-      ["cases","A1,A2","___ sun is shining today.","The","A","An","This"],
-      ["cases","B1,B2","He is ___ honest man.","an","a","the","some"],
-      ["verbs","A1,A2","I ___ (to be) happy.","am","is","are","be"],
-      ["verbs","A1,A2","She ___ (to go) to school every day.","goes","go","going","went"],
-      ["verbs","B1,B2","They ___ (to have) a new car.","have","has","had","having"],
-      ["preps","A1,A2","She is interested ___ music.","in","on","at","to"],
-      ["preps","A2,B1","The book is ___ the table.","on","in","at","under"],
-      ["preps","B1,B2","He lives ___ London.","in","at","on","by"],
-      ["grammar","A1,A2","One child, two ___","children","childs","childes","child"],
-      ["grammar","A2,B1","This is ___ (good) than that.","better","gooder","best","more good"],
-      ["grammar","B1,B2","If I ___ (have) time, I will call you.","had","have","has","having"]
-    ],
-    "Dutch": [
-      ["cases","A1,A2","___ appel (de/het)","het","de","een","die"],
-      ["cases","A1,A2","___ tafel (de/het)","de","het","een","die"],
-      ["cases","A2,B1","___ huis (de/het)","het","de","een","dat"],
-      ["verbs","A1,A2","Ik ___ (zijn) moe.","ben","bent","is","zijn"],
-      ["verbs","A1,A2","Hij ___ (hebben) een fiets.","heeft","heb","hebben","hebt"],
-      ["verbs","A2,B1","Wij ___ (gaan) naar school.","gaan","gaat","ga","gingen"],
-      ["preps","A1,A2","Ik woon ___ Amsterdam.","in","op","aan","te"],
-      ["preps","A1,A2","Het boek ligt ___ tafel.","op","in","onder","aan"],
-      ["preps","A2,B1","Ik ben geïnteresseerd ___ muziek.","in","op","aan","voor"],
-      ["grammar","A1,A2","Een kind, twee ___","kinderen","kinds","kind","kinder"],
-      ["grammar","A2,B1","Dat is ___ (goed) dan dit.","beter","goeder","best","goed"],
-      ["grammar","B1,B2","Zij ___ (werken) elke dag.","werkt","werk","werken","werkte"]
-    ],
-    "German": [
-      ["cases","A1,A2","___ Apfel (der/die/das)","der","die","das","den"],
-      ["cases","A1,A2","___ Mädchen (der/die/das)","das","der","die","den"],
-      ["cases","A2,B1","Ich gebe ___ Mann das Buch. (der/die/das/den)","dem","der","das","den"],
-      ["cases","B1,B2","___ ist hier? (wer/wen/wem)","Wer","Wen","Wem","Was"],
-      ["verbs","A1,A2","ich ___ (sein)","bin","bist","ist","sind"],
-      ["verbs","A1,A2","du ___ (haben)","hast","habe","hat","habt"],
-      ["verbs","A2,B1","er ___ (gehen) nach Hause.","geht","gehst","gehe","gingen"],
-      ["preps","A1,A2","Ich fahre ___ dem Bus.","mit","in","auf","zu"],
-      ["preps","A1,A2","Das Geschenk ist ___ dich.","für","mit","von","zu"],
-      ["preps","A2,B1","Er wohnt ___ Berlin.","in","auf","zu","nach"],
-      ["grammar","A1,A2","ein Kind, zwei ___","Kinder","Kinds","Kindern","Kind"],
-      ["grammar","A2,B1","Das ist ___ (gut).","besser","guter","gut","am besten"],
-      ["grammar","B1,B2","___ du das gesehen? (haben)","Hast","Haben","Hat","Hattest"]
+  const EXAM_LANGS = ["French","Russian"];
+  const CASE_SUBS = ["2","3","4","5","6"];
+  const CASE_LABELS = { "1":"1 Nominative", "2":"2 Genitive", "3":"3 Dative", "4":"4 Accusative", "5":"5 Instrumental", "6":"6 Prepositional" };
+  const VERB_SUBS = ["pres","past-impf","past-pf","fut-comp","fut-simple","imperative"];
+  const VERB_LABELS = {
+    pres: "present (imperfective)", "past-impf": "past imperfective", "past-pf": "past perfective",
+    "fut-comp": "compound future (imperfective)", "fut-simple": "simple future (perfective)", imperative: "imperative mood"
+  };
+  const EXAM_PARTS_BY_LANG = {
+    "Russian": [
+      { id: "cases",    label: "Cases",              subs: CASE_SUBS, subLabels: CASE_LABELS },
+      { id: "verbs",    label: "Verb conjugations",  subs: VERB_SUBS, subLabels: VERB_LABELS },
+      { id: "pronouns", label: "Pronoun declension", subs: CASE_SUBS, subLabels: CASE_LABELS, needsPronouns: true }
     ],
     "French": [
-      ["cases","A1,A2","___ table (la/le)","la","le","les","un"],
-      ["cases","A1,A2","___ livre (le/la)","le","la","les","un"],
-      ["cases","A2,B1","___ école (la/l')","la","l'","le","les"],
-      ["verbs","A1,A2","je ___ (être)","suis","es","est","sommes"],
-      ["verbs","A1,A2","tu ___ (avoir)","as","a","avons","avez"],
-      ["verbs","A2,B1","nous ___ (aller)","allons","allez","va","vais"],
-      ["preps","A1,A2","J'habite ___ Paris.","à","en","dans","sur"],
-      ["preps","A1,A2","Le livre est ___ la table.","sur","dans","sous","à"],
-      ["preps","A2,B1","Je suis intéressé ___ la musique.","à","de","en","sur"],
-      ["grammar","A1,A2","un enfant, deux ___","enfants","enfant","enfantss","enfans"],
-      ["grammar","A2,B1","C'est ___ (bon).","mieux","meilleur","bon","plus bon"],
-      ["grammar","B1,B2","Elle ___ (finir) ses devoirs.","finit","finis","finissons","finissez"]
-    ],
-    "Spanish": [
-      ["cases","A1,A2","___ mesa (la/el)","la","el","las","los"],
-      ["cases","A1,A2","___ libro (el/la)","el","la","los","las"],
-      ["cases","A2,B1","___ agua (el/la)","el","la","las","los"],
-      ["verbs","A1,A2","yo ___ (ser)","soy","eres","es","somos"],
-      ["verbs","A1,A2","tú ___ (tener)","tienes","tengo","tiene","tenéis"],
-      ["verbs","A2,B1","nosotros ___ (ir)","vamos","voy","vas","va"],
-      ["preps","A1,A2","Vivo ___ Madrid.","en","a","de","por"],
-      ["preps","A1,A2","El libro está ___ la mesa.","en","sobre","a","de"],
-      ["preps","A2,B1","Estoy interesado ___ la música.","en","a","de","por"],
-      ["grammar","A1,A2","un niño, dos ___","niños","niño","niñoss","niñes"],
-      ["grammar","A2,B1","Esto es ___ (bueno).","mejor","bueno","más bueno","buena"],
-      ["grammar","B1,B2","Ella ___ (comer) ahora.","come","como","comes","comemos"]
-    ],
-    "Russian": [
-      ["cases","A1,A2","Я читаю ___ (книга).","книгу","книги","книге","книга"],
-      ["cases","A1,A2","У меня есть ___ (собака).","собака","собаки","собаке","собаку"],
-      ["cases","A2,B1","Он подарил ___ (друг) книгу.","другу","друг","друга","другом"],
-      ["cases","B1,B2","Мы говорим о ___ (мама).","маме","мама","маму","мамой"],
-      ["verbs","A1,A2","Я ___ (читать) книгу.","читаю","читаешь","читает","читал"],
-      ["verbs","A1,A2","Ты ___ (говорить) по-русски?","говоришь","говорю","говорит","говорил"],
-      ["verbs","A2,B1","Они ___ (работать) в офисе.","работают","работает","работаю","работал"],
-      ["verbs","B1,B2","Вчера я ___ (прочитать) эту книгу.","прочитал","читал","читаю","прочитаю"],
-      ["preps","A1,A2","Я иду ___ школу.","в","на","к","из"],
-      ["preps","A1,A2","Книга лежит ___ столе.","на","в","к","под"],
-      ["preps","A2,B1","Он приехал ___ Москвы.","из","в","на","к"],
-      ["preps","B1,B2","Она думает ___ (он).","о нём","его","ему","им"],
-      ["grammar","A1,A2","Один стол, два ___","стола","столов","стол","столы"],
-      ["grammar","A1,A2","Это ___ (новый) машина.","новая","новый","новое","новые"],
-      ["grammar","A2,B1","Я вижу ___ (красивый) дом.","красивый","красивая","красивое","красивые"],
-      ["grammar","B1,B2","Если ___ дождь, мы останемся дома.","будет","есть","был","была"]
-    ],
-    "Italian": [
-      ["cases","A1,A2","___ libro (il/lo/la)","il","lo","la","i"],
-      ["cases","A1,A2","___ zaino (il/lo/la)","lo","il","la","le"],
-      ["cases","A2,B1","Vedo ___ amica.","l'","il","lo","la"],
-      ["verbs","A1,A2","Io ___ (essere) stanco.","sono","sei","è","siamo"],
-      ["verbs","A1,A2","Tu ___ (avere) fame?","hai","ho","ha","abbiamo"],
-      ["verbs","A2,B1","Loro ___ (andare) a scuola.","vanno","va","vai","andiamo"],
-      ["preps","A1,A2","Vado ___ Italia.","in","a","di","con"],
-      ["preps","A1,A2","Il libro è ___ tavolo.","sul","nel","al","dal"],
-      ["preps","A2,B1","Parlo ___ miei amici.","con","di","a","per"],
-      ["grammar","A1,A2","un libro, due ___","libri","libro","libris","libra"],
-      ["grammar","A2,B1","Casa ___ (bello).","bella","bello","belli","belle"],
-      ["grammar","B1,B2","Ieri ___ (mangiare) la pizza.","ho mangiato","mangio","mangia","mangiava"]
-    ],
-    "Portuguese": [
-      ["cases","A1,A2","___ livro (o/a)","o","a","os","as"],
-      ["cases","A1,A2","___ mesa (a/o)","a","o","as","os"],
-      ["cases","A2,B1","___ amigos (os/as)","os","as","o","a"],
-      ["verbs","A1,A2","Eu ___ (ser) brasileiro.","sou","és","é","somos"],
-      ["verbs","A1,A2","Tu ___ (ter) fome?","tens","tenho","tem","temos"],
-      ["verbs","A2,B1","Eles ___ (ir) à escola.","vão","vai","vais","vamos"],
-      ["preps","A1,A2","Vou ___ Brasil.","para","em","de","por"],
-      ["preps","A1,A2","O livro está ___ mesa.","na","no","em","sobre"],
-      ["preps","A2,B1","Falo ___ meus amigos.","com","de","a","para"],
-      ["grammar","A1,A2","um livro, dois ___","livros","livro","livra","livres"],
-      ["grammar","A2,B1","A casa é ___ (bonito).","bonita","bonito","bonitos","bonitas"],
-      ["grammar","B1,B2","Ontem eu ___ (comer) pizza.","comi","como","come","comemos"]
-    ],
-    "Hindi": [
-      ["cases","A1,A2","मुझे ___ चाहिए (water)","पानी","किताब","दूध","रोटी"],
-      ["cases","A2,B1","___ (to me)","मुझे","मुझ","मैं","उसे"],
-      ["cases","A2,B1","वह ___ में रहता है (in the house)","घर","किताब","दुकान","मेज़"],
-      ["verbs","A1,A2","मैं ___ (I am)","हूँ","है","हो","हैं"],
-      ["verbs","A1,A2","तुम ___ हो (you are)","हो","हूँ","है","हैं"],
-      ["verbs","A2,B1","वह ___ है (he goes)","जाता","जाती","जाते","जाना"],
-      ["preps","A1,A2","किताब ___ है (on the table)","मेज़ पर","मेज़ में","मेज़ से","मेज़ को"],
-      ["preps","A1,A2","मैं ___ से आता हूँ (from Delhi)","दिल्ली","मुंबई","घर","दुकान"],
-      ["preps","A2,B1","___ को (to him)","उसे","उस","वह","मुझे"],
-      ["grammar","A1,A2","एक ___ (boy), दो लड़के","लड़का","लड़की","लड़के","लड़कों"],
-      ["grammar","A2,B1","यह ___ है (this is good)","अच्छा","अच्छी","अच्छे","अच्छा们"],
-      ["grammar","B1,B2","वह ___ है (where)","कहाँ","क्या","कौन","कब"]
-    ],
-    "Arabic": [
-      ["cases","A1,A2","___ قلم (the pen)","ال","a","la","il"],
-      ["cases","A2,B1","رأيتُ ___ (I saw the boy, accusative)","الولدَ","الولدُ","الولدِ","الولدْ"],
-      ["cases","B1,B2","إلى ___ (to the book)","الكتابِ","الكتابُ","الكتابَ","الكتابْ"],
-      ["verbs","A1,A2","أنا ___ (I write)","أكتب","يكتب","كتبتُ","نكتب"],
-      ["verbs","A1,A2","هو ___ (he goes)","يذهب","ذهب","ذهبتُ","يذهبْ"],
-      ["verbs","A2,B1","نحن ___ (we ate)","أكلنا","يأكل","أكل","نأكل"],
-      ["preps","A1,A2","___ البيت (in the house)","في","من","إلى","على"],
-      ["preps","A1,A2","___ المدرسة (to school)","إلى","من","في","مع"],
-      ["preps","B1,B2","ذهبتُ ___ (with him)","معه","إليه","منه","عليه"],
-      ["grammar","A1,A2","___ (two books, dual)","كتابان","كتابين","كتابان","كتاب"],
-      ["grammar","A1,A2","___ (houses, plural of بيت)","بيوت","بيت","بيتان","أبيات"],
-      ["grammar","A2,B1","___ (where)","أين","هل","من","كيف"]
-    ],
-    "Chinese (Mandarin)": [
-      ["cases","A1,A2","一 ___ 书 (one book)","本","个","杯","张"],
-      ["cases","A1,A2","两 ___ 人 (two people)","个","本","条","杯"],
-      ["cases","A2,B1","三 ___ 水 (three glasses of water)","杯","碗","本","个"],
-      ["verbs","A1,A2","我 ___ 中国人 (I am Chinese)","是","有","在","会"],
-      ["verbs","A1,A2","他 ___ 饭 (he eats)","吃","喝","买","看"],
-      ["verbs","A2,B1","他 ___ 了 (he has eaten)","吃了","喝","看了","买了"],
-      ["preps","A1,A2","___ 北京 (in Beijing)","在","从","比","跟"],
-      ["preps","A2,B1","他 ___ 北京来 (he comes from Beijing)","从","到","在","比"],
-      ["preps","A1,A2","我 ___ 你买书 (I buy a book for you)","给","跟","对","向"],
-      ["grammar","A1,A2","他是学生 ___ ? (question particle)","吗","了","呢","的"],
-      ["grammar","A2,B1","这本书很 ___ (this book is expensive)","贵","便宜","大","小"],
-      ["grammar","B1,B2","因为下雨，___ 我没去 (so I didn't go)","所以","但是","如果","还是"]
-    ],
-    "Japanese": [
-      ["cases","A1,A2","私 ___ 学生です (I am a student)","は","が","を","に"],
-      ["cases","A1,A2","猫 ___ います (there is a cat)","が","は","を","で"],
-      ["cases","A2,B1","本 ___ 読みます (I read a book)","を","が","は","に"],
-      ["verbs","A1,A2","私は学生 ___","です","だ","ます","でした"],
-      ["verbs","A1,A2","ご飯を食べ ___ (I eat, polite)","ます","る","た","ない"],
-      ["verbs","A2,B1","昨日食べ ___ (I ate, past)","た","ます","ない","て"],
-      ["preps","A1,A2","学校 ___ 行きます (go to school)","に","で","を","が"],
-      ["preps","A1,A2","バス ___ 行きます (go by bus)","で","に","を","へ"],
-      ["preps","A2,B1","友達 ___ 会いました (met a friend)","に","で","を","が"],
-      ["grammar","A1,A2","これは ___ ですか (what is this?)","何","誰","いつ","どこ"],
-      ["grammar","A2,B1","高 ___ 本 (an expensive book)","い","かった","く","さ"],
-      ["grammar","B1,B2","食べ ___ (I want to eat)","たい","ます","た","ない"]
+      { id: "articles",   label: "Articles & gender",    subs: ["def","ind","part","mf"], subLabels: { def: "défini (le/la/les)", ind: "indéfini (un/une/des)", part: "partitif (du/de la)", mf: "gender (m/f)" } },
+      { id: "adjectives", label: "Adjectives",           subs: ["agree","place"], subLabels: { agree: "accord (m/f/sg/pl)", place: "plaats (vóór/na)" } },
+      { id: "tenses",     label: "Verb tenses",          subs: ["pres","impf","pc","fp","fs","imp","cond","subj"], subLabels: { pres: "présent", impf: "imparfait", pc: "passé composé", fp: "futur proche", fs: "futur simple", imp: "impératif", cond: "conditionnel", subj: "subjonctif" } },
+      { id: "pronouns",   label: "Pronouns",             subs: ["cod","coi","yen","poss","refl","ton"], subLabels: { cod: "COD (le/la/me)", coi: "COI (lui/leur)", yen: "y / en", poss: "possessif (mon/ton)", refl: "réfléchi (me/se)", ton: "tonique (moi/toi)" } },
+      { id: "negation",   label: "Negation",             subs: ["pas","plus","jamais","personne"], subLabels: { pas: "ne…pas", plus: "ne…plus", jamais: "ne…jamais", personne: "ne…personne" } },
+      { id: "questions",  label: "Questions",            subs: ["estceque","inversion","words"], subLabels: { estceque: "est-ce que", inversion: "inversie", words: "vraagwoorden" } },
+      { id: "partitive",  label: "Partitive & quantity", subs: ["du","beaucoup","peu"], subLabels: { du: "du/de la/de l'", beaucoup: "beaucoup de", peu: "peu de" } },
+      { id: "relatives",  label: "Relative clauses",     subs: ["qui","que","dont","ou"], subLabels: { qui: "qui (sujet)", que: "que (COD)", dont: "dont (de)", ou: "où" } }
     ]
   };
-  let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", level: "B1", parts: [], includeWords: true };
+  function examParts() { return EXAM_PARTS_BY_LANG[exam.lang] || []; }
+  const EXAM_PRONOUNS = {
+    "Russian": [
+      { nom: "я",   forms: ["я","меня","мне","меня","мной","обо мне"] },
+      { nom: "ты",  forms: ["ты","тебя","тебе","тебя","тобой","о тебе"] },
+      { nom: "он",  forms: ["он","его","ему","его","им","о нём"] },
+      { nom: "мы",  forms: ["мы","нас","нам","нас","нами","о нас"] },
+      { nom: "вы",  forms: ["вы","вас","вам","вас","вами","о вас"] },
+      { nom: "они", forms: ["они","их","им","их","ими","о них"] }
+    ]
+  };
+  const EXAM_QUESTION_COUNT = 30;
+  const EXAM_BANK = window.EXAM_BANK || {};
+  let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", subs: {}, parts: [], includeWords: true };
   let examOptsFilled = false;
 
   function examStep(name) {
@@ -1563,15 +1417,18 @@ function bumpStat(id, key) {
     ["examPick", "examOpts", "examRun"].forEach((id) =>
       $(id).classList.toggle("hidden", id !== "exam" + name[0].toUpperCase() + name.slice(1)));
   }
-  function partLabel(id) {
+  function partLabel(id, sub) {
     if (id === "words") return "Vocabulary from lists";
-    const p = EXAM_PARTS.find((x) => x.id === id);
-    return p ? p.label : id;
+    const p = examParts().find((x) => x.id === id);
+    if (!p) return id;
+    let s = p.label;
+    if (sub && p.subLabels && p.subLabels[sub]) s += " — " + p.subLabels[sub];
+    return s;
   }
   function openExam() {
     activateTab("exam");
-    examStep("pick");
-    renderExamPick();
+    fillExamOpts();
+    examStep("opts");
   }
   function renderExamPick() {
     const box = $("examPickList");
@@ -1596,7 +1453,7 @@ function bumpStat(id, key) {
     });
     lists.forEach((l) => {
       const fname = l.folder ? ((folders.find((f) => f.id === l.folder) || {}).name || "") : "";
-      mk({ list: l.id }, "📋 " + l.name + (fname ? "  —  in map: " + fname : ""), () => {});
+      mk({ list: l.id }, "📋 " + l.name + (fname ? "  —  in folder: " + fname : ""), () => {});
     });
     if (!lists.length) box.innerHTML = '<p class="empty">No lists yet — create one first with ➕ New list.</p>';
   }
@@ -1604,14 +1461,64 @@ function bumpStat(id, key) {
     if (examOptsFilled) return;
     examOptsFilled = true;
     $("examLang").innerHTML = '<option value="">Choose a language</option>' + EXAM_LANGS.slice().sort((a, b) => a.localeCompare(b, "en")).map((l) => "<option>" + l + "</option>").join("");
-    $("examLevel").innerHTML = EXAM_LEVELS.map((l) => '<option' + (l === "B1" ? " selected" : "") + ">" + l + "</option>").join("");
+    $("examLang").addEventListener("change", () => {
+      const v = $("examLang").value;
+      $("examPartsSection").classList.toggle("hidden", !v);
+      if (v) { exam.lang = v; renderExamParts(); }
+    });
+  }
+  function renderExamParts() {
     const pbox = $("examParts");
-    EXAM_PARTS.forEach((p) => {
+    pbox.innerHTML = "";
+    exam.subs = {};
+    const parts = examParts();
+    if (!parts.length) { pbox.innerHTML = '<p class="hint">No exam components for this language yet — add them in its z-exam file.</p>'; return; }
+    parts.forEach((p) => {
+      if (p.needsPronouns && !(EXAM_PRONOUNS[exam.lang] || []).length) return;
+      const wrap = document.createElement("div");
+      wrap.className = "exam-part";
       const lab = document.createElement("label");
       lab.className = "opt-pill";
-      lab.innerHTML = '<input type="checkbox" value="' + p.id + '" checked> ' + p.label;
-      pbox.appendChild(lab);
+      const cb = document.createElement("input");
+      cb.type = "checkbox"; cb.value = p.id; cb.dataset.part = p.id; cb.checked = false;
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(" " + p.label));
+      wrap.appendChild(lab);
+      const subRow = document.createElement("div");
+      subRow.className = "exam-subrow hidden";
+      exam.subs[p.id] = [];
+      (p.subs || []).forEach((s) => {
+        const sl = document.createElement("label");
+        sl.className = "opt-pill";
+        const sc = document.createElement("input");
+        sc.type = "checkbox"; sc.value = s; sc.checked = true;
+        sl.appendChild(sc);
+        sl.appendChild(document.createTextNode(" " + (p.subLabels[s] || s)));
+        subRow.appendChild(sl);
+        sc.addEventListener("change", () => {
+          exam.subs[p.id] = [...subRow.querySelectorAll("input:checked")].map((x) => x.value);
+        });
+        exam.subs[p.id].push(s);
+      });
+      wrap.appendChild(subRow);
+      pbox.appendChild(wrap);
+      cb.addEventListener("change", () => subRow.classList.toggle("hidden", !cb.checked));
     });
+  }
+  function genPronounQuestions(lang, selSubs) {
+    const table = EXAM_PRONOUNS[lang] || [];
+    const subs = selSubs && selSubs.length ? selSubs : CASE_SUBS;
+    const qs = [];
+    table.forEach((pr) => {
+      subs.forEach((c) => {
+        const idx = parseInt(c, 10) - 1;
+        if (idx < 0 || idx > 5) return;
+        const answer = pr.forms[idx];
+        const wrong = shuffle(pr.forms.filter((f, j) => j !== idx)).slice(0, 3);
+        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer, options: shuffle([answer, ...wrong]) });
+      });
+    });
+    return qs;
   }
   async function loadExamWords(listIds) {
     if (GUEST) {
@@ -1627,39 +1534,42 @@ function bumpStat(id, key) {
       .map((w) => ({ id: w.id, a: w.lang1, b: w.lang2 }));
   }
   function buildExamQueue() {
-    const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"];
+    const bank = EXAM_BANK[exam.lang] || [];
     const compQs = [];
     exam.parts.forEach((pid) => {
-      let entries = bank.filter((e) => e[0] === pid);
-      const lv = entries.filter((e) => e[1].split(",").map((s) => s.trim()).includes(exam.level));
-      if (lv.length) entries = lv;
-      entries.forEach((e) => compQs.push({ part: pid, prompt: e[2], answer: e[3], options: shuffle([e[3], e[4], e[5], e[6]]) }));
+      const p = examParts().find((x) => x.id === pid);
+      const selSubs = exam.subs[pid] || [];
+      bank.filter((e) => e[0] === pid).forEach((e) => {
+        const sub = e[1] || "";
+        if (sub && !selSubs.includes(sub)) return;
+        const opts = shuffle([e[3], e[4], e[5], e[6]].filter((x) => x !== undefined && x !== null && x !== ""));
+        while (opts.length < 4) opts.push("—");
+        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3], options: opts.slice(0, 4) });
+      });
+      if (pid === "pronouns") compQs.push(...genPronounQuestions(exam.lang, selSubs));
     });
     const wordQs = [];
     if (exam.includeWords && exam.pool.length) {
       exam.pool.forEach((w) => {
-        const toB = Math.random() < 0.5;
-        const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
-        const wrong = shuffle(exam.pool.filter((x) => x !== w && (toB ? x.b : x.a) !== answer))
-          .slice(0, 3).map((x) => (toB ? x.b : x.a));
-        const options = shuffle([answer, ...wrong]);
-        while (options.length < 4) options.push("—");
-        wordQs.push({ part: "words", prompt, answer, options: options.slice(0, 4), id: w.id });
+        [true, false].forEach((toB) => {
+          const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
+          if (prompt === answer) return;
+          const wrong = shuffle(exam.pool.filter((x) => x !== w && (toB ? x.b : x.a) !== answer))
+            .slice(0, 3).map((x) => (toB ? x.b : x.a));
+          const options = shuffle([answer, ...wrong]);
+          while (options.length < 4) options.push("—");
+          wordQs.push({ part: "words", prompt, answer, options: options.slice(0, 4), id: w.id });
+        });
       });
     }
-    const total = EXAM_QUESTION_COUNT;
-    const c = shuffle(compQs), wq = shuffle(wordQs);
-    const nW = wq.length ? Math.min(wq.length, Math.round(total / 2)) : 0;
-    const nC = c.length ? Math.min(c.length, total - nW) : 0;
+    const seen = new Set();
     const queue = [];
-    for (let i = 0; i < nW; i++) queue.push(wq[i]);
-    for (let i = 0; i < nC; i++) queue.push(c[i]);
-    let guard = 0;
-    while (queue.length < total && (c.length || wq.length) && guard++ < 500) {
-      const src = (wq.length && (queue.length % 2 === 0 || !c.length)) ? wq : c;
-      queue.push(src[Math.floor(Math.random() * src.length)]);
+    for (const q of shuffle(compQs.concat(wordQs))) {
+      if (queue.length >= EXAM_QUESTION_COUNT) break;
+      const key = (q.prompt || "").trim().toLowerCase();
+      if (!seen.has(key)) { seen.add(key); queue.push(q); }
     }
-    return shuffle(queue).slice(0, total);
+    return shuffle(queue);
   }
   function startExamTimer() {
     let secs = 30 * 60;
@@ -1679,7 +1589,7 @@ function bumpStat(id, key) {
       const inp = w.querySelector("input.exam-answer");
       return q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked;
     }).length;
-    $("examCount").textContent = " Answered: " + n + "/" + exam.queue.length;
+    $("examCount").textContent = "Answered: " + n + "/" + exam.queue.length;
     $("examProgress").style.width = (exam.queue.length ? (n / exam.queue.length * 100) : 0) + "%";
   }
   function renderExamQuestions() {
@@ -1690,7 +1600,7 @@ function bumpStat(id, key) {
       wrap.className = "exam-q";
       const head = document.createElement("p");
       head.className = "hint";
-      head.textContent = (i + 1) + ". [" + partLabel(item.part) + "]  •  " + exam.lang + " " + exam.level;
+      head.textContent = (i + 1) + ". [" + partLabel(item.part, item.sub) + "] • " + exam.lang;
       const pr = document.createElement("div");
       pr.className = "prompt exam-prompt";
       pr.textContent = item.prompt;
@@ -1766,27 +1676,16 @@ function bumpStat(id, key) {
   }
   $("examSubmit").addEventListener("click", examSubmit);
   $("examSubmit2").addEventListener("click", examSubmit);
-  $("examCancelBtn").addEventListener("click", () => activateTab("overview"));
-  $("examToOpts").addEventListener("click", () => {
+  $("examToOpts").addEventListener("click", async () => {
     const ids = [...$("examPickList").querySelectorAll("input[data-list]:checked")].map((cb) => cb.dataset.list);
     if (!ids.length) { showModal({ title: "📝 Exam", text: "Check at least one list first.", okText: "OK" }); return; }
     exam.listIds = ids;
-    fillExamOpts();
-    examStep("opts");
+    await startExamRun();
   });
-  $("examOptsBack").addEventListener("click", () => examStep("pick"));
-  $("examStart").addEventListener("click", async () => {
-    const lang = $("examLang").value;
-    if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
-    exam.lang = lang;
-    exam.level = $("examLevel").value;
-    exam.parts = [...$("examParts").querySelectorAll("input:checked")].map((cb) => cb.value);
-    exam.includeWords = $("examWords").checked;
-    if (!exam.parts.length && !exam.includeWords) {
-      showModal({ title: "📝 Exam", text: "Choose at least one exam part or check 'Include words from lists'.", okText: "OK" });
-      return;
-    }
-    exam.pool = await loadExamWords(exam.listIds);
+  $("examOptsBack").addEventListener("click", () => activateTab("overview"));
+  $("examCancelBtn").addEventListener("click", () => examStep("opts"));
+  async function startExamRun() {
+    exam.pool = exam.includeWords ? await loadExamWords(exam.listIds) : [];
     if (exam.includeWords && !exam.pool.length) {
       showModal({ title: "📝 Exam", text: "The selected lists contain no words.", okText: "OK" });
       return;
@@ -1796,9 +1695,7 @@ function bumpStat(id, key) {
       showModal({ title: "📝 Exam", text: "No questions available for this combination.", okText: "OK" });
       return;
     }
-    exam.idx = 0; exam.score = 0; exam.locked = false;
-    $("examDoneBar").classList.add("hidden");
-    exam.done = false;
+    exam.idx = 0; exam.score = 0; exam.locked = false; exam.done = false;
     examStep("run");
     $("examResult").classList.add("hidden");
     $("examDoneBar").classList.add("hidden");
@@ -1806,6 +1703,23 @@ function bumpStat(id, key) {
     $("examSubmit2").disabled = false;
     startExamTimer();
     renderExamQuestions();
+  }
+  $("examStart").addEventListener("click", () => {
+    const lang = $("examLang").value;
+    if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
+    exam.lang = lang;
+    exam.parts = [...$("examParts").querySelectorAll("input[data-part]:checked")].map((cb) => cb.value);
+    exam.includeWords = $("examWords").checked;
+    if (!exam.parts.length && !exam.includeWords) {
+      showModal({ title: "📝 Exam", text: "Choose at least one exam part or check 'Include words from lists'.", okText: "OK" });
+      return;
+    }
+    if (exam.includeWords) {
+      renderExamPick();
+      examStep("pick");
+      return;
+    }
+    startExamRun();
   });
   $("examQuit").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
   $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
@@ -1822,7 +1736,7 @@ function bumpStat(id, key) {
       const lt = localStorage.getItem("hippo-tab");
       const ll = localStorage.getItem("hippo-list");
       if (lt === "list" && ll) { openList(ll); }
-      else activateTab(lt && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+      else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
     } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
     const saved = loadSavedQuiz();
@@ -1869,7 +1783,7 @@ function bumpStat(id, key) {
           const lt = localStorage.getItem("hippo-tab");
           const ll = localStorage.getItem("hippo-list");
           if (lt === "list" && ll) { openList(ll); }
-          else activateTab(lt && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+          else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
         } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
         const saved = loadSavedQuiz();
