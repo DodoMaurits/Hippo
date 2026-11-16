@@ -1797,6 +1797,7 @@ function bumpStat(id, key) {
       return;
     }
     let aiQs = [];
+    $("examStart").disabled = true;
     if (!GUEST) {
       try {
         saveStatus("🤖 Generating exam with AI…");
@@ -1814,6 +1815,7 @@ function bumpStat(id, key) {
       } catch (e) { console.error("AI exam failed, using local bank", e); }
     }
     exam.queue = buildExamQueue(aiQs);
+    $("examStart").disabled = false;
     if (!exam.queue.length) {
       showModal({ title: "📝 Exam", text: "No questions available for this combination.", okText: "OK" });
       return;
