@@ -1419,7 +1419,7 @@ function bumpStat(id, key) {
   }
   function partLabel(id, sub) {
     if (id === "words") return "Vocabulary from lists";
-    examParts().find((x) => x.id === id)
+    const p = examParts().find((x) => x.id === id);
     if (!p) return id;
     let s = p.label;
     if (sub && p.subLabels && p.subLabels[sub]) s += " — " + p.subLabels[sub];
@@ -1427,8 +1427,8 @@ function bumpStat(id, key) {
   }
   function openExam() {
     activateTab("exam");
-    examStep("pick");
-    renderExamPick();
+    fillExamOpts();
+    examStep("opts");
   }
   function renderExamPick() {
     const box = $("examPickList");
@@ -1480,7 +1480,7 @@ function bumpStat(id, key) {
       const lab = document.createElement("label");
       lab.className = "opt-pill";
       const cb = document.createElement("input");
-      cb.type = "checkbox"; cb.value = p.id; cb.checked = true;
+      cb.type = "checkbox"; cb.value = p.id; cb.dataset.part = p.id; cb.checked = true;
       lab.appendChild(cb);
       lab.appendChild(document.createTextNode(" " + p.label));
       wrap.appendChild(lab);
@@ -1542,7 +1542,9 @@ function bumpStat(id, key) {
       bank.filter((e) => e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
         if (sub && !selSubs.includes(sub)) return;
-        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3], options: shuffle([e[3], e[4], e[5], e[6]]) });
+        const opts = shuffle([e[3], e[4], e[5], e[6]].filter((x) => x !== undefined && x !== null && x !== ""));
+        while (opts.length < 4) opts.push("—");
+        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3], options: opts.slice(0, 4) });
       });
       if (pid === "pronouns") compQs.push(...genPronounQuestions(exam.lang, selSubs));
     });
@@ -1674,25 +1676,16 @@ function bumpStat(id, key) {
   }
   $("examSubmit").addEventListener("click", examSubmit);
   $("examSubmit2").addEventListener("click", examSubmit);
-  $("examToOpts").addEventListener("click", () => {
+  $("examToOpts").addEventListener("click", async () => {
     const ids = [...$("examPickList").querySelectorAll("input[data-list]:checked")].map((cb) => cb.dataset.list);
     if (!ids.length) { showModal({ title: "📝 Exam", text: "Check at least one list first.", okText: "OK" }); return; }
     exam.listIds = ids;
-    fillExamOpts();
-    examStep("opts");
+    await startExamRun();
   });
-  $("examOptsBack").addEventListener("click", () => examStep("pick"));
-  $("examStart").addEventListener("click", async () => {
-    const lang = $("examLang").value;
-    if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
-    exam.lang = lang;
-    exam.parts = [...$("examParts").querySelectorAll("input:checked")].map((cb) => cb.value);
-    exam.includeWords = $("examWords").checked;
-    if (!exam.parts.length && !exam.includeWords) {
-      showModal({ title: "📝 Exam", text: "Choose at least one exam part or check 'Include words from lists'.", okText: "OK" });
-      return;
-    }
-    exam.pool = await loadExamWords(exam.listIds);
+  $("examOptsBack").addEventListener("click", () => activateTab("overview"));
+  $("examCancelBtn").addEventListener("click", () => examStep("opts"));
+  async function startExamRun() {
+    exam.pool = exam.includeWords ? await loadExamWords(exam.listIds) : [];
     if (exam.includeWords && !exam.pool.length) {
       showModal({ title: "📝 Exam", text: "The selected lists contain no words.", okText: "OK" });
       return;
@@ -1710,6 +1703,23 @@ function bumpStat(id, key) {
     $("examSubmit2").disabled = false;
     startExamTimer();
     renderExamQuestions();
+  }
+  $("examStart").addEventListener("click", () => {
+    const lang = $("examLang").value;
+    if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
+    exam.lang = lang;
+    exam.parts = [...$("examParts").querySelectorAll("input[data-part]:checked")].map((cb) => cb.value);
+    exam.includeWords = $("examWords").checked;
+    if (!exam.parts.length && !exam.includeWords) {
+      showModal({ title: "📝 Exam", text: "Choose at least one exam part or check 'Include words from lists'.", okText: "OK" });
+      return;
+    }
+    if (exam.includeWords) {
+      renderExamPick();
+      examStep("pick");
+      return;
+    }
+    startExamRun();
   });
   $("examQuit").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
   $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
