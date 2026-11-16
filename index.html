@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hippo Knows</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦛</text></svg>">
-  <link rel="stylesheet" href="styletest.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="bubbles" aria-hidden="true">
@@ -52,6 +52,7 @@
       <button class="tab hidden" data-tab="flash">🃏 Flashcards</button>
       <button class="tab hidden" data-tab="quiz-mc">🫧 Multiple choice</button>
       <button class="tab hidden" data-tab="quiz-type">⌨️ Typing</button>
+      <button class="tab" data-tab="exam">📝 Create exam</button>
     </div>
 
     <!-- OVERVIEW -->
@@ -103,6 +104,60 @@
       <p class="empty" id="emptyMsg">The pool is empty… add your first word above! 🦛</p>
     </div>
 
+    <!-- EXAM -->
+    <div class="panel" id="panel-exam">
+      <div id="examPick">
+        <h2 class="panel-title">📝 Exam — Pick your lists</h2>
+        <p class="hint">Select one or more lists or a folder to include in your exam.</p>
+        <div id="examPickList" class="exam-pick-list"></div>
+        <div class="quiz-controls" style="margin-top:12px">
+          <button class="btn secondary" id="examCancelBtn">← Cancel</button>
+          <button class="btn" id="examToOpts">Start exam ➜</button>
+        </div>
+      </div>
+
+      <div id="examOpts" class="hidden">
+        <h2 class="panel-title">📝 Exam settings</h2>
+        <div class="quiz-box">
+          <div class="quiz-options">
+            <div class="opt-row">
+              <label class="opt-pill">Language <select id="examLang"></select></label>
+              <label class="opt-pill">Level <select id="examLevel"></select></label>
+            </div>
+            <p class="hint" style="margin:10px 0 4px">Assessment components:</p>
+            <div class="opt-row" id="examParts"></div>
+            <div class="opt-row" style="margin-top:8px">
+              <label class="opt-pill"><input type="checkbox" id="examWords" checked> Include words/phrases from the selected lists</label>
+            </div>
+          </div>
+        </div>
+        <div class="quiz-controls" style="margin-top:12px">
+          <button class="btn secondary" id="examOptsBack">← Cancel</button>
+          <button class="btn" id="examStart">▶ Start exam</button>
+        </div>
+      </div>
+
+      <div id="examRun" class="hidden">
+        <div class="quiz-controls">
+          <button class="btn secondary" id="examQuit">← Quit</button>
+          <button class="btn" id="examSubmit">✔ Submit</button>
+        </div>
+        <div class="score-bar"><span id="examScore">Score: 0/0</span><span id="examCount">Answered: 0/30</span><span id="examTimer">30:00</span></div>
+        <div class="progress"><div id="examProgress"></div></div>
+        <div id="examQuestions"></div>
+        <div class="quiz-controls" style="margin-top:12px">
+          <button class="btn" id="examSubmit2">✔ Submit</button>
+        </div>
+        <div class="quiz-box hidden" id="examResult" style="text-align:center">
+          <div class="prompt" id="examGrade"></div>
+          <div class="hint" id="examResultText"></div>
+        </div>
+        <div class="quiz-controls hidden" id="examDoneBar" style="margin-top:12px">
+          <button class="btn" id="examToOverview">← Back to list overview</button>
+        </div>
+      </div>
+    </div>
+    
     <!-- FLASHCARDS -->
     <div class="panel" id="panel-flash">
       <div class="quiz-controls">
@@ -228,6 +283,6 @@
     </div>
   </div>
 
-  <script type="module" src="scripttest.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
