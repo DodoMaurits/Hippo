@@ -685,6 +685,97 @@ th input { width: 100%; }
   font: inherit; 
 }
 
+/* ================= Exam ================= */
+.exam-pick-list { 
+  text-align: left;
+  max-height: 46vh; 
+  overflow: auto; 
+  margin: 10px 0; 
+}
+
+.exam-pick-list .opt-pill { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  margin-bottom: 6px; 
+  width: fit-content; 
+}
+
+#examTimer { 
+  margin-left: auto; 
+  font-variant-numeric: tabular-nums;
+}
+
+#panel-exam .prompt { 
+  font-size: 1.35rem; 
+}
+
+.exam-q { 
+  text-align: left; 
+  background: rgba(255,255,255,.05); 
+  border-radius: 12px; 
+  padding: 12px 14px; 
+  margin-bottom: 12px; 
+}
+
+.exam-q .exam-prompt { 
+  font-size: 1.15rem; 
+  margin: 4px 0 10px; 
+}
+
+.exam-q .choices { 
+  margin: 4px 0 2px; 
+}
+
+.choice.selected { 
+  outline: 2px solid #4aa3ff; 
+  background: rgba(74,163,255,.18); 
+}
+
+.exam-answer { 
+  width: 100%; 
+}
+
+input.exam-answer.correct { 
+  border-color: #43d17c; 
+}
+
+input.exam-answer.wrong { 
+  border-color: #ff7b7b; 
+}
+
+#examResult {
+  text-align: center; 
+}
+
+#examOpts .quiz-options { 
+  flex-direction: column; 
+  align-items: stretch; 
+  gap: 8px; 
+  margin-bottom: 24px; 
+}
+
+#examOpts .quiz-options > .hint { 
+  width: 100%; 
+  text-align: left; 
+  margin: 10px 0 2px; 
+}
+
+#examOpts .opt-row { 
+  display: flex; 
+  flex-wrap: wrap; 
+  align-items: center; 
+  gap: 8px; 
+}
+
+#examOpts .opt-pill {
+  width: auto; 
+  padding: 8px 14px; 
+}
+
+#examOpts .opt-row:last-of-type { margin-top: 6px; }
+#panel-exam .quiz-controls { justify-content: center; }
+
 /* ================= Flashcards ================= */
 .flashcard { 
   max-width: 480px; 
