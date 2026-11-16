@@ -1538,6 +1538,7 @@ function bumpStat(id, key) {
       ["grammar","B1,B2","食べ ___ (I want to eat)","たい","ます","た","ない"]
     ]
   };
+  Object.assign(EXAM_BANK, window.EXAM_BANK || {});
   let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", level: "B1", parts: [], includeWords: true };
   let examOptsFilled = false;
 
@@ -1609,8 +1610,8 @@ function bumpStat(id, key) {
     return (data || []).filter((w) => w.lang1 && w.lang2 && w.lang1.trim() && w.lang2.trim() && !w.hidden)
       .map((w) => ({ id: w.id, a: w.lang1, b: w.lang2 }));
   }
-  function buildExamQueue(aiQs) {
-    const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"];
+  function buildExamQueue() {
+    const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"] || [];
     const compQs = [];
     exam.parts.forEach((pid) => {
       let entries = bank.filter((e) => e[0] === pid);
