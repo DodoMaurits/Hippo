@@ -1469,24 +1469,23 @@ function bumpStat(id, key) {
   }
   function renderExamParts() {
     const pbox = $("examParts");
-    const sbox = $("examSubParts");
     pbox.innerHTML = "";
-    sbox.innerHTML = "";
     exam.subs = {};
-        const parts = examParts();
+    const parts = examParts();
     if (!parts.length) { pbox.innerHTML = '<p class="hint">No exam components for this language yet — add them in its z-exam file.</p>'; return; }
     parts.forEach((p) => {
       if (p.needsPronouns && !(EXAM_PRONOUNS[exam.lang] || []).length) return;
+      const wrap = document.createElement("div");
+      wrap.className = "exam-part";
       const lab = document.createElement("label");
       lab.className = "opt-pill";
       const cb = document.createElement("input");
       cb.type = "checkbox"; cb.value = p.id; cb.checked = true;
       lab.appendChild(cb);
       lab.appendChild(document.createTextNode(" " + p.label));
-      pbox.appendChild(lab);
+      wrap.appendChild(lab);
       const subRow = document.createElement("div");
-      subRow.className = "opt-row exam-subrow";
-      subRow.id = "examSub-" + p.id;
+      subRow.className = "exam-subrow";
       exam.subs[p.id] = [];
       (p.subs || []).forEach((s) => {
         const sl = document.createElement("label");
@@ -1501,7 +1500,8 @@ function bumpStat(id, key) {
         });
         exam.subs[p.id].push(s);
       });
-      sbox.appendChild(subRow);
+      wrap.appendChild(subRow);
+      pbox.appendChild(wrap);
       cb.addEventListener("change", () => subRow.classList.toggle("hidden", !cb.checked));
     });
   }
