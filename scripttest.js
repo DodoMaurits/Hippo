@@ -1379,166 +1379,8 @@ function bumpStat(id, key) {
     { id: "preps",   label: "Prepositions" },
     { id: "grammar", label: "Grammar" }
   ];
-  const EXAM_QUESTION_COUNT = 30; // vast aantal vragen, ± 30 minuten
-  // Bank: [onderdeel, niveaus, vraag, goed antwoord, 3 foute opties]
-  const EXAM_BANK = {
-    "English": [
-      ["cases","A1,A2","I saw ___ elephant yesterday.","an","a","the","no"],
-      ["cases","A1,A2","___ sun is shining today.","The","A","An","This"],
-      ["cases","B1,B2","He is ___ honest man.","an","a","the","some"],
-      ["verbs","A1,A2","I ___ (to be) happy.","am","is","are","be"],
-      ["verbs","A1,A2","She ___ (to go) to school every day.","goes","go","going","went"],
-      ["verbs","B1,B2","They ___ (to have) a new car.","have","has","had","having"],
-      ["preps","A1,A2","She is interested ___ music.","in","on","at","to"],
-      ["preps","A2,B1","The book is ___ the table.","on","in","at","under"],
-      ["preps","B1,B2","He lives ___ London.","in","at","on","by"],
-      ["grammar","A1,A2","One child, two ___","children","childs","childes","child"],
-      ["grammar","A2,B1","This is ___ (good) than that.","better","gooder","best","more good"],
-      ["grammar","B1,B2","If I ___ (have) time, I will call you.","had","have","has","having"]
-    ],
-    "Dutch": [
-      ["cases","A1,A2","___ appel (de/het)","het","de","een","die"],
-      ["cases","A1,A2","___ tafel (de/het)","de","het","een","die"],
-      ["cases","A2,B1","___ huis (de/het)","het","de","een","dat"],
-      ["verbs","A1,A2","Ik ___ (zijn) moe.","ben","bent","is","zijn"],
-      ["verbs","A1,A2","Hij ___ (hebben) een fiets.","heeft","heb","hebben","hebt"],
-      ["verbs","A2,B1","Wij ___ (gaan) naar school.","gaan","gaat","ga","gingen"],
-      ["preps","A1,A2","Ik woon ___ Amsterdam.","in","op","aan","te"],
-      ["preps","A1,A2","Het boek ligt ___ tafel.","op","in","onder","aan"],
-      ["preps","A2,B1","Ik ben geïnteresseerd ___ muziek.","in","op","aan","voor"],
-      ["grammar","A1,A2","Een kind, twee ___","kinderen","kinds","kind","kinder"],
-      ["grammar","A2,B1","Dat is ___ (goed) dan dit.","beter","goeder","best","goed"],
-      ["grammar","B1,B2","Zij ___ (werken) elke dag.","werkt","werk","werken","werkte"]
-    ],
-    "German": [
-      ["cases","A1,A2","___ Apfel (der/die/das)","der","die","das","den"],
-      ["cases","A1,A2","___ Mädchen (der/die/das)","das","der","die","den"],
-      ["cases","A2,B1","Ich gebe ___ Mann das Buch. (der/die/das/den)","dem","der","das","den"],
-      ["cases","B1,B2","___ ist hier? (wer/wen/wem)","Wer","Wen","Wem","Was"],
-      ["verbs","A1,A2","ich ___ (sein)","bin","bist","ist","sind"],
-      ["verbs","A1,A2","du ___ (haben)","hast","habe","hat","habt"],
-      ["verbs","A2,B1","er ___ (gehen) nach Hause.","geht","gehst","gehe","gingen"],
-      ["preps","A1,A2","Ich fahre ___ dem Bus.","mit","in","auf","zu"],
-      ["preps","A1,A2","Das Geschenk ist ___ dich.","für","mit","von","zu"],
-      ["preps","A2,B1","Er wohnt ___ Berlin.","in","auf","zu","nach"],
-      ["grammar","A1,A2","ein Kind, zwei ___","Kinder","Kinds","Kindern","Kind"],
-      ["grammar","A2,B1","Das ist ___ (gut).","besser","guter","gut","am besten"],
-      ["grammar","B1,B2","___ du das gesehen? (haben)","Hast","Haben","Hat","Hattest"]
-    ],
-    "French": [
-      ["cases","A1,A2","___ table (la/le)","la","le","les","un"],
-      ["cases","A1,A2","___ livre (le/la)","le","la","les","un"],
-      ["cases","A2,B1","___ école (la/l')","la","l'","le","les"],
-      ["verbs","A1,A2","je ___ (être)","suis","es","est","sommes"],
-      ["verbs","A1,A2","tu ___ (avoir)","as","a","avons","avez"],
-      ["verbs","A2,B1","nous ___ (aller)","allons","allez","va","vais"],
-      ["preps","A1,A2","J'habite ___ Paris.","à","en","dans","sur"],
-      ["preps","A1,A2","Le livre est ___ la table.","sur","dans","sous","à"],
-      ["preps","A2,B1","Je suis intéressé ___ la musique.","à","de","en","sur"],
-      ["grammar","A1,A2","un enfant, deux ___","enfants","enfant","enfantss","enfans"],
-      ["grammar","A2,B1","C'est ___ (bon).","mieux","meilleur","bon","plus bon"],
-      ["grammar","B1,B2","Elle ___ (finir) ses devoirs.","finit","finis","finissons","finissez"]
-    ],
-    "Spanish": [
-      ["cases","A1,A2","___ mesa (la/el)","la","el","las","los"],
-      ["cases","A1,A2","___ libro (el/la)","el","la","los","las"],
-      ["cases","A2,B1","___ agua (el/la)","el","la","las","los"],
-      ["verbs","A1,A2","yo ___ (ser)","soy","eres","es","somos"],
-      ["verbs","A1,A2","tú ___ (tener)","tienes","tengo","tiene","tenéis"],
-      ["verbs","A2,B1","nosotros ___ (ir)","vamos","voy","vas","va"],
-      ["preps","A1,A2","Vivo ___ Madrid.","en","a","de","por"],
-      ["preps","A1,A2","El libro está ___ la mesa.","en","sobre","a","de"],
-      ["preps","A2,B1","Estoy interesado ___ la música.","en","a","de","por"],
-      ["grammar","A1,A2","un niño, dos ___","niños","niño","niñoss","niñes"],
-      ["grammar","A2,B1","Esto es ___ (bueno).","mejor","bueno","más bueno","buena"],
-      ["grammar","B1,B2","Ella ___ (comer) ahora.","come","como","comes","comemos"]
-    ],
-    "Italian": [
-      ["cases","A1,A2","___ libro (il/lo/la)","il","lo","la","i"],
-      ["cases","A1,A2","___ zaino (il/lo/la)","lo","il","la","le"],
-      ["cases","A2,B1","Vedo ___ amica.","l'","il","lo","la"],
-      ["verbs","A1,A2","Io ___ (essere) stanco.","sono","sei","è","siamo"],
-      ["verbs","A1,A2","Tu ___ (avere) fame?","hai","ho","ha","abbiamo"],
-      ["verbs","A2,B1","Loro ___ (andare) a scuola.","vanno","va","vai","andiamo"],
-      ["preps","A1,A2","Vado ___ Italia.","in","a","di","con"],
-      ["preps","A1,A2","Il libro è ___ tavolo.","sul","nel","al","dal"],
-      ["preps","A2,B1","Parlo ___ miei amici.","con","di","a","per"],
-      ["grammar","A1,A2","un libro, due ___","libri","libro","libris","libra"],
-      ["grammar","A2,B1","Casa ___ (bello).","bella","bello","belli","belle"],
-      ["grammar","B1,B2","Ieri ___ (mangiare) la pizza.","ho mangiato","mangio","mangia","mangiava"]
-    ],
-    "Portuguese": [
-      ["cases","A1,A2","___ livro (o/a)","o","a","os","as"],
-      ["cases","A1,A2","___ mesa (a/o)","a","o","as","os"],
-      ["cases","A2,B1","___ amigos (os/as)","os","as","o","a"],
-      ["verbs","A1,A2","Eu ___ (ser) brasileiro.","sou","és","é","somos"],
-      ["verbs","A1,A2","Tu ___ (ter) fome?","tens","tenho","tem","temos"],
-      ["verbs","A2,B1","Eles ___ (ir) à escola.","vão","vai","vais","vamos"],
-      ["preps","A1,A2","Vou ___ Brasil.","para","em","de","por"],
-      ["preps","A1,A2","O livro está ___ mesa.","na","no","em","sobre"],
-      ["preps","A2,B1","Falo ___ meus amigos.","com","de","a","para"],
-      ["grammar","A1,A2","um livro, dois ___","livros","livro","livra","livres"],
-      ["grammar","A2,B1","A casa é ___ (bonito).","bonita","bonito","bonitos","bonitas"],
-      ["grammar","B1,B2","Ontem eu ___ (comer) pizza.","comi","como","come","comemos"]
-    ],
-    "Hindi": [
-      ["cases","A1,A2","मुझे ___ चाहिए (water)","पानी","किताब","दूध","रोटी"],
-      ["cases","A2,B1","___ (to me)","मुझे","मुझ","मैं","उसे"],
-      ["cases","A2,B1","वह ___ में रहता है (in the house)","घर","किताब","दुकान","मेज़"],
-      ["verbs","A1,A2","मैं ___ (I am)","हूँ","है","हो","हैं"],
-      ["verbs","A1,A2","तुम ___ हो (you are)","हो","हूँ","है","हैं"],
-      ["verbs","A2,B1","वह ___ है (he goes)","जाता","जाती","जाते","जाना"],
-      ["preps","A1,A2","किताब ___ है (on the table)","मेज़ पर","मेज़ में","मेज़ से","मेज़ को"],
-      ["preps","A1,A2","मैं ___ से आता हूँ (from Delhi)","दिल्ली","मुंबई","घर","दुकान"],
-      ["preps","A2,B1","___ को (to him)","उसे","उस","वह","मुझे"],
-      ["grammar","A1,A2","एक ___ (boy), दो लड़के","लड़का","लड़की","लड़के","लड़कों"],
-      ["grammar","A2,B1","यह ___ है (this is good)","अच्छा","अच्छी","अच्छे","बورا"],
-      ["grammar","B1,B2","वह ___ है (where)","कहाँ","क्या","कौन","कब"]
-    ],
-    "Arabic": [
-      ["cases","A1,A2","___ قلم (the pen)","ال","a","la","il"],
-      ["cases","A2,B1","رأيتُ ___ (I saw the boy, accusative)","الولدَ","الولدُ","الولدِ","الولدْ"],
-      ["cases","B1,B2","إلى ___ (to the book)","الكتابِ","الكتابُ","الكتابَ","الكتابْ"],
-      ["verbs","A1,A2","أنا ___ (I write)","أكتب","يكتب","كتبتُ","نكتب"],
-      ["verbs","A1,A2","هو ___ (he goes)","يذهب","ذهب","ذهبتُ","يذهبْ"],
-      ["verbs","A2,B1","نحن ___ (we ate)","أكلنا","يأكل","أكل","نأكل"],
-      ["preps","A1,A2","___ البيت (in the house)","في","من","إلى","على"],
-      ["preps","A1,A2","___ المدرسة (to school)","إلى","من","في","مع"],
-      ["preps","B1,B2","ذهبتُ ___ (with him)","معه","إليه","منه","عليه"],
-      ["grammar","A1,A2","___ (two books, dual)","كتابان","كتابين","كتابان","كتاب"],
-      ["grammar","A1,A2","___ (houses, plural of بيت)","بيوت","بيت","بيتان","أبيات"],
-      ["grammar","A2,B1","___ (where)","أين","هل","من","كيف"]
-    ],
-    "Chinese (Mandarin)": [
-      ["cases","A1,A2","一 ___ 书 (one book)","本","个","杯","张"],
-      ["cases","A1,A2","两 ___ 人 (two people)","个","本","条","杯"],
-      ["cases","A2,B1","三 ___ 水 (three glasses of water)","杯","碗","本","个"],
-      ["verbs","A1,A2","我 ___ 中国人 (I am Chinese)","是","有","在","会"],
-      ["verbs","A1,A2","他 ___ 饭 (he eats)","吃","喝","买","看"],
-      ["verbs","A2,B1","他 ___ 了 (he has eaten)","吃了","喝","看了","买了"],
-      ["preps","A1,A2","___ 北京 (in Beijing)","在","从","比","跟"],
-      ["preps","A2,B1","他 ___ 北京来 (he comes from Beijing)","从","到","在","比"],
-      ["preps","A1,A2","我 ___ 你买书 (I buy a book for you)","给","跟","对","向"],
-      ["grammar","A1,A2","他是学生 ___ ? (question particle)","吗","了","呢","的"],
-      ["grammar","A2,B1","这本书很 ___ (this book is expensive)","贵","便宜","大","小"],
-      ["grammar","B1,B2","因为下雨，___ 我没去 (so I didn't go)","所以","但是","如果","还是"]
-    ],
-    "Japanese": [
-      ["cases","A1,A2","私 ___ 学生です (I am a student)","は","が","を","に"],
-      ["cases","A1,A2","猫 ___ います (there is a cat)","が","は","を","で"],
-      ["cases","A2,B1","本 ___ 読みます (I read a book)","を","が","は","に"],
-      ["verbs","A1,A2","私は学生 ___","です","だ","ます","でした"],
-      ["verbs","A1,A2","ご飯を食べ ___ (I eat, polite)","ます","る","た","ない"],
-      ["verbs","A2,B1","昨日食べ ___ (I ate, past)","た","ます","ない","て"],
-      ["preps","A1,A2","学校 ___ 行きます (go to school)","に","で","を","が"],
-      ["preps","A1,A2","バス ___ 行きます (go by bus)","で","に","を","へ"],
-      ["preps","A2,B1","友達 ___ 会いました (met a friend)","に","で","を","が"],
-      ["grammar","A1,A2","これは ___ ですか (what is this?)","何","誰","いつ","どこ"],
-      ["grammar","A2,B1","高 ___ 本 (an expensive book)","い","かった","く","さ"],
-      ["grammar","B1,B2","食べ ___ (I want to eat)","たい","ます","た","ない"]
-    ]
-  };
-  Object.assign(EXAM_BANK, window.EXAM_BANK || {});
+  const EXAM_QUESTION_COUNT = 30;
+  const EXAM_BANK = window.EXAM_BANK || {};
   let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", level: "B1", parts: [], includeWords: true };
   let examOptsFilled = false;
 
@@ -1635,13 +1477,6 @@ function bumpStat(id, key) {
     }
     const seen = new Set();
     const queue = [];
-    for (const q of shuffle(aiQs || [])) {
-      const key = (q.prompt || "").trim().toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      queue.push(q);
-      if (queue.length >= EXAM_QUESTION_COUNT) break;
-    }
     for (const q of shuffle(compQs.concat(wordQs))) {
       if (queue.length >= EXAM_QUESTION_COUNT) break;
       const key = (q.prompt || "").trim().toLowerCase();
@@ -1779,26 +1614,7 @@ function bumpStat(id, key) {
       showModal({ title: "📝 Exam", text: "The selected lists contain no words.", okText: "OK" });
       return;
     }
-    let aiQs = [];
-    $("examStart").disabled = true;
-    if (!GUEST) {
-      try {
-        saveStatus("🤖 Generating exam with AI…");
-        const { data, error } = await supabase.functions.invoke("generate-exam", {
-          body: {
-            lang: exam.lang,
-            level: exam.level,
-            parts: exam.includeWords ? exam.parts.concat("words") : exam.parts,
-            count: EXAM_QUESTION_COUNT,
-            words: exam.includeWords ? exam.pool.slice(0, 60).map((w) => [w.a, w.b]) : []
-          }
-        });
-        if (!error && data && Array.isArray(data.questions)) aiQs = data.questions;
-        else console.error("AI exam failed, using local bank", error || data);
-      } catch (e) { console.error("AI exam failed, using local bank", e); }
-    }
-    exam.queue = buildExamQueue(aiQs);
-    $("examStart").disabled = false;
+    exam.queue = buildExamQueue();
     if (!exam.queue.length) {
       showModal({ title: "📝 Exam", text: "No questions available for this combination.", okText: "OK" });
       return;
