@@ -1674,7 +1674,6 @@ function bumpStat(id, key) {
   }
   $("examSubmit").addEventListener("click", examSubmit);
   $("examSubmit2").addEventListener("click", examSubmit);
-  $("examCancelBtn").addEventListener("click", () => activateTab("overview"));
   $("examToOpts").addEventListener("click", () => {
     const ids = [...$("examPickList").querySelectorAll("input[data-list]:checked")].map((cb) => cb.dataset.list);
     if (!ids.length) { showModal({ title: "📝 Exam", text: "Check at least one list first.", okText: "OK" }); return; }
