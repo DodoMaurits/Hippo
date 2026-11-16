@@ -119,13 +119,16 @@
       <div id="examOpts" class="hidden">
         <h2 class="panel-title">📝 Exam settings</h2>
         <div class="quiz-box">
-          <div class="quiz-options">
-            <div class="opt-row">
+          <div class="quiz-options exam-opts">
+            <div class="exam-section">
               <label class="opt-pill">Language <select id="examLang"></select></label>
             </div>
-            <p class="hint" style="margin:10px 0 4px">Assessment components:</p>
-            <div class="opt-row" id="examParts"></div>
-            <div class="opt-row" style="margin-top:8px">
+            <div class="exam-section hidden" id="examPartsSection">
+              <p class="exam-section-title">Assessment components:</p>
+              <div class="opt-row" id="examParts"></div>
+              <div id="examSubParts"></div>
+            </div>
+            <div class="exam-section">
               <label class="opt-pill"><input type="checkbox" id="examWords" checked> Include words/phrases from the selected lists</label>
             </div>
           </div>
