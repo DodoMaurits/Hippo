@@ -783,6 +783,8 @@ input.exam-answer.wrong {
 
 #panel-exam .score-bar { gap: 16px; }
 
+#app:has(#panel-exam.active #examRun:not(.hidden)) .tabs { display: none; }
+
 /* ================= Flashcards ================= */
 .flashcard { 
   max-width: 480px; 
