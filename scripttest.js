@@ -1372,7 +1372,6 @@ function bumpStat(id, key) {
 
   // ---------- Exam ----------
   const EXAM_LANGS = ["English","Spanish","French","German","Dutch","Italian","Portuguese","Russian","Chinese (Mandarin)","Japanese","Arabic","Hindi"];
-  const EXAM_LEVELS = ["A1","A2","B1","B2","C1","C2"];
   const EXAM_PARTS = [
     { id: "cases",   label: "Cases" },
     { id: "verbs",   label: "Verb conjugations" },
@@ -1381,7 +1380,7 @@ function bumpStat(id, key) {
   ];
   const EXAM_QUESTION_COUNT = 30;
   const EXAM_BANK = window.EXAM_BANK || {};
-  let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", level: "B1", parts: [], includeWords: true };
+  let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", parts: [], includeWords: true };
   let examOptsFilled = false;
 
   function examStep(name) {
@@ -1430,7 +1429,6 @@ function bumpStat(id, key) {
     if (examOptsFilled) return;
     examOptsFilled = true;
     $("examLang").innerHTML = '<option value="">Choose a language</option>' + EXAM_LANGS.slice().sort((a, b) => a.localeCompare(b, "en")).map((l) => "<option>" + l + "</option>").join("");
-    $("examLevel").innerHTML = EXAM_LEVELS.map((l) => '<option' + (l === "B1" ? " selected" : "") + ">" + l + "</option>").join("");
     const pbox = $("examParts");
     EXAM_PARTS.forEach((p) => {
       const lab = document.createElement("label");
@@ -1456,9 +1454,7 @@ function bumpStat(id, key) {
     const bank = EXAM_BANK[exam.lang] || EXAM_BANK["English"] || [];
     const compQs = [];
     exam.parts.forEach((pid) => {
-      let entries = bank.filter((e) => e[0] === pid);
-      const lv = entries.filter((e) => e[1].split(",").map((s) => s.trim()).includes(exam.level));
-      if (lv.length) entries = lv;
+      const entries = bank.filter((e) => e[0] === pid);
       entries.forEach((e) => compQs.push({ part: pid, prompt: e[2], answer: e[3], options: shuffle([e[3], e[4], e[5], e[6]]) }));
     });
     const wordQs = [];
@@ -1513,7 +1509,7 @@ function bumpStat(id, key) {
       wrap.className = "exam-q";
       const head = document.createElement("p");
       head.className = "hint";
-      head.textContent = (i + 1) + ". [" + partLabel(item.part) + "]  •  " + exam.lang + " " + exam.level;
+      head.textContent = (i + 1) + ". [" + partLabel(item.part) + "] • " + exam.lang;
       const pr = document.createElement("div");
       pr.className = "prompt exam-prompt";
       pr.textContent = item.prompt;
@@ -1602,7 +1598,6 @@ function bumpStat(id, key) {
     const lang = $("examLang").value;
     if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
     exam.lang = lang;
-    exam.level = $("examLevel").value;
     exam.parts = [...$("examParts").querySelectorAll("input:checked")].map((cb) => cb.value);
     exam.includeWords = $("examWords").checked;
     if (!exam.parts.length && !exam.includeWords) {
