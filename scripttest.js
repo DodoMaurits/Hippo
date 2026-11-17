@@ -1538,7 +1538,7 @@ function bumpStat(id, key) {
             if (pr.paradigm && pr.paradigm[c]) {
               const g = ["m", "f", "n", "pl"];
               pr.paradigm[c].forEach((v, gi) => {
-                compQs.push({ part: pid, sub: c, prompt: 'Pronoun "' + pr.name + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "), " + (g[gi] || ("form " + (gi + 1))) + ":", answer: v });
+              compQs.push({ part: pid, sub: c, prompt: 'Decline "' + pr.name + '" — ' + String(CASE_LABELS[c] || c).replace(/^\d+\s*/, "") + " (case " + c + "), " + (g[gi] || ("form " + (gi + 1))) + ":", answer: v });
               });
             } else {
               compQs.push({ part: pid, sub: c, prompt: 'Pronoun "' + pr.name + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer: pr.forms[idx] });
@@ -1624,17 +1624,21 @@ function bumpStat(id, key) {
       inp.className = "answer-input exam-answer";
       inp.addEventListener("input", examUpdCount);
       const ansLen = String(item.answer || "").split(";")[0].trim().length;
-      inp.size = Math.max(6, Math.min(28, ansLen + 2));
-      const text = String(item.prompt);
+      inp.size = Math.max(12, Math.min(30, ansLen + 4));
+      let text = String(item.prompt);
+      let hint = "";
+      const hm = text.match(/\(([^)]*)\)/);
+      if (hm) { hint = " (" + hm[1] + ")"; text = (text.slice(0, hm.index) + text.slice(hm.index + hm[0].length)).replace(/\s+/g, " ").trim(); }
       const pos = text.indexOf("___");
       pr.appendChild(document.createTextNode(num + ". "));
       if (pos >= 0) {
         pr.appendChild(document.createTextNode(text.slice(0, pos)));
         pr.appendChild(inp);
-        pr.appendChild(document.createTextNode(text.slice(pos + 3)));
+        pr.appendChild(document.createTextNode(text.slice(pos + 3) + hint));
       } else {
         pr.appendChild(document.createTextNode(text + " "));
         pr.appendChild(inp);
+        if (hint) pr.appendChild(document.createTextNode(hint));
       }
       wrap.appendChild(pr);
       box.appendChild(wrap);
