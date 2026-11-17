@@ -1399,18 +1399,25 @@ function bumpStat(id, key) {
   function examParts() { return EXAM_PARTS_BY_LANG[exam.lang] || []; }
   const EXAM_PRONOUNS = {
     "Russian": [
-      { nom: "я (persoonlijk)",     forms: ["я","меня","мне","меня","мной","обо мне"] },
-      { nom: "ты (persoonlijk)",    forms: ["ты","тебя","тебе","тебя","тобой","о тебе"] },
-      { nom: "он (persoonlijk)",    forms: ["он","его","ему","его","им","о нём"] },
-      { nom: "мы (persoonlijk)",    forms: ["мы","нас","нам","нас","нами","о нас"] },
-      { nom: "вы (persoonlijk)",    forms: ["вы","вас","вам","вас","вами","о вас"] },
-      { nom: "они (persoonlijk)",   forms: ["они","их","им","их","ими","о них"] },
-      { nom: "мой (bezittelijk)",   forms: ["мой","моего","моему","мой; моего","моим","о моём"] },
-      { nom: "твой (bezittelijk)",  forms: ["твой","твоего","твоему","твой; твоего","твоим","о твоём"] },
-      { nom: "наш (bezittelijk)",   forms: ["наш","нашего","нашему","наш; нашего","нашим","о нашем"] },
-      { nom: "ваш (bezittelijk)",   forms: ["ваш","вашего","вашему","ваш; вашего","вашим","о вашем"] },
-      { nom: "себя (wederkerend)",  forms: ["себя","себя","себе","себя","собой","о себе"] }
+      { nom: "я (persoonlijk)",    short: "я",    forms: ["я","меня","мне","меня","мной","обо мне"] },
+      { nom: "ты (persoonlijk)",   short: "ты",   forms: ["ты","тебя","тебе","тебя","тобой","о тебе"] },
+      { nom: "он (persoonlijk)",   short: "он",   forms: ["он","его","ему","его","им","о нём"] },
+      { nom: "мы (persoonlijk)",   short: "мы",   forms: ["мы","нас","нам","нас","нами","о нас"] },
+      { nom: "вы (persoonlijk)",   short: "вы",   forms: ["вы","вас","вам","вас","вами","о вас"] },
+      { nom: "они (persoonlijk)",  short: "они",  forms: ["они","их","им","их","ими","о них"] },
+      { nom: "себя (wederkerend)", short: "себя", forms: ["себя","себя","себе","себя","собой","о себе"] },
+      { nom: "мой (bezittelijk)",  short: "мой",  forms: ["мой","моего","моему","мой; моего","моим","о моём"], bare: true },
+      { nom: "твой (bezittelijk)", short: "твой", forms: ["твой","твоего","твоему","твой; твоего","твоим","о твоём"], bare: true },
+      { nom: "наш (bezittelijk)",  short: "наш",  forms: ["наш","нашего","нашему","наш; unseres","нашим","о нашем"], bare: true },
+      { nom: "ваш (bezittelijk)",  short: "ваш",  forms: ["ваш","вашего","вашему","ваш; вашего","вашим","о вашем"], bare: true }
     ]
+  };
+  const EXAM_PRONOUN_TEMPLATES = {
+    "2": ["У ___ ({p}) нет машины.", "У ___ ({p}) большая семья.", "После ___ ({p}) мы ушли.", "Без ___ ({p}) я не поеду."],
+    "3": ["___ ({p}) нравится этот город.", "Он подарил ___ ({p}) книгу.", "Сколько ___ ({p}) лет?", "Мы едем к ___ ({p})."],
+    "4": ["Он видит ___ ({p}).", "Он любит ___ ({p}).", "Мы встретили ___ ({p}) в парке."],
+    "5": ["Она разговаривает с ___ ({p}).", "Он доволен ___ ({p}).", "Перед ___ ({p}) стоит машина."],
+    "6": ["Мы говорим о ___ ({p}).", "Он думает о ___ ({p}).", "Они спорят о ___ ({p})."]
   };
   const EXAM_QUESTION_COUNT = 30;
   const EXAM_BANK = window.EXAM_BANK || {};
@@ -1519,7 +1526,12 @@ function bumpStat(id, key) {
         const idx = parseInt(c, 10) - 1;
         if (idx < 0 || idx > 5) return;
         const answer = pr.forms[idx];
-        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer });
+        const tpls = EXAM_PRONOUN_TEMPLATES[c] || [];
+        const t = !pr.bare && tpls.length ? tpls[Math.floor(Math.random() * tpls.length)] : null;
+        const prompt = t
+          ? t.replace("{p}", pr.short || pr.nom)
+          : 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):";
+        qs.push({ part: "pronouns", sub: c, prompt, answer });
       });
     });
     return qs;
