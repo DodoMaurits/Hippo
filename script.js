@@ -1558,11 +1558,18 @@ function bumpStat(id, key) {
       });
     }
     const seen = new Set();
-    const queue = [];
-    for (const q of shuffle(compQs.concat(wordQs))) {
-      if (queue.length >= EXAM_QUESTION_COUNT) break;
+    const byPart = {};
+    shuffle(compQs.concat(wordQs)).forEach((q) => {
       const key = (q.prompt || "").trim().toLowerCase();
-      if (!seen.has(key)) { seen.add(key); queue.push(q); }
+      if (seen.has(key)) return;
+      seen.add(key);
+      (byPart[q.part] = byPart[q.part] || []).push(q);
+    });
+    const partKeys = shuffle(Object.keys(byPart));
+    const queue = [];
+    for (let i = 0; queue.length < EXAM_QUESTION_COUNT && partKeys.some((k) => byPart[k].length); i++) {
+      const q = byPart[partKeys[i % partKeys.length]].shift();
+      if (q) queue.push(q);
     }
     return shuffle(queue);
   }
