@@ -712,15 +712,21 @@ th input { width: 100%; }
 
 .exam-q { 
   text-align: left; 
-  background: rgba(255,255,255,.05); 
-  border-radius: 10px; 
-  padding: 8px 12px; 
-  margin-bottom: 8px; 
+  padding: 5px 0; 
+  margin-bottom: 2px; 
 }
 
 .exam-q .exam-prompt { 
-  font-size: 1.1rem; 
-  margin: 0 0 6px; 
+  font-size: 1rem; 
+  margin: 0; 
+  line-height: 2; 
+}
+
+#examQuestions .exam-answer { 
+  width: auto; 
+  font-size: 1rem; 
+  padding: 2px 8px; 
+  margin: 0 4px; 
 }
 
 .exam-q .choices { 
