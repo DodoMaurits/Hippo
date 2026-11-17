@@ -1612,14 +1612,24 @@ function bumpStat(id, key) {
       wrap.dataset.qi = i;
       const pr = document.createElement("div");
       pr.className = "prompt exam-prompt";
-      pr.textContent = num + ". " + item.prompt;
-      wrap.appendChild(pr);
       const inp = document.createElement("input");
       inp.type = "text";
       inp.className = "answer-input exam-answer";
-      inp.placeholder = "Type your answer…";
       inp.addEventListener("input", examUpdCount);
-      wrap.appendChild(inp);
+      const ansLen = String(item.answer || "").split(";")[0].trim().length;
+      inp.size = Math.max(6, Math.min(28, ansLen + 2));
+      const text = String(item.prompt);
+      const pos = text.indexOf("___");
+      pr.appendChild(document.createTextNode(num + ". "));
+      if (pos >= 0) {
+        pr.appendChild(document.createTextNode(text.slice(0, pos)));
+        pr.appendChild(inp);
+        pr.appendChild(document.createTextNode(text.slice(pos + 3)));
+      } else {
+        pr.appendChild(document.createTextNode(text + " "));
+        pr.appendChild(inp);
+      }
+      wrap.appendChild(pr);
       box.appendChild(wrap);
     });
     examUpdCount();
