@@ -1784,6 +1784,7 @@ function bumpStat(id, key) {
     });
   }
 
+  let authReady = false;
   if (GUEST) {
     startGuest();
   } else {
@@ -1792,6 +1793,8 @@ function bumpStat(id, key) {
         $("loginScreen").classList.add("hidden");
         $("app").classList.remove("hidden");
         $("loggedInUser").textContent = "🦛 " + session.user.email;
+        if (authReady) return;
+        authReady = true;
         await loadLists();
         loadColNames();
         renderOverview();
@@ -1825,6 +1828,7 @@ function bumpStat(id, key) {
       }
     }
       } else {
+        authReady = false;
         words = [];
         $("app").classList.add("hidden");
         $("loginScreen").classList.remove("hidden");
