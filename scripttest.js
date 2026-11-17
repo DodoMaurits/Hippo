@@ -1398,7 +1398,6 @@ function bumpStat(id, key) {
   };
   function examParts() { return EXAM_PARTS_BY_LANG[exam.lang] || []; }
   const EXAM_PRONOUNS = window.EXAM_PRONOUNS || {};
-  const EXAM_PRONOUN_TEMPLATES = window.EXAM_PRONOUN_TEMPLATES || {};
   const EXAM_QUESTION_COUNT = 30;
   const EXAM_BANK = window.EXAM_BANK || {};
   let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", subs: {}, parts: [], includeWords: true };
@@ -1505,13 +1504,7 @@ function bumpStat(id, key) {
       subs.forEach((c) => {
         const idx = parseInt(c, 10) - 1;
         if (idx < 0 || idx > 5) return;
-        const answer = pr.forms[idx];
-        const tpls = (EXAM_PRONOUN_TEMPLATES[lang] || {})[c] || [];
-        const t = !pr.bare && tpls.length ? tpls[Math.floor(Math.random() * tpls.length)] : null;
-        const prompt = t
-          ? t.replace("{p}", pr.short || pr.nom)
-          : 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):";
-        qs.push({ part: "pronouns", sub: c, prompt, answer });
+        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer: pr.forms[idx] });
       });
     });
     return qs;
