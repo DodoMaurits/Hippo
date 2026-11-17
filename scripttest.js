@@ -1737,8 +1737,18 @@ function bumpStat(id, key) {
     }
     startExamRun();
   });
-  $("examQuit").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
-  $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
+  $("examQuit").addEventListener("click", async () => {
+    if (exam.step === "run" && !exam.done) {
+      const res = await showModal({
+        title: "Leave exam?",
+        text: "Are you sure you want to quit? Your answers will be lost.",
+        okText: "Quit exam",
+        extraButton: { label: "Stay in exam", value: "stay" }
+      });
+      if (res !== true) return;
+    }
+    clearInterval(exam.timer); exam.timer = null; activateTab("overview");
+  });  $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
   
   // ---------- Init ----------
   async function startGuest() {
