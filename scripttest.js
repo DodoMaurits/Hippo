@@ -1514,8 +1514,7 @@ function bumpStat(id, key) {
         const idx = parseInt(c, 10) - 1;
         if (idx < 0 || idx > 5) return;
         const answer = pr.forms[idx];
-        const wrong = shuffle(pr.forms.filter((f, j) => j !== idx)).slice(0, 3);
-        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer, options: shuffle([answer, ...wrong]) });
+        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer });
       });
     });
     return qs;
@@ -1542,9 +1541,7 @@ function bumpStat(id, key) {
       bank.filter((e) => e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
         if (sub && !selSubs.includes(sub)) return;
-        const opts = shuffle([e[3], e[4], e[5], e[6]].filter((x) => x !== undefined && x !== null && x !== ""));
-        while (opts.length < 4) opts.push("—");
-        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3], options: opts.slice(0, 4) });
+        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3] });
       });
       if (pid === "pronouns") compQs.push(...genPronounQuestions(exam.lang, selSubs));
     });
@@ -1554,11 +1551,7 @@ function bumpStat(id, key) {
         [true, false].forEach((toB) => {
           const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
           if (prompt === answer) return;
-          const wrong = shuffle(exam.pool.filter((x) => x !== w && (toB ? x.b : x.a) !== answer))
-            .slice(0, 3).map((x) => (toB ? x.b : x.a));
-          const options = shuffle([answer, ...wrong]);
-          while (options.length < 4) options.push("—");
-          wordQs.push({ part: "words", prompt, answer, options: options.slice(0, 4), id: w.id });
+          wordQs.push({ part: "words", prompt, answer, id: w.id });
         });
       });
     }
@@ -1641,7 +1634,7 @@ function bumpStat(id, key) {
       const inp = wrap.querySelector("input.exam-answer");
       const given = inp ? inp.value.trim() : "";
       if (inp) inp.disabled = true;
-      const ok = !!given && normalize(given) === normalize(item.answer);
+      const ok = !!given && acceptedAnswers(item.answer).includes(normalize(given));
       if (ok) score++;
       if (item.id) bumpStat(item.id, ok ? "right" : "wrong");
       const fb = document.createElement("div");
