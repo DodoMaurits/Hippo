@@ -1516,7 +1516,7 @@ function bumpStat(id, key) {
       const p = examParts().find((x) => x.id === pid);
       const selSubs = exam.subs[pid] || [];
       const subs = selSubs.length ? selSubs : CASE_SUBS;
-      bank.filter((e) => e[0] === pid).forEach((e) => {
+      bank.filter((e) => e && e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
         if (sub && !selSubs.includes(sub)) return;
         if (e[3] === "{p}") {
