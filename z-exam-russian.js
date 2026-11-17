@@ -117,7 +117,7 @@ window.EXAM_BANK["Russian"] = [
   ["verbs","past-pf","Вчера я ___ (прочитать, perfective) эту книгу.","прочитал"],
   ["verbs","fut-comp","Завтра я ___ эту книгу (читать, compound future).","буду читать"],
   ["verbs","fut-simple","Завтра я ___ книгу (читать, simple future).","прочитаю"],
-  ["verbs","imperative","___! (писать, imperative)","Пиши"]
+  ["verbs","imperative","___! (писать, imperative)","Пиши"],
   // ===== pronouns — "{p}" = per zin worden alle pronouns uit EXAM_PRONOUNS bevraagd =====
   ["pronouns","2","У ___ нет машины.","{p}"],
   ["pronouns","2","У ___ большая семья.","{p}"],
