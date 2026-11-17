@@ -1524,7 +1524,7 @@ function bumpStat(id, key) {
             if (pr.bare) return;
             const idx = parseInt(sub, 10) - 1;
             if (idx < 0 || idx > 5) return;
-            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + (pr.short || pr.nom) + ")"), answer: pr.forms[idx] });
+            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + pr.name + ")")
           });
           return;
         }
@@ -1535,7 +1535,7 @@ function bumpStat(id, key) {
           subs.forEach((c) => {
             const idx = parseInt(c, 10) - 1;
             if (idx < 0 || idx > 5) return;
-            compQs.push({ part: pid, sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer: pr.forms[idx] });
+            compQs.push({ part: pid, sub: c, prompt: 'Pronoun "' + pr.name + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):"
           });
         });
       }
