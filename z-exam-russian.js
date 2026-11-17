@@ -1,15 +1,16 @@
 // Exam question bank — Russian
 // Formaat: ["onderdeel","sub","vraag","antwoord"]
-// onderdeel: "cases" | "verbs"   sub: bv. "4" (accusatief) / "pres"
-// (pronouns worden gegenereerd uit EXAM_PRONOUNS in scripttest.js)
+// "cases"    = naamvallen van ZELFSTANDIG en BIJVOEGLIJK naamwoord (sub "2".."6")
+// "verbs"    = werkwoordvervoeging (sub bv. "pres")
+// "pronouns" = naamvallen van PERSOONLIJK / BEZITTELIJK / WEDERKEREND voornaamwoord
+//   (de paradigma's worden gegenereerd uit EXAM_PRONOUNS in scripttest.js;
+//    hier kun je extra contextvragen als ["pronouns","2","...","..."] neerzetten)
 window.EXAM_BANK = window.EXAM_BANK || {};
 window.EXAM_BANK["Russian"] = [
   // ===== cases — naamval 2 (genitief) =====
   ["cases","2","У меня нет ___ (время).","времени"],
   ["cases","2","У нас нет ___ (деньги).","денег"],
   ["cases","2","У меня нет ___ (брат).","брата"],
-  ["cases","2","У ___ (я) есть машина.","меня"],
-  ["cases","2","У ___ (они) большая семья.","них"],
   ["cases","2","После ___ (обед) мы гуляли.","обеда"],
   ["cases","2","Два ___ (яблоко) и три груши.","яблока"],
   ["cases","2","Пять ___ (книга) лежат на столе.","книг"],
@@ -25,12 +26,10 @@ window.EXAM_BANK["Russian"] = [
   // ===== cases — naamвал 3 (датив) =====
   ["cases","3","Он подарил ___ (друг) книгу.","другу"],
   ["cases","3","Я помогаю ___ (мама).","маме"],
-  ["cases","3","___ (я) нравится этот город.","Мне"],
-  ["cases","3","Сколько ___ (ты) лет?","тебе"],
   ["cases","3","Он позвонил ___ (брат).","брату"],
   ["cases","3","Мы едем к ___ (бабушка).","бабушке"],
   ["cases","3","По ___ (дорога) домой шёл дождь.","дороге"],
-  ["cases","3","Благодаря ___ (друзья) он сдал экзамен.","друзьям"],
+  ["cases","3","Благодаря ___ (друзья) он сдал examen.","друзьям"],
   ["cases","3","Согласно ___ (приказ) всё изменилось.","приказу"],
   ["cases","3","Наперекор ___ (все мнения) он уехал.","всем мнениям"],
   // ===== cases — naamвал 4 (accusatief) =====
@@ -64,6 +63,12 @@ window.EXAM_BANK["Russian"] = [
   ["cases","6","Я мечтаю о ___ (путешествие).","путешествии"],
   ["cases","6","Он живёт в ___ (Москва).","Москве"],
   ["cases","6","Книга лежит на ___ (стол).","столе"],
+  // ===== cases — bijvoeglijke naamwoorden =====
+  ["cases","2","У меня нет ___ (новая) книги.","новой"],
+  ["cases","3","Он подарил цветы ___ (хороший) другу.","хорошему"],
+  ["cases","4","Я вижу ___ (большой) дом.","большой"],
+  ["cases","5","Она интересуется ___ (русская) литературой.","русской"],
+  ["cases","6","Он живёт в ___ (новый) доме.","новом"],
   // ===== verbs =====
   ["verbs","pres","Я ___ (читать) книгу.","читаю"],
   ["verbs","pres","Ты ___ (говорить) по-русски?","говоришь"],
@@ -72,5 +77,10 @@ window.EXAM_BANK["Russian"] = [
   ["verbs","past-pf","Вчера я ___ (прочитать, СВ) эту книгу.","прочитал"],
   ["verbs","fut-comp","Завтра я ___ эту книгу (составное будущее, НСВ).","буду читать"],
   ["verbs","fut-simple","Завтра я ___ книгу (простое будущее, СВ).","прочитаю"],
-  ["verbs","imperative","___! (писать, повелительное наклонение)","Пиши"]
+  ["verbs","imperative","___! (писать, повелительное наклонение)","Пиши"],
+  // ===== pronouns — persoonlijk voornaamwoord in context =====
+  ["pronouns","2","У ___ (я) есть машина.","меня"],
+  ["pronouns","2","У ___ (они) большая семья.","них"],
+  ["pronouns","3","___ (я) нравится этот город.","Мне"],
+  ["pronouns","3","Сколько ___ (ты) лет?","тебе"]
 ];
