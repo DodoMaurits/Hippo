@@ -1,10 +1,25 @@
-// Exam question bank — Russian
-// Formaat: ["onderdeel","sub","vraag","antwoord"]
-// "cases"    = naamvallen van ZELFSTANDIG en BIJVOEGLIJK naamwoord (sub "2".."6")
-// "verbs"    = werkwoordvervoeging (sub bv. "pres")
-// "pronouns" = naamvallen van PERSOONLIJK / BEZITTELIJK / WEDERKEREND voornaamwoord
-//   (de paradigma's worden gegenereerd uit EXAM_PRONOUNS in scripttest.js;
-//    hier kun je extra contextvragen als ["pronouns","2","...","..."] neerzetten)
+window.EXAM_PRONOUNS = window.EXAM_PRONOUNS || {};
+window.EXAM_PRONOUNS["Russian"] = [
+  { nom: "я (persoonlijk)",    short: "я",    forms: ["я","меня","мне","меня","мной","обо мне"] },
+  { nom: "ты (persoonlijk)",   short: "ты",   forms: ["ты","тебя","тебе","тебя","тобой","о тебе"] },
+  { nom: "он (persoonlijk)",   short: "он",   forms: ["он","его","ему","его","им","о нём"] },
+  { nom: "мы (persoonlijk)",   short: "мы",   forms: ["мы","нас","нам","нас","нами","о нас"] },
+  { nom: "вы (persoonlijk)",   short: "вы",   forms: ["вы","вас","вам","вас","вами","о вас"] },
+  { nom: "они (persoonlijk)",  short: "они",  forms: ["они","их","им","их","ими","о них"] },
+  { nom: "себя (wederkerend)", short: "себя", forms: ["себя","себя","себе","себя","собой","о себе"] },
+  { nom: "мой (bezittelijk)",  short: "мой",  forms: ["мой","моего","моему","мой; моего","моим","о моём"], bare: true },
+  { nom: "твой (bezittelijk)", short: "твой", forms: ["твой","твоего","твоему","твой; твоего","твоим","о твоём"], bare: true },
+  { nom: "наш (bezittelijk)",  short: "наш",  forms: ["наш","нашего","нашему","наш; нашего","нашим","о нашем"], bare: true },
+  { nom: "ваш (bezittelijk)",  short: "ваш",  forms: ["ваш","вашего","вашему","ваш; вашего","вашим","о вашем"], bare: true }
+];
+window.EXAM_PRONOUN_TEMPLATES = window.EXAM_PRONOUN_TEMPLATES || {};
+window.EXAM_PRONOUN_TEMPLATES["Russian"] = {
+  "2": ["У ___ ({p}) нет машины.", "У ___ ({p}) большая семья.", "После ___ ({p}) мы ушли.", "Без ___ ({p}) я не поеду."],
+  "3": ["___ ({p}) нравится этот город.", "Он подарил ___ ({p}) книгу.", "Сколько ___ ({p}) лет?", "Мы едем к ___ ({p})."],
+  "4": ["Он видит ___ ({p}).", "Он любит ___ ({p}).", "Мы встретили ___ ({p}) в парке."],
+  "5": ["Она разговаривает с ___ ({p}).", "Он доволен ___ ({p}).", "Перед ___ ({p}) стоит машина."],
+  "6": ["Мы говорим о ___ ({p}).", "Он думает о ___ ({p}).", "Они спорят о ___ ({p})."]
+};
 window.EXAM_BANK = window.EXAM_BANK || {};
 window.EXAM_BANK["Russian"] = [
   // ===== cases — naamval 2 (genitief) =====
