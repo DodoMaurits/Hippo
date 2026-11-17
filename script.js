@@ -1514,8 +1514,7 @@ function bumpStat(id, key) {
         const idx = parseInt(c, 10) - 1;
         if (idx < 0 || idx > 5) return;
         const answer = pr.forms[idx];
-        const wrong = shuffle(pr.forms.filter((f, j) => j !== idx)).slice(0, 3);
-        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer, options: shuffle([answer, ...wrong]) });
+        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer });
       });
     });
     return qs;
@@ -1542,9 +1541,7 @@ function bumpStat(id, key) {
       bank.filter((e) => e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
         if (sub && !selSubs.includes(sub)) return;
-        const opts = shuffle([e[3], e[4], e[5], e[6]].filter((x) => x !== undefined && x !== null && x !== ""));
-        while (opts.length < 4) opts.push("—");
-        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3], options: opts.slice(0, 4) });
+        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3] });
       });
       if (pid === "pronouns") compQs.push(...genPronounQuestions(exam.lang, selSubs));
     });
@@ -1554,11 +1551,7 @@ function bumpStat(id, key) {
         [true, false].forEach((toB) => {
           const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
           if (prompt === answer) return;
-          const wrong = shuffle(exam.pool.filter((x) => x !== w && (toB ? x.b : x.a) !== answer))
-            .slice(0, 3).map((x) => (toB ? x.b : x.a));
-          const options = shuffle([answer, ...wrong]);
-          while (options.length < 4) options.push("—");
-          wordQs.push({ part: "words", prompt, answer, options: options.slice(0, 4), id: w.id });
+          wordQs.push({ part: "words", prompt, answer, id: w.id });
         });
       });
     }
@@ -1585,10 +1578,8 @@ function bumpStat(id, key) {
   function examUpdCount() {
     let n = 0;
     $("examQuestions").querySelectorAll(".exam-q").forEach((w) => {
-      const q = exam.queue[+w.dataset.qi];
-      if (!q) return;
       const inp = w.querySelector("input.exam-answer");
-      if (q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked) n++;
+      if (inp && inp.value.trim()) n++;
     });
     $("examCount").textContent = "Answered: " + n + "/" + exam.queue.length;
     $("examProgress").style.width = (exam.queue.length ? (n / exam.queue.length * 100) : 0) + "%";
@@ -1621,31 +1612,12 @@ function bumpStat(id, key) {
       pr.className = "prompt exam-prompt";
       pr.textContent = num + ". " + item.prompt;
       wrap.appendChild(pr);
-      if (item.part === "words") {
-        const inp = document.createElement("input");
-        inp.type = "text";
-        inp.className = "answer-input exam-answer";
-        inp.placeholder = "Type your answer…";
-        inp.addEventListener("input", examUpdCount);
-        wrap.appendChild(inp);
-      } else {
-        const ch = document.createElement("div");
-        ch.className = "choices";
-        item.options.forEach((opt) => {
-          const btn = document.createElement("button");
-          btn.className = "choice";
-          btn.textContent = opt;
-          btn.addEventListener("click", () => {
-            if (exam.done) return;
-            ch.querySelectorAll(".choice").forEach((b) => b.classList.remove("selected"));
-            btn.classList.add("selected");
-            item.picked = opt;
-            examUpdCount();
-          });
-          ch.appendChild(btn);
-        });
-        wrap.appendChild(ch);
-      }
+      const inp = document.createElement("input");
+      inp.type = "text";
+      inp.className = "answer-input exam-answer";
+      inp.placeholder = "Type your answer…";
+      inp.addEventListener("input", examUpdCount);
+      wrap.appendChild(inp);
       box.appendChild(wrap);
     });
     examUpdCount();
@@ -1659,21 +1631,16 @@ function bumpStat(id, key) {
     $("examQuestions").querySelectorAll(".exam-q").forEach((wrap) => {
       const item = exam.queue[+wrap.dataset.qi];
       if (!item) return;
-      let given = item.picked || "";
       const inp = wrap.querySelector("input.exam-answer");
-      if (inp) { given = inp.value.trim(); inp.disabled = true; }
-      const ok = !!given && normalize(given) === normalize(item.answer);
+      const given = inp ? inp.value.trim() : "";
+      if (inp) inp.disabled = true;
+      const ok = !!given && acceptedAnswers(item.answer).includes(normalize(given));
       if (ok) score++;
       if (item.id) bumpStat(item.id, ok ? "right" : "wrong");
       const fb = document.createElement("div");
       fb.className = "feedback " + (ok ? "good" : "bad");
       fb.textContent = ok ? "✔ Correct!" : "✘ Correct answer: " + item.answer;
       wrap.appendChild(fb);
-      wrap.querySelectorAll(".choice").forEach((b) => {
-        b.disabled = true;
-        if (normalize(b.textContent) === normalize(item.answer)) b.classList.add("correct");
-        else if (b.classList.contains("selected")) b.classList.add("wrong");
-      });
       if (inp) inp.classList.add(ok ? "correct" : "wrong");
     });
     exam.score = score;
@@ -1737,8 +1704,18 @@ function bumpStat(id, key) {
     }
     startExamRun();
   });
-  $("examQuit").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
-  $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
+  $("examQuit").addEventListener("click", async () => {
+    if (exam.step === "run" && !exam.done) {
+      const res = await showModal({
+        title: "Leave exam?",
+        text: "Are you sure you want to quit? Your answers will be lost.",
+        okText: "Quit exam",
+        extraButton: { label: "Stay in exam", value: "stay" }
+      });
+      if (res !== true) return;
+    }
+    clearInterval(exam.timer); exam.timer = null; activateTab("overview");
+  });  $("examToOverview").addEventListener("click", () => { clearInterval(exam.timer); exam.timer = null; activateTab("overview"); });
   
   // ---------- Init ----------
   async function startGuest() {
