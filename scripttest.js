@@ -1496,19 +1496,6 @@ function bumpStat(id, key) {
       cb.addEventListener("change", () => subRow.classList.toggle("hidden", !cb.checked));
     });
   }
-  function genPronounQuestions(lang, selSubs) {
-    const table = EXAM_PRONOUNS[lang] || [];
-    const subs = selSubs && selSubs.length ? selSubs : CASE_SUBS;
-    const qs = [];
-    table.forEach((pr) => {
-      subs.forEach((c) => {
-        const idx = parseInt(c, 10) - 1;
-        if (idx < 0 || idx > 5) return;
-        qs.push({ part: "pronouns", sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer: pr.forms[idx] });
-      });
-    });
-    return qs;
-  }
   async function loadExamWords(listIds) {
     if (GUEST) {
       let all = [];
@@ -1528,12 +1515,30 @@ function bumpStat(id, key) {
     exam.parts.forEach((pid) => {
       const p = examParts().find((x) => x.id === pid);
       const selSubs = exam.subs[pid] || [];
+      const subs = selSubs.length ? selSubs : CASE_SUBS;
       bank.filter((e) => e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
         if (sub && !selSubs.includes(sub)) return;
+        if (e[3] === "{p}") {
+          (EXAM_PRONOUNS[exam.lang] || []).forEach((pr) => {
+            if (pr.bare) return;
+            const idx = parseInt(sub, 10) - 1;
+            if (idx < 0 || idx > 5) return;
+            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + (pr.short || pr.nom) + ")"), answer: pr.forms[idx] });
+          });
+          return;
+        }
         compQs.push({ part: pid, sub, prompt: e[2], answer: e[3] });
       });
-      if (pid === "pronouns") compQs.push(...genPronounQuestions(exam.lang, selSubs));
+      if (pid === "pronouns") {
+        (EXAM_PRONOUNS[exam.lang] || []).filter((pr) => pr.bare).forEach((pr) => {
+          subs.forEach((c) => {
+            const idx = parseInt(c, 10) - 1;
+            if (idx < 0 || idx > 5) return;
+            compQs.push({ part: pid, sub: c, prompt: 'Pronoun "' + pr.nom + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer: pr.forms[idx] });
+          });
+        });
+      }
     });
     const wordQs = [];
     if (exam.includeWords && exam.pool.length) {
