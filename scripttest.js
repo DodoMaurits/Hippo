@@ -1524,7 +1524,7 @@ function bumpStat(id, key) {
             if (pr.bare) return;
             const idx = parseInt(sub, 10) - 1;
             if (idx < 0 || idx > 5) return;
-            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + pr.name + ")")
+            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + pr.name + ")"), answer: pr.forms[idx] });
           });
           return;
         }
