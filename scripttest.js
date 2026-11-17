@@ -1585,10 +1585,8 @@ function bumpStat(id, key) {
   function examUpdCount() {
     let n = 0;
     $("examQuestions").querySelectorAll(".exam-q").forEach((w) => {
-      const q = exam.queue[+w.dataset.qi];
-      if (!q) return;
       const inp = w.querySelector("input.exam-answer");
-      if (q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked) n++;
+      if (inp && inp.value.trim()) n++;
     });
     $("examCount").textContent = "Answered: " + n + "/" + exam.queue.length;
     $("examProgress").style.width = (exam.queue.length ? (n / exam.queue.length * 100) : 0) + "%";
@@ -1621,31 +1619,12 @@ function bumpStat(id, key) {
       pr.className = "prompt exam-prompt";
       pr.textContent = num + ". " + item.prompt;
       wrap.appendChild(pr);
-      if (item.part === "words") {
-        const inp = document.createElement("input");
-        inp.type = "text";
-        inp.className = "answer-input exam-answer";
-        inp.placeholder = "Type your answer…";
-        inp.addEventListener("input", examUpdCount);
-        wrap.appendChild(inp);
-      } else {
-        const ch = document.createElement("div");
-        ch.className = "choices";
-        item.options.forEach((opt) => {
-          const btn = document.createElement("button");
-          btn.className = "choice";
-          btn.textContent = opt;
-          btn.addEventListener("click", () => {
-            if (exam.done) return;
-            ch.querySelectorAll(".choice").forEach((b) => b.classList.remove("selected"));
-            btn.classList.add("selected");
-            item.picked = opt;
-            examUpdCount();
-          });
-          ch.appendChild(btn);
-        });
-        wrap.appendChild(ch);
-      }
+      const inp = document.createElement("input");
+      inp.type = "text";
+      inp.className = "answer-input exam-answer";
+      inp.placeholder = "Type your answer…";
+      inp.addEventListener("input", examUpdCount);
+      wrap.appendChild(inp);
       box.appendChild(wrap);
     });
     examUpdCount();
@@ -1659,9 +1638,9 @@ function bumpStat(id, key) {
     $("examQuestions").querySelectorAll(".exam-q").forEach((wrap) => {
       const item = exam.queue[+wrap.dataset.qi];
       if (!item) return;
-      let given = item.picked || "";
       const inp = wrap.querySelector("input.exam-answer");
-      if (inp) { given = inp.value.trim(); inp.disabled = true; }
+      const given = inp ? inp.value.trim() : "";
+      if (inp) inp.disabled = true;
       const ok = !!given && normalize(given) === normalize(item.answer);
       if (ok) score++;
       if (item.id) bumpStat(item.id, ok ? "right" : "wrong");
@@ -1669,11 +1648,6 @@ function bumpStat(id, key) {
       fb.className = "feedback " + (ok ? "good" : "bad");
       fb.textContent = ok ? "✔ Correct!" : "✘ Correct answer: " + item.answer;
       wrap.appendChild(fb);
-      wrap.querySelectorAll(".choice").forEach((b) => {
-        b.disabled = true;
-        if (normalize(b.textContent) === normalize(item.answer)) b.classList.add("correct");
-        else if (b.classList.contains("selected")) b.classList.add("wrong");
-      });
       if (inp) inp.classList.add(ok ? "correct" : "wrong");
     });
     exam.score = score;
