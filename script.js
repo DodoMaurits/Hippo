@@ -1583,28 +1583,43 @@ function bumpStat(id, key) {
     }, 1000);
   }
   function examUpdCount() {
-    const n = exam.queue.filter((q, j) => {
-      const w = $("examQuestions").children[j];
-      if (!w) return false;
+    let n = 0;
+    $("examQuestions").querySelectorAll(".exam-q").forEach((w) => {
+      const q = exam.queue[+w.dataset.qi];
+      if (!q) return;
       const inp = w.querySelector("input.exam-answer");
-      return q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked;
-    }).length;
+      if (q.part === "words" ? !!(inp && inp.value.trim()) : !!q.picked) n++;
+    });
     $("examCount").textContent = "Answered: " + n + "/" + exam.queue.length;
     $("examProgress").style.width = (exam.queue.length ? (n / exam.queue.length * 100) : 0) + "%";
+  }
+  function examSortKey(item, idx) {
+    const parts = examParts();
+    const pi = item.part === "words" ? parts.length : parts.findIndex((p) => p.id === item.part);
+    const p = parts.find((x) => x.id === item.part);
+    const si = item.part === "words" || !p || !p.subs ? 0 : p.subs.indexOf(item.sub);
+    return (pi === -1 ? parts.length - 1 : pi) * 10000 + (si < 0 ? 0 : si) * 100 + idx;
   }
   function renderExamQuestions() {
     const box = $("examQuestions");
     box.innerHTML = "";
-    exam.queue.forEach((item, i) => {
+    const ordered = exam.queue.map((q, i) => ({ q, i })).sort((a, b) => examSortKey(a.q, a.i) - examSortKey(b.q, b.i));
+    let lastPart = null, num = 0;
+    ordered.forEach(({ q: item, i }) => {
+      if (item.part !== lastPart) {
+        lastPart = item.part;
+        const h = document.createElement("h3");
+        h.className = "exam-cat";
+        h.textContent = partLabel(item.part, "");
+        box.appendChild(h);
+      }
+      num++;
       const wrap = document.createElement("div");
       wrap.className = "exam-q";
-      const head = document.createElement("p");
-      head.className = "hint";
-      head.textContent = (i + 1) + ". [" + partLabel(item.part, item.sub) + "] • " + exam.lang;
+      wrap.dataset.qi = i;
       const pr = document.createElement("div");
       pr.className = "prompt exam-prompt";
-      pr.textContent = item.prompt;
-      wrap.appendChild(head);
+      pr.textContent = num + ". " + item.prompt;
       wrap.appendChild(pr);
       if (item.part === "words") {
         const inp = document.createElement("input");
@@ -1641,8 +1656,9 @@ function bumpStat(id, key) {
     clearInterval(exam.timer);
     exam.timer = null;
     let score = 0;
-    exam.queue.forEach((item, i) => {
-      const wrap = $("examQuestions").children[i];
+    $("examQuestions").querySelectorAll(".exam-q").forEach((wrap) => {
+      const item = exam.queue[+wrap.dataset.qi];
+      if (!item) return;
       let given = item.picked || "";
       const inp = wrap.querySelector("input.exam-answer");
       if (inp) { given = inp.value.trim(); inp.disabled = true; }
