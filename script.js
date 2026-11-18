@@ -1504,6 +1504,7 @@ function bumpStat(id, key) {
       alab.className = "opt-pill";
       alab.appendChild(document.createTextNode("Question amount "));
       const anum = document.createElement("input");
+      anum.addEventListener("change", () => { anum.value = Math.max(1, Math.min(25, parseInt(anum.value, 10) || 1)); });
       anum.type = "number"; anum.min = 1; anum.max = 25; anum.value = 8; anum.className = "opt-max"; anum.dataset.amt = p.id;
       alab.appendChild(anum);
       amtRow.appendChild(alab);
@@ -1707,6 +1708,9 @@ function bumpStat(id, key) {
     $("examWordsDirRow").classList.toggle("hidden", !$("examWords").checked);
     $("examWordsAmtRow").classList.toggle("hidden", !$("examWords").checked);
   });
+  $("examWordsAmt").addEventListener("change", (e) => {
+    e.target.value = Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1));
+  });
   $("examTimeLimit").addEventListener("change", () => $("examTimeOptsRow").classList.toggle("hidden", !$("examTimeLimit").checked));
   async function startExamRun() {
     exam.pool = exam.includeWords ? await loadExamWords(exam.listIds) : [];
@@ -1732,6 +1736,9 @@ function bumpStat(id, key) {
     const lang = $("examLang").value;
     if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
     exam.noLimit = !$("examTimeLimit").checked;
+    exam.lang = lang;
+    exam.parts = [...$("examParts").querySelectorAll("input[data-part]:checked")].map((cb) => cb.value);
+    exam.includeWords = $("examWords").checked;
     const t = document.querySelector('input[name="examTime"]:checked');
     exam.minutes = t ? parseInt(t.value, 10) : 30;
     exam.amounts = { words: $("examWordsAmt").value };
