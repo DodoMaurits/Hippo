@@ -1816,6 +1816,7 @@ function bumpStat(id, key) {
         text: "Are you sure you want to quit? Your answers will be lost.",
         okText: "Quit exam",
         extraButton: { label: "Stay in exam", value: "stay" }
+        hideCancel: true
       });
       if (res !== true) return;
     }
