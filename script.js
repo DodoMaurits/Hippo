@@ -1707,6 +1707,7 @@ function bumpStat(id, key) {
     $("examWordsDirRow").classList.toggle("hidden", !$("examWords").checked);
     $("examWordsAmtRow").classList.toggle("hidden", !$("examWords").checked);
   });
+  $("examTimeLimit").addEventListener("change", () => $("examTimeOptsRow").classList.toggle("hidden", !$("examTimeLimit").checked));
   async function startExamRun() {
     exam.pool = exam.includeWords ? await loadExamWords(exam.listIds) : [];
     if (exam.includeWords && !exam.pool.length) {
@@ -1730,8 +1731,9 @@ function bumpStat(id, key) {
   $("examStart").addEventListener("click", () => {
     const lang = $("examLang").value;
     if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
-    exam.noLimit = $("examNoLimit").checked;
-    exam.minutes = Math.max(5, Math.min(60, parseInt($("examMinutes").value, 10) || 30));
+    exam.noLimit = !$("examTimeLimit").checked;
+    const t = document.querySelector('input[name="examTime"]:checked');
+    exam.minutes = t ? parseInt(t.value, 10) : 30;
     exam.amounts = { words: $("examWordsAmt").value };
     $("examParts").querySelectorAll("input[data-amt]").forEach((n) => { exam.amounts[n.dataset.amt] = n.value; });
     if (!exam.parts.length && !exam.includeWords) {
