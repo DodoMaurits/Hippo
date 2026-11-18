@@ -1393,14 +1393,80 @@ function bumpStat(id, key) {
       { id: "pronouns", label: "Pronoun declension", subs: CASE_SUBS, subLabels: CASE_LABELS, needsPronouns: true }
     ],
     "French": [
-      { id: "articles",   label: "Articles & gender",    subs: ["def","ind","part","mf"], subLabels: { def: "défini (le/la/les)", ind: "indéfini (un/une/des)", part: "partitif (du/de la)", mf: "gender (m/f)" } },
-      { id: "adjectives", label: "Adjectives",           subs: ["agree","place"], subLabels: { agree: "accord (m/f/sg/pl)", place: "plaats (vóór/na)" } },
-      { id: "tenses",     label: "Verb tenses",          subs: ["pres","impf","pc","fp","fs","imp","cond","subj"], subLabels: { pres: "présent", impf: "imparfait", pc: "passé composé", fp: "futur proche", fs: "futur simple", imp: "impératif", cond: "conditionnel", subj: "subjonctif" } },
-      { id: "pronouns",   label: "Pronouns",             subs: ["cod","coi","yen","poss","refl","ton"], subLabels: { cod: "COD (le/la/me)", coi: "COI (lui/leur)", yen: "y / en", poss: "possessif (mon/ton)", refl: "réfléchi (me/se)", ton: "tonique (moi/toi)" } },
-      { id: "negation",   label: "Negation",             subs: ["pas","plus","jamais","personne"], subLabels: { pas: "ne…pas", plus: "ne…plus", jamais: "ne…jamais", personne: "ne…personne" } },
-      { id: "questions",  label: "Questions",            subs: ["estceque","inversion","words"], subLabels: { estceque: "est-ce que", inversion: "inversie", words: "vraagwoorden" } },
-      { id: "partitive",  label: "Partitive & quantity", subs: ["du","beaucoup","peu"], subLabels: { du: "du/de la/de l'", beaucoup: "beaucoup de", peu: "peu de" } },
-      { id: "relatives",  label: "Relative clauses",     subs: ["qui","que","dont","ou"], subLabels: { qui: "qui (sujet)", que: "que (COD)", dont: "dont (de)", ou: "où" } }
+      { 
+        id: "articles", label: "Articles", subs: ["def","ind","part","mf"],
+        subLabels: { 
+          def: "Défini (le/la/les)", 
+          ind: "Indéfini (un/une/des)", 
+          part: "Partitif (du/de la)", 
+          mf: "Gender"
+        } 
+      },
+      { 
+        id: "adjectives", label: "Adjectives", subs: ["agree","place"], 
+        subLabels: { 
+          agree: "Accord", 
+          place: "Positionnement" 
+        } 
+      },
+      { 
+        id: "tenses", label: "Verb tenses", subs: ["pres","impf","pc","fp","fs","imp","cond","subj"],
+        subLabels: {
+          pres: "Présent", 
+          impf: "Imparfait",
+          pc: "Passé composé",
+          fp: "Futur proche", 
+          fs: "Futur simple",
+          imp: "Impératif", 
+          cond: "Conditionnel", 
+          subj: "Subjonctif" 
+        } 
+      },
+      { 
+        id: "pronouns", label: "Pronouns", subs: ["cod","coi","yen","poss","refl","ton"], 
+        subLabels: {
+          cod: "COD (le/la/me)", 
+          coi: "COI (lui/leur)", 
+          yen: "y / en", 
+          poss: "Possessif (mon/ton)", 
+          refl: "Réfléchi (me/se)", 
+          ton: "Tonique (moi/toi)" 
+        } 
+      },
+      { 
+        id: "negation", label: "Negation", subs: ["pas","plus","jamais","personne"],
+        subLabels: { 
+          pas: "Ne…pas", 
+          plus: "Ne…plus", 
+          jamais: "Ne…jamais",
+          personne: "Ne…personne"
+        } 
+      },
+      { 
+        id: "questions", label: "Questions", subs: ["estceque","inversion","words"], 
+        subLabels: { 
+          estceque: "Est-ce que", 
+          inversion: "Inversie", 
+          words: "Mots interrogatifs" 
+        } 
+      },
+      { 
+        id: "partitive", label: "Partitive & quantity", subs: ["du","beaucoup","peu"], 
+        subLabels: { 
+          du: "Du/de la/de l'",
+          beaucoup: "Beaucoup de",
+          peu: "Peu de" 
+        } 
+      },
+      { 
+        id: "relatives", label: "Relative clauses", subs: ["qui","que","dont","ou"], 
+        subLabels: { 
+          qui: "Qui (sujet)",
+          que: "Que (COD)", 
+          dont: "Dont (de)", 
+          ou: "Où"
+        } 
+      }
     ]
   };
   function examParts() { return EXAM_PARTS_BY_LANG[exam.lang] || []; }
