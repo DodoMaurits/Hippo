@@ -1539,33 +1539,22 @@ function bumpStat(id, key) {
       bank.filter((e) => e && e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
         if (sub && !selSubs.includes(sub)) return;
-        if (e[3] === "{p}") {
+        if (String(e[3]).indexOf("{p") === 0) {
+          const gm = String(e[3]).match(/\{p:?(m|f|n|pl)?\}/);
+          const gi = gm && gm[1] ? { m: 0, f: 1, n: 2, pl: 3 }[gm[1]] : -1;
+          const idx = parseInt(sub, 10) - 1;
+          if (idx < 0 || idx > 5) return;
           (EXAM_PRONOUNS[exam.lang] || []).forEach((pr) => {
-            if (pr.bare) return;
-            const idx = parseInt(sub, 10) - 1;
-            if (idx < 0 || idx > 5) return;
-            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + pr.name + ")"), answer: pr.forms[idx] });
+            let answer;
+            if (pr.paradigm && pr.paradigm[sub] && gi >= 0) answer = pr.paradigm[sub][gi];
+            else if (pr.forms) answer = pr.forms[idx];
+            else return;
+            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + pr.name + ")"), answer });
           });
           return;
         }
         compQs.push({ part: pid, sub, prompt: e[2], answer: e[3] });
       });
-      if (pid === "pronouns") {
-        (EXAM_PRONOUNS[exam.lang] || []).filter((pr) => pr.bare).forEach((pr) => {
-          subs.forEach((c) => {
-            const idx = parseInt(c, 10) - 1;
-            if (idx < 0 || idx > 5) return;
-            if (pr.paradigm && pr.paradigm[c]) {
-              const g = ["m", "f", "n", "pl"];
-              pr.paradigm[c].forEach((v, gi) => {
-              compQs.push({ part: pid, sub: c, prompt: 'Decline "' + pr.name + '" — ' + String(CASE_LABELS[c] || c).replace(/^\d+\s*/, "") + " (case " + c + "), " + (g[gi] || ("form " + (gi + 1))) + ":", answer: v });
-              });
-            } else {
-              compQs.push({ part: pid, sub: c, prompt: 'Pronoun "' + pr.name + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer: pr.forms[idx] });
-            }
-          });
-        });
-      }
     });
     const wordQs = [];
     if (exam.includeWords && exam.pool.length) {
