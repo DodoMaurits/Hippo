@@ -1499,7 +1499,7 @@ function bumpStat(id, key) {
         exam.subs[p.id].push(s);
       });
       const amtRow = document.createElement("div");
-      amtRow.className = "exam-subrow hidden";
+      amtRow.className = "exam-inline-row hidden";
       const alab = document.createElement("label");
       alab.className = "opt-pill";
       alab.appendChild(document.createTextNode("Question amount "));
