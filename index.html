@@ -123,8 +123,14 @@
             <div class="exam-section">
               <label class="opt-pill">Language <select id="examLang"></select></label>
               <div class="exam-inline-row">
-                <label class="opt-pill">🕐 <input type="number" id="examMinutes" min="5" max="60" value="30" class="opt-max"> minutes</label>
-                <label class="opt-pill"><input type="checkbox" id="examNoLimit"> No time limit</label>
+                <label class="opt-pill"><input type="checkbox" id="examTimeLimit"> 🕐 Time limit</label>
+              </div>
+              <div class="exam-inline-row hidden" id="examTimeOptsRow">
+                <label class="opt-pill"><input type="radio" name="examTime" value="5"> 5 min</label>
+                <label class="opt-pill"><input type="radio" name="examTime" value="15"> 15 min</label>
+                <label class="opt-pill"><input type="radio" name="examTime" value="30" checked> 30 min</label>
+                <label class="opt-pill"><input type="radio" name="examTime" value="45"> 45 min</label>
+                <label class="opt-pill"><input type="radio" name="examTime" value="60"> 60 min</label>
               </div>
             </div>
             <div class="exam-section hidden" id="examPartsSection">
