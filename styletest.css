@@ -706,7 +706,7 @@ th input { width: 100%; }
   font-variant-numeric: tabular-nums;
 }
 
-#panel-exam .prompt { 
+#panel-exam #examGrade { 
   font-size: 1.35rem; 
 }
 
@@ -717,9 +717,10 @@ th input { width: 100%; }
 }
 
 .exam-q .exam-prompt { 
-  font-size: 0.8rem; 
+  font-size: 0.9rem; 
   margin: 0; 
-  line-height: 2; 
+  line-height: 1.6; 
+  min-height: 0; 
 }
 
 #examQuestions .exam-answer { 
