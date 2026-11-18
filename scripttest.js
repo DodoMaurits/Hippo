@@ -1553,8 +1553,11 @@ function bumpStat(id, key) {
     });
     const wordQs = [];
     if (exam.includeWords && exam.pool.length) {
+      const wdir = $("examWordsDir").value;
       exam.pool.forEach((w) => {
         [true, false].forEach((toB) => {
+          if (wdir === "1to2" && !toB) return;
+          if (wdir === "2to1" && toB) return;
           const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
           if (prompt === answer) return;
           wordQs.push({ part: "words", prompt, answer, id: w.id });
@@ -1694,6 +1697,7 @@ function bumpStat(id, key) {
   });
   $("examOptsBack").addEventListener("click", () => activateTab("overview"));
   $("examCancelBtn").addEventListener("click", () => examStep("opts"));
+  $("examWords").addEventListener("change", () => $("examWordsDirRow").classList.toggle("hidden", !$("examWords").checked));
   async function startExamRun() {
     exam.pool = exam.includeWords ? await loadExamWords(exam.listIds) : [];
     if (exam.includeWords && !exam.pool.length) {
