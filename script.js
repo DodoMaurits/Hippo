@@ -1393,14 +1393,39 @@ function bumpStat(id, key) {
       { id: "pronouns", label: "Pronoun declension", subs: CASE_SUBS, subLabels: CASE_LABELS, needsPronouns: true }
     ],
     "French": [
-      { id: "articles",   label: "Articles & gender",    subs: ["def","ind","part","mf"], subLabels: { def: "défini (le/la/les)", ind: "indéfini (un/une/des)", part: "partitif (du/de la)", mf: "gender (m/f)" } },
-      { id: "adjectives", label: "Adjectives",           subs: ["agree","place"], subLabels: { agree: "accord (m/f/sg/pl)", place: "plaats (vóór/na)" } },
-      { id: "tenses",     label: "Verb tenses",          subs: ["pres","impf","pc","fp","fs","imp","cond","subj"], subLabels: { pres: "présent", impf: "imparfait", pc: "passé composé", fp: "futur proche", fs: "futur simple", imp: "impératif", cond: "conditionnel", subj: "subjonctif" } },
-      { id: "pronouns",   label: "Pronouns",             subs: ["cod","coi","yen","poss","refl","ton"], subLabels: { cod: "COD (le/la/me)", coi: "COI (lui/leur)", yen: "y / en", poss: "possessif (mon/ton)", refl: "réfléchi (me/se)", ton: "tonique (moi/toi)" } },
-      { id: "negation",   label: "Negation",             subs: ["pas","plus","jamais","personne"], subLabels: { pas: "ne…pas", plus: "ne…plus", jamais: "ne…jamais", personne: "ne…personne" } },
-      { id: "questions",  label: "Questions",            subs: ["estceque","inversion","words"], subLabels: { estceque: "est-ce que", inversion: "inversie", words: "vraagwoorden" } },
-      { id: "partitive",  label: "Partitive & quantity", subs: ["du","beaucoup","peu"], subLabels: { du: "du/de la/de l'", beaucoup: "beaucoup de", peu: "peu de" } },
-      { id: "relatives",  label: "Relative clauses",     subs: ["qui","que","dont","ou"], subLabels: { qui: "qui (sujet)", que: "que (COD)", dont: "dont (de)", ou: "où" } }
+      { 
+        id: "grammar", label: "Grammar words", subs: ["articles","pronouns","poss","refl","ton","negation","questions","partitive"],
+        subLabels: { 
+          articles: "Articles", 
+          pronouns: "Pronouns", 
+          poss: "Possessive (mon/ton)", 
+          refl: "Reflective (me/se)",
+          ton: "Stressed (moi/toi)",
+          negation: "Negation",
+          questions: "Questions",
+          partitive: "Partitive"
+        } 
+      },
+      { 
+        id: "tenses", label: "Verb tenses", subs: ["pres","impf","pc","fp","fs","imp","cond","subj"],
+        subLabels: {
+          pres: "Présent", 
+          impf: "Imparfait",
+          pc: "Passé composé",
+          fp: "Futur proche", 
+          fs: "Futur simple",
+          imp: "Impératif", 
+          cond: "Conditionnel", 
+          subj: "Subjonctif" 
+        } 
+      },
+      { 
+        id: "adjectives", label: "Adjectives", subs: ["agree","place"], 
+        subLabels: { 
+          agree: "Accord (gender)", 
+          place: "Place (avant/après)" 
+        } 
+      }
     ]
   };
   function examParts() { return EXAM_PARTS_BY_LANG[exam.lang] || []; }
