@@ -1407,6 +1407,7 @@ function bumpStat(id, key) {
   const EXAM_PRONOUNS = window.EXAM_PRONOUNS || {};
   const EXAM_QUESTION_COUNT = 30;
   const EXAM_BANK = window.EXAM_BANK || {};
+  const EXAM_SUBJECTS = window.EXAM_SUBJECTS || {};
   let exam = { step: "pick", listIds: [], pool: [], queue: [], idx: 0, score: 0, locked: false, timer: null, lang: "", subs: {}, parts: [], includeWords: true };
   let examOptsFilled = false;
 
@@ -1554,7 +1555,15 @@ function bumpStat(id, key) {
           });
           return;
         }
-        compQs.push({ part: pid, sub, prompt: e[2], answer: e[3] });
+        let prompt = String(e[2]), answer = e[3];
+        if (prompt.indexOf("[subject]") >= 0) {
+          const subs = EXAM_SUBJECTS[exam.lang] || ["я","ты","он","она","мы","вы","они"];
+          const si = Math.floor(Math.random() * subs.length);
+          prompt = prompt.split("[subject]").join(subs[si]);
+          const forms = String(e[3]).split(",").map((s) => s.trim());
+          answer = forms[si] || forms[forms.length - 1];
+        }
+        compQs.push({ part: pid, sub, prompt, answer });
       });
     });
     const wordQs = [];
