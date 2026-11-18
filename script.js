@@ -882,7 +882,10 @@ function bumpStat(id, key) {
   }
   function updateNewlistTab() {
     const t = document.querySelector('.tab[data-tab="newlist"]');
-    if (t) t.classList.toggle("hidden", !!currentQuizMode());
+    if (!t) return;
+    const tab = document.querySelector(".tab.active");
+    const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type"].includes(tab.dataset.tab);
+    t.classList.toggle("hidden", !!currentQuizMode() || inListView);
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
   function quizSaveKey() { return QUIZ_SAVE_KEY + "-" + (currentList ? currentList.id : "none"); }
@@ -1495,9 +1498,22 @@ function bumpStat(id, key) {
         });
         exam.subs[p.id].push(s);
       });
+      const amtRow = document.createElement("div");
+      amtRow.className = "exam-subrow hidden";
+      const alab = document.createElement("label");
+      alab.className = "opt-pill";
+      alab.appendChild(document.createTextNode("Question amount "));
+      const anum = document.createElement("input");
+      anum.type = "number"; anum.min = 1; anum.max = 25; anum.value = 8; anum.className = "opt-max"; anum.dataset.amt = p.id;
+      alab.appendChild(anum);
+      amtRow.appendChild(alab);
       wrap.appendChild(subRow);
+      wrap.appendChild(amtRow);
       pbox.appendChild(wrap);
-      cb.addEventListener("change", () => subRow.classList.toggle("hidden", !cb.checked));
+      cb.addEventListener("change", () => {
+        subRow.classList.toggle("hidden", !cb.checked);
+        amtRow.classList.toggle("hidden", !cb.checked);
+      });
     });
   }
   async function loadExamWords(listIds) {
@@ -1523,38 +1539,30 @@ function bumpStat(id, key) {
       bank.filter((e) => e && e[0] === pid).forEach((e) => {
         const sub = e[1] || "";
         if (sub && !selSubs.includes(sub)) return;
-        if (e[3] === "{p}") {
+        if (String(e[3]).indexOf("{p") === 0) {
+          const gm = String(e[3]).match(/\{p:?(m|f|n|pl)?\}/);
+          const gi = gm && gm[1] ? { m: 0, f: 1, n: 2, pl: 3 }[gm[1]] : -1;
+          const idx = parseInt(sub, 10) - 1;
+          if (idx < 0 || idx > 5) return;
           (EXAM_PRONOUNS[exam.lang] || []).forEach((pr) => {
-            if (pr.bare) return;
-            const idx = parseInt(sub, 10) - 1;
-            if (idx < 0 || idx > 5) return;
-            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + pr.name + ")"), answer: pr.forms[idx] });
+            let answer;
+            if (pr.paradigm && pr.paradigm[sub] && gi >= 0) answer = pr.paradigm[sub][gi];
+            else if (pr.forms) answer = pr.forms[idx];
+            else return;
+            compQs.push({ part: pid, sub, prompt: String(e[2]).replace("___", "___ (" + pr.name + ")"), answer });
           });
           return;
         }
         compQs.push({ part: pid, sub, prompt: e[2], answer: e[3] });
       });
-      if (pid === "pronouns") {
-        (EXAM_PRONOUNS[exam.lang] || []).filter((pr) => pr.bare).forEach((pr) => {
-          subs.forEach((c) => {
-            const idx = parseInt(c, 10) - 1;
-            if (idx < 0 || idx > 5) return;
-            if (pr.paradigm && pr.paradigm[c]) {
-              const g = ["m", "f", "n", "pl"];
-              pr.paradigm[c].forEach((v, gi) => {
-              compQs.push({ part: pid, sub: c, prompt: 'Decline "' + pr.name + '" — ' + String(CASE_LABELS[c] || c).replace(/^\d+\s*/, "") + " (case " + c + "), " + (g[gi] || ("form " + (gi + 1))) + ":", answer: v });
-              });
-            } else {
-              compQs.push({ part: pid, sub: c, prompt: 'Pronoun "' + pr.name + '", case ' + c + " (" + (CASE_LABELS[c] || "") + "):", answer: pr.forms[idx] });
-            }
-          });
-        });
-      }
     });
     const wordQs = [];
     if (exam.includeWords && exam.pool.length) {
+      const wdir = $("examWordsDir").value;
       exam.pool.forEach((w) => {
         [true, false].forEach((toB) => {
+          if (wdir === "1to2" && !toB) return;
+          if (wdir === "2to1" && toB) return;
           const prompt = toB ? w.a : w.b, answer = toB ? w.b : w.a;
           if (prompt === answer) return;
           wordQs.push({ part: "words", prompt, answer, id: w.id });
@@ -1569,18 +1577,19 @@ function bumpStat(id, key) {
       seen.add(key);
       (byPart[q.part] = byPart[q.part] || []).push(q);
     });
-    const partKeys = shuffle(Object.keys(byPart));
     const queue = [];
-    for (let i = 0; queue.length < EXAM_QUESTION_COUNT && partKeys.some((k) => byPart[k].length); i++) {
-      const q = byPart[partKeys[i % partKeys.length]].shift();
-      if (q) queue.push(q);
-    }
+    Object.keys(byPart).forEach((part) => {
+      const cap = Math.max(1, Math.min(25, parseInt(exam.amounts[part], 10) || 8));
+      queue.push(...byPart[part].slice(0, cap));
+    });
     return shuffle(queue);
   }
   function startExamTimer() {
-    let secs = 30 * 60;
     clearInterval(exam.timer);
-    $("examTimer").textContent = "30:00";
+    exam.timer = null;
+    if (exam.noLimit) { $("examTimer").textContent = "∞"; return; }
+    let secs = (exam.minutes || 30) * 60;
+    $("examTimer").textContent = (exam.minutes || 30) + ":00";
     exam.timer = setInterval(() => {
       secs--;
       const m = Math.floor(Math.max(0, secs) / 60), s = Math.max(0, secs) % 60;
@@ -1694,6 +1703,10 @@ function bumpStat(id, key) {
   });
   $("examOptsBack").addEventListener("click", () => activateTab("overview"));
   $("examCancelBtn").addEventListener("click", () => examStep("opts"));
+  $("examWords").addEventListener("change", () => {
+    $("examWordsDirRow").classList.toggle("hidden", !$("examWords").checked);
+    $("examWordsAmtRow").classList.toggle("hidden", !$("examWords").checked);
+  });
   async function startExamRun() {
     exam.pool = exam.includeWords ? await loadExamWords(exam.listIds) : [];
     if (exam.includeWords && !exam.pool.length) {
@@ -1717,9 +1730,10 @@ function bumpStat(id, key) {
   $("examStart").addEventListener("click", () => {
     const lang = $("examLang").value;
     if (!lang) { showModal({ title: "📝 Exam", text: "Choose a language first.", okText: "OK" }); return; }
-    exam.lang = lang;
-    exam.parts = [...$("examParts").querySelectorAll("input[data-part]:checked")].map((cb) => cb.value);
-    exam.includeWords = $("examWords").checked;
+    exam.noLimit = $("examNoLimit").checked;
+    exam.minutes = Math.max(5, Math.min(60, parseInt($("examMinutes").value, 10) || 30));
+    exam.amounts = { words: $("examWordsAmt").value };
+    $("examParts").querySelectorAll("input[data-amt]").forEach((n) => { exam.amounts[n.dataset.amt] = n.value; });
     if (!exam.parts.length && !exam.includeWords) {
       showModal({ title: "📝 Exam", text: "Choose at least one exam part or check 'Include words from lists'.", okText: "OK" });
       return;
