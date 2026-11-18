@@ -1394,19 +1394,16 @@ function bumpStat(id, key) {
     ],
     "French": [
       { 
-        id: "articles", label: "Articles", subs: ["def","ind","part","mf"],
+        id: "grammar", label: "Grammar words", subs: ["articles","pronouns","poss","refl","ton","negation","questions","partitive"],
         subLabels: { 
-          def: "Défini (le/la/les)", 
-          ind: "Indéfini (un/une/des)", 
-          part: "Partitif (du/de la)", 
-          mf: "Gender"
-        } 
-      },
-      { 
-        id: "adjectives", label: "Adjectives", subs: ["agree","place"], 
-        subLabels: { 
-          agree: "Accord", 
-          place: "Positionnement" 
+          articles: "Articles", 
+          pronouns: "Pronouns", 
+          poss: "Possessive (mon/ton)", 
+          refl: "Reflective (me/se)",
+          ton: "Stressed (moi/toi)",
+          negation: "Negation",
+          questions: "Questions",
+          partitive: "Partitive"
         } 
       },
       { 
@@ -1423,48 +1420,10 @@ function bumpStat(id, key) {
         } 
       },
       { 
-        id: "pronouns", label: "Pronouns", subs: ["cod","coi","yen","poss","refl","ton"], 
-        subLabels: {
-          cod: "COD (le/la/me)", 
-          coi: "COI (lui/leur)", 
-          yen: "y / en", 
-          poss: "Possessif (mon/ton)", 
-          refl: "Réfléchi (me/se)", 
-          ton: "Tonique (moi/toi)" 
-        } 
-      },
-      { 
-        id: "negation", label: "Negation", subs: ["pas","plus","jamais","personne"],
+        id: "adjectives", label: "Adjectives", subs: ["agree","place"], 
         subLabels: { 
-          pas: "Ne…pas", 
-          plus: "Ne…plus", 
-          jamais: "Ne…jamais",
-          personne: "Ne…personne"
-        } 
-      },
-      { 
-        id: "questions", label: "Questions", subs: ["estceque","inversion","words"], 
-        subLabels: { 
-          estceque: "Est-ce que", 
-          inversion: "Inversie", 
-          words: "Mots interrogatifs" 
-        } 
-      },
-      { 
-        id: "partitive", label: "Partitive & quantity", subs: ["du","beaucoup","peu"], 
-        subLabels: { 
-          du: "Du/de la/de l'",
-          beaucoup: "Beaucoup de",
-          peu: "Peu de" 
-        } 
-      },
-      { 
-        id: "relatives", label: "Relative clauses", subs: ["qui","que","dont","ou"], 
-        subLabels: { 
-          qui: "Qui (sujet)",
-          que: "Que (COD)", 
-          dont: "Dont (de)", 
-          ou: "Où"
+          agree: "Accord (gender)", 
+          place: "Place (avant/après)" 
         } 
       }
     ]
