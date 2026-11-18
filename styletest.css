@@ -772,7 +772,6 @@ input.exam-answer.wrong {
 .exam-opts { flex-direction: column; align-items: center; gap: 0; margin-bottom: 24px; }
 .exam-section { width: 100%; max-width: 620px; text-align: center; padding: 14px 0; border-top: 1px solid var(--border); }
 .exam-section:first-child { border-top: none; padding-top: 0; }
-.exam-section:first-child + .exam-section { border-top: none; padding-top: 0; }
 .exam-section-title { font-weight: 700; margin-bottom: 8px; }
 #examParts { width: 100%; max-width: 620px; border-bottom: 1px solid var(--border); }
 .exam-part { padding: 10px 0; border-top: 1px solid var(--border); text-align: center; }
