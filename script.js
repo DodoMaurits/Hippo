@@ -1624,7 +1624,7 @@ function bumpStat(id, key) {
       inp.className = "answer-input exam-answer";
       inp.addEventListener("input", examUpdCount);
       const ansLen = String(item.answer || "").split(";")[0].trim().length;
-      inp.size = Math.max(12, Math.min(30, ansLen + 4));
+      inp.size = Math.round(Math.max(12, Math.min(30, ansLen + 4)) * 1.5);
       let text = String(item.prompt);
       let hint = "";
       const hm = text.match(/\(([^)]*)\)/);
