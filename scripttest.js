@@ -882,7 +882,10 @@ function bumpStat(id, key) {
   }
   function updateNewlistTab() {
     const t = document.querySelector('.tab[data-tab="newlist"]');
-    if (t) t.classList.toggle("hidden", !!currentQuizMode());
+    if (!t) return;
+    const tab = document.querySelector(".tab.active");
+    const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type"].includes(tab.dataset.tab);
+    t.classList.toggle("hidden", !!currentQuizMode() || inListView);
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
   function quizSaveKey() { return QUIZ_SAVE_KEY + "-" + (currentList ? currentList.id : "none"); }
