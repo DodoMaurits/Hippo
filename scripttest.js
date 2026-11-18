@@ -1781,6 +1781,9 @@ function bumpStat(id, key) {
     $("examDoneBar").classList.add("hidden");
     $("examSubmit").disabled = false;
     $("examSubmit2").disabled = false;
+    $("examScore").textContent = "Score: 0/0";
+    $("examGrade").textContent = "";
+    $("examResultText").textContent = "";
     startExamTimer();
     renderExamQuestions();
   }
