@@ -127,6 +127,13 @@
               <p class="exam-section-title">Choose assessment components</p>
               <div class="exam-part">
                 <label class="opt-pill"><input type="checkbox" id="examWords" checked>Vocabulary from lists</label>
+                <div class="exam-subrow" id="examWordsDirRow">
+                  <select id="examWordsDir">
+                    <option value="1to2">Column A → Column B</option>
+                    <option value="2to1">Column B → Column A</option>
+                    <option value="both" selected>Both directions</option>
+                  </select>
+                </div>
               </div>
               <div id="examParts"></div>
             </div>
