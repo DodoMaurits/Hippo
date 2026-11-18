@@ -1376,8 +1376,12 @@ function bumpStat(id, key) {
   const CASE_LABELS = { "1":"1 Nominative", "2":"2 Genitive", "3":"3 Dative", "4":"4 Accusative", "5":"5 Instrumental", "6":"6 Prepositional" };
   const VERB_SUBS = ["pres","past-impf","past-pf","fut-comp","fut-simple","imperative"];
   const VERB_LABELS = {
-    pres: "present (imperfective)", "past-impf": "past imperfective", "past-pf": "past perfective",
-    "fut-comp": "compound future (imperfective)", "fut-simple": "simple future (perfective)", imperative: "imperative mood"
+    pres: "1. Present (i)", 
+    "past-impf": "2. Past imperfective", 
+    "past-pf": "3. Past perfective",
+    "fut-comp": "4. Compound future (i)", 
+    "fut-simple": "5. Simple future (p)", 
+    imperative: "6. Imperative"
   };
   const EXAM_PARTS_BY_LANG = {
     "Russian": [
