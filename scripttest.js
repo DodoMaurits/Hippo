@@ -1521,6 +1521,8 @@ function bumpStat(id, key) {
         subRow.appendChild(sl);
         sc.addEventListener("change", () => {
           exam.subs[p.id] = [...subRow.querySelectorAll("input:checked")].map((x) => x.value);
+          anum.min = Math.max(1, exam.subs[p.id].length);
+          if (parseInt(anum.value, 10) < anum.min) anum.value = anum.min;
         });
         exam.subs[p.id].push(s);
       });
@@ -1530,8 +1532,8 @@ function bumpStat(id, key) {
       alab.className = "opt-pill";
       alab.appendChild(document.createTextNode("Question amount "));
       const anum = document.createElement("input");
-      anum.addEventListener("change", () => { anum.value = Math.max(1, Math.min(25, parseInt(anum.value, 10) || 1)); });
-      anum.type = "number"; anum.min = 1; anum.max = 25; anum.value = 8; anum.className = "opt-max"; anum.dataset.amt = p.id;
+      anum.addEventListener("change", () => { anum.value = Math.max(parseInt(anum.min, 10) || 1, Math.min(25, parseInt(anum.value, 10) || 1)); });
+      anum.type = "number"; anum.min = (p.subs || []).length || 1; anum.max = 25; anum.value = Math.max(anum.min, 8); anum.className = "opt-max"; anum.dataset.amt = p.id;
       alab.appendChild(anum);
       amtRow.appendChild(alab);
       wrap.appendChild(subRow);
@@ -1614,8 +1616,24 @@ function bumpStat(id, key) {
     });
     const queue = [];
     Object.keys(byPart).forEach((part) => {
-      const cap = Math.max(1, Math.min(25, parseInt(exam.amounts[part], 10) || 8));
-      queue.push(...byPart[part].slice(0, cap));
+      const subs = exam.subs[part] || [];
+      const minCap = part === "words" ? 1 : Math.max(1, subs.length);
+      const cap = Math.max(minCap, Math.min(25, parseInt(exam.amounts[part], 10) || 8));
+      const items = byPart[part];
+      if (part === "words" || !subs.length) { queue.push(...items.slice(0, cap)); return; }
+      const bySub = {};
+      items.forEach((q) => { const k = q.sub || ""; (bySub[k] = bySub[k] || []).push(q); });
+      const base = Math.floor(cap / subs.length);
+      const picked = new Set();
+      const out = [];
+      subs.forEach((s) => {
+        (bySub[s] || []).slice(0, Math.max(1, base)).forEach((q) => {
+          if (out.length < cap && !picked.has(q)) { picked.add(q); out.push(q); }
+        });
+      });
+      const need = cap - out.length;
+      if (need > 0) shuffle(items.filter((q) => !picked.has(q))).slice(0, need).forEach((q) => { picked.add(q); out.push(q); });
+      queue.push(...out);
     });
     return shuffle(queue);
   }
