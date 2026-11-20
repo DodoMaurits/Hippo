@@ -1574,6 +1574,7 @@ function bumpStat(id, key) {
           const idx = parseInt(sub, 10) - 1;
           if (idx < 0 || idx > 5) return;
           (EXAM_PRONOUNS[exam.lang] || []).forEach((pr) => {
+            if (pr.bare) return;
             let answer;
             if (pr.paradigm && pr.paradigm[sub] && gi >= 0) answer = pr.paradigm[sub][gi];
             else if (pr.forms) answer = pr.forms[idx];
