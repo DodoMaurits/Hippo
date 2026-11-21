@@ -60,7 +60,6 @@ window.EXAM_BANK["French"] = [
   ["grammar","pronouns","Le film ___ nous avons vu était génial.","que"],
   ["grammar","pronouns","L'enfant ___ joue dehors est mon fils.","qui"],
   ["grammar","pronouns","Le problème ___ nous parlons est grave.","dont"],
-  ["grammar","pronouns","Tu as reçu ___ lettre ?","la"],
   ["grammar","pronouns","Il donne un cadeau à sa sœur. Il ___ donne un cadeau.","lui"],
   ["grammar","pronouns","Nous allons au cinéma. Nous ___ allons.","y"],
   ["grammar","pronouns","Tu bois du lait ? J'___ bois.","en"],
