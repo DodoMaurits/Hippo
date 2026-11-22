@@ -211,8 +211,6 @@ function bumpStat(id, key) {
     updateNewlistTab();
     const tb = document.querySelector(".tabs");
     if (tb) tb.classList.toggle("in-list", name === "overview" || (!!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name)));
-    const tb = document.querySelector(".tabs");
-    if (tb) tb.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
     const hd = document.querySelector(".hippo-header");
     if (hd) hd.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
     try { localStorage.setItem("hippo-tab", name); } catch (e) {}
