@@ -561,6 +561,7 @@ function bumpStat(id, key) {
     updateImgBtn();
     activateTab("list");
     setQuizTabs(true);
+    await maybeResumeQuiz();
   }
 
   function updateImgBtn() {
@@ -836,7 +837,7 @@ function bumpStat(id, key) {
       okText: "End Quiz",
       extraButton: { label: "Leave but save", value: "save" }
     });
-    if (res === "save") { saveQuiz(mode); return true; }
+    if (res === "save") { saveQuiz(mode); activeQuiz = null; resetQuizUI(mode); return true; }
     if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(mode); return true; }
     return false;
   }
@@ -889,10 +890,35 @@ function bumpStat(id, key) {
   function saveQuiz(mode) {
     if (!mode) return;
     const st = mode === "mc" ? mc : mode === "ty" ? ty : fl;
-    localStorage.setItem(quizSaveKey(), JSON.stringify({ mode, state: st, opts: quizOpts }));
+    localStorage.setItem(quizSaveKey(), JSON.stringify({ mode, state: st, opts: quizOpts, listId: currentList ? currentList.id : null }));
   }
   function loadSavedQuiz() {
     try { return JSON.parse(localStorage.getItem(quizSaveKey())); } catch (e) { return null; }
+  }
+  async function maybeResumeQuiz() {
+    const saved = loadSavedQuiz();
+    if (!saved || !saved.state || !((saved.state.queue || []).length > saved.state.idx)) return;
+    if (saved.listId && currentList && saved.listId !== currentList.id) return;
+    if (currentQuizMode()) return;
+    const res = await showModal({
+      title: "🦛 Unfinished quiz",
+      text: "This list has a saved quiz. Resume it or start fresh?",
+      okText: "Resume",
+      extraButton: { label: "Discard", value: "discard" },
+      hideCancel: true
+    });
+    if (res === true || res === "save") {
+      activeQuiz = saved.mode;
+      if (saved.mode === "mc") mc = saved.state; else if (saved.mode === "ty") ty = saved.state; else fl = saved.state;
+      quizOpts = saved.opts || quizOpts;
+      if (saved.mode === "mc") { activateTab("quiz-mc"); mcNext(); }
+      else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
+      else { activateTab("flash"); flashShow(); }
+      setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
+      setQuizTabs(true);
+    } else {
+      clearSavedQuiz();
+    }
   }
   function clearSavedQuiz() { localStorage.removeItem(quizSaveKey()); }
   function shuffle(arr) {
@@ -1836,28 +1862,7 @@ function bumpStat(id, key) {
       else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
     } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
-    const saved = loadSavedQuiz();
-    if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
-      const res = await showModal({
-        title: "🦛 Unfinished quiz",
-        text: "You have a quiz in progress. Resume it or start fresh?",
-        okText: "Resume",
-        extraButton: { label: "Discard", value: "discard" },
-        hideCancel: true
-      });
-      if (res === true || res === "save") {
-        activeQuiz = saved.mode;
-        if (saved.mode === "mc") mc = saved.state; else if (saved.mode === "ty") ty = saved.state; else fl = saved.state;
-        quizOpts = saved.opts || quizOpts;
-        if (saved.mode === "mc") { activateTab("quiz-mc"); mcNext(); }
-        else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
-        else { activateTab("flash"); flashShow(); }
-        setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
-        setQuizTabs(true);
-      } else {
-        clearSavedQuiz();
-      }
-    }
+    await maybeResumeQuiz();
     await showModal({
       title: "Guest mode",
       text: "Guest lists are stored in your browser cache — clearing browsing data deletes them.",
@@ -1886,28 +1891,7 @@ function bumpStat(id, key) {
           else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
         } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
-        const saved = loadSavedQuiz();
-        if (saved && saved.state && (saved.state.queue || []).length > saved.state.idx) {
-          const res = await showModal({
-          title: "🦛 Unfinished quiz",
-          text: "You have a quiz in progress. Resume it or start fresh?",
-          okText: "Resume",
-          extraButton: { label: "Discard", value: "discard" },
-          hideCancel: true
-        });
-        if (res === true || res === "save") {
-        activeQuiz = saved.mode;
-        if (saved.mode === "mc") mc = saved.state; else if (saved.mode === "ty") ty = saved.state; else fl = saved.state;
-        quizOpts = saved.opts || quizOpts;
-        if (saved.mode === "mc") { activateTab("quiz-mc"); mcNext(); }
-        else if (saved.mode === "ty") { activateTab("quiz-type"); typeNext(); }
-        else { activateTab("flash"); flashShow(); }
-        setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
-        setQuizTabs(true);
-        } else {
-        clearSavedQuiz();
-      }
-    }
+        await maybeResumeQuiz();
       } else {
         authReady = false;
         words = [];
