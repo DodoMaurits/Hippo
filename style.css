@@ -999,6 +999,12 @@ input.exam-answer.wrong {
             padding: 8px 6px; 
             font-size: 1rem; 
           }
+
+          #panel-overview .panel-title {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
           
           .list-header input[type="text"] {
             flex: 1 1 100%;
