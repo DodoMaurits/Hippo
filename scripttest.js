@@ -279,13 +279,17 @@ function bumpStat(id, key) {
   }
 
   function saveFoldersGuest() { localStorage.setItem("hippo-guest-folders", JSON.stringify(folders)); }
+  async function myUid() {
+    const { data } = await supabase.auth.getSession();
+    return data.session && data.session.user ? data.session.user.id : null;
+  }
   async function newFolder() {
     const name = await showModal({ title: "📁 Create map", inputPlaceholder: "New map", okText: "Create" });
     if (!name || !name.trim()) return;
     const f = { id: "f" + Date.now(), name: name.trim() };
     folders.unshift(f);
     if (GUEST) saveFoldersGuest();
-    else await supabase.from("folders").insert({ id: f.id, name: f.name, ord: Date.now() });
+    else await supabase.from("folders").insert({ id: f.id, name: f.name, ord: Date.now(), user_id: await myUid() });
     renderOverview();
   }
   $("newFolderBtn").addEventListener("click", newFolder);
