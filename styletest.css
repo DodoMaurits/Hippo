@@ -513,6 +513,8 @@ th input { width: 100%; }
   margin-left: 10px; 
 }
 
+#addRowBottom { display: none; }
+
 /* ================= Quiz ================= */
 .quiz-controls { 
   display: flex; 
