@@ -271,23 +271,25 @@ function bumpStat(id, key) {
       .from("lists").select("id, name, col1, col2, folder").order("created_at", { ascending: true });
     if (error) { console.error(error); return; }
     lists = data || [];
-    folders = [...new Set(lists.map((l) => l.folder).filter(Boolean))].map((name) => ({ id: name, name }));
-    try {
-      const order = JSON.parse(localStorage.getItem("hippo-folder-order") || "[]");
-      folders.sort((a, b) => {
-        const ia = order.indexOf(a.id), ib = order.indexOf(b.id);
-        return (ia === -1 ? folders.length : ia) - (ib === -1 ? folders.length : ib);
-      });
-    } catch (e) {}
+    const { data: fdata } = await supabase.from("folders").select("id, name").order("ord", { ascending: true });
+    folders = (fdata && fdata.length ? fdata : [...new Set(lists.map((l) => l.folder).filter(Boolean))].map((name) => ({ id: name, name })))
+      .map((f) => ({ id: f.id, name: f.name }));
+    const known = new Set(folders.map((f) => f.id));
+    lists.forEach((l) => { if (l.folder && !known.has(l.folder)) folders.push({ id: l.folder, name: l.folder }); });
   }
 
   function saveFoldersGuest() { localStorage.setItem("hippo-guest-folders", JSON.stringify(folders)); }
+  async function myUid() {
+    const { data } = await supabase.auth.getSession();
+    return data.session && data.session.user ? data.session.user.id : null;
+  }
   async function newFolder() {
     const name = await showModal({ title: "📁 Create map", inputPlaceholder: "New map", okText: "Create" });
     if (!name || !name.trim()) return;
-    folders.unshift({ id: "f" + Date.now(), name: name.trim() });
+    const f = { id: "f" + Date.now(), name: name.trim() };
+    folders.unshift(f);
     if (GUEST) saveFoldersGuest();
-    else localStorage.setItem("hippo-folder-order", JSON.stringify(folders.map((x) => x.id)));
+    else await supabase.from("folders").insert({ id: f.id, name: f.name, ord: Date.now(), user_id: await myUid() });
     renderOverview();
   }
   $("newFolderBtn").addEventListener("click", newFolder);
@@ -434,16 +436,9 @@ function bumpStat(id, key) {
         e.stopPropagation();
         const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: "New name", prefill: f.name, okText: "Save"});
         if (!name || !name.trim()) return;
-        const oldId = f.id;
         f.name = name.trim();
-        f.id = f.name;
-        for (const l of lists) {
-          if (l.folder === oldId) {
-            l.folder = f.id;
-            if (!GUEST) await supabase.from("lists").update({ folder: f.id }).eq("id", l.id);
-          }
-        }
         if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
+        else await supabase.from("folders").update({ name: f.name }).eq("id", f.id);
         renderOverview();
       });
             const fdel = document.createElement("button");
@@ -460,6 +455,7 @@ function bumpStat(id, key) {
           }
         }
         folders = folders.filter((x) => x.id !== f.id);
+        if (!GUEST) await supabase.from("folders").delete().eq("id", f.id);
         if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
         renderOverview();
       });
@@ -493,7 +489,7 @@ function bumpStat(id, key) {
         const [m] = folders.splice(from, 1);
         folders.splice(folders.indexOf(f), 0, m);
         if (GUEST) saveFoldersGuest();
-        else localStorage.setItem("hippo-folder-order", JSON.stringify(folders.map((x) => x.id)));
+        else for (let k = 0; k < folders.length; k++) await supabase.from("folders").update({ ord: k }).eq("id", folders[k].id);
         renderOverview();
       });
       box.appendChild(row);
@@ -793,6 +789,7 @@ function bumpStat(id, key) {
     const inputs = $("listBody").querySelectorAll("tr:last-child input");
     if (inputs[0]) inputs[0].focus();
   });
+  $("addRowBottom").addEventListener("click", () => $("addRow").click());
 
   $("saveListBtn").addEventListener("click", () => flushList());
 
