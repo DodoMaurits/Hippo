@@ -1010,8 +1010,13 @@ input.exam-answer.wrong {
             display: inline-block !important; 
           }
           
-          .list-header input[type="text"], .list-header .btn { 
-            flex: 1 1 100%; 
+          .list-header input[type="text"] {
+            flex: 1 1 100%;
+          }
+          
+          .list-header .btn {
+            flex: 0 0 auto;
+            width: fit-content;
           }
           
           .tip-desktop { 
