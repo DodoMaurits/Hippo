@@ -793,19 +793,6 @@ function bumpStat(id, key) {
     const inputs = $("listBody").querySelectorAll("tr:last-child input");
     if (inputs[0]) inputs[0].focus();
   });
-    $("delRowBtn").addEventListener("click", async () => {
-    if (lastRowIdx < 0 || !words[lastRowIdx]) {
-      await showModal({ title: "🗑️ Delete row", text: "Tap a word row first, then Delete row.", okText: "OK" });
-      return;
-    }
-    const ok = await showModal({ title: "🗑️ Delete row", text: "Delete this word pair?", okText: "Delete" });
-    if (!ok) return;
-    const i = lastRowIdx;
-    if (GUEST) { words.splice(i, 1); save(); renderList(); return; }
-    await supabase.from("words").delete().eq("id", words[i].id);
-    words.splice(i, 1);
-    renderList();
-  });
 
   $("saveListBtn").addEventListener("click", () => flushList());
 
