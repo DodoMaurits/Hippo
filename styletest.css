@@ -1018,6 +1018,16 @@ input.exam-answer.wrong {
             flex: 0 0 auto;
             width: fit-content;
           }
+
+          .tabs.in-list .tab[data-tab="overview"],
+          .tabs.in-list .tab[data-tab="newlist"] {
+            display: none;
+          }
+          
+          .list-header .btn.danger {
+            padding: 10px 18px;
+            font-size: .95rem;
+          }
           
           .tip-desktop { 
             display: none; 
