@@ -276,6 +276,12 @@ function bumpStat(id, key) {
       .map((f) => ({ id: f.id, name: f.name }));
     const known = new Set(folders.map((f) => f.id));
     lists.forEach((l) => { if (l.folder && !known.has(l.folder)) folders.push({ id: l.folder, name: l.folder }); });
+    if (!GUEST) {
+      const uid = await myUid();
+      for (let k = 0; k < folders.length; k++) {
+        await supabase.from("folders").upsert({ id: folders[k].id, name: folders[k].name, ord: k, user_id: uid }, { onConflict: "id" });
+      }
+    }
   }
 
   function saveFoldersGuest() { localStorage.setItem("hippo-guest-folders", JSON.stringify(folders)); }
