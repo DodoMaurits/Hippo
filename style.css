@@ -1024,6 +1024,10 @@ input.exam-answer.wrong {
             display: none;
           }
           
+          .hippo-header.in-list .header-text {
+            display: none;
+          }
+          
           .list-header .btn.danger {
             padding: 10px 18px;
             font-size: .95rem;
