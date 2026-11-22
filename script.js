@@ -976,18 +976,23 @@ function bumpStat(id, key) {
     }).join(" ");
   }
   function getPairs(direction) {
+    const exOf = (s) => {
+      const m = String(s || "").match(/\(\s*EX:([^)]*)\)/i);
+      return m ? m[1].split(";").map((x) => x.trim()).filter(Boolean) : [];
+    };
     return words
       .filter((w) => w.a.trim() && w.b.trim() && !w.hidden)
       .map((w) => {
         const img = !!(currentList && currentList.imgMode);
+        const exLines = [...new Set(exOf(w.a).concat(exOf(w.b)))];
         if (direction === "both") {
           return Math.random() < 0.5
-            ? { id: w.id, prompt: w.a, answer: w.b, answerImg: false }
-            : { id: w.id, prompt: w.b, answer: w.a, answerImg: img };
+            ? { id: w.id, prompt: w.a, answer: w.b, answerImg: false, exLines }
+            : { id: w.id, prompt: w.b, answer: w.a, answerImg: img, exLines };
         }
         return direction === "2to1"
-          ? { id: w.id, prompt: w.b, answer: w.a, answerImg: img }
-          : { id: w.id, prompt: w.a, answer: w.b, answerImg: false };
+          ? { id: w.id, prompt: w.b, answer: w.a, answerImg: img, exLines }
+          : { id: w.id, prompt: w.a, answer: w.b, answerImg: false, exLines };
       });
   }
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
@@ -1141,7 +1146,7 @@ function bumpStat(id, key) {
     const exm = String(item.prompt).match(/\(\s*EX:([^)]*)\)/i);
     let ptext = String(item.prompt);
     if (exm) ptext = (ptext.slice(0, exm.index) + ptext.slice(exm.index + exm[0].length)).replace(/\s+/g, " ").trim();
-    item.exLines = exm ? exm[1].split(";").map((s) => s.trim()).filter(Boolean) : [];
+    if (!item.exLines) item.exLines = exm ? exm[1].split(";").map((s) => s.trim()).filter(Boolean) : [];
     if (currentList.imgMode) $("typePrompt").innerHTML = '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
     else $("typePrompt").textContent = ptext;
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
