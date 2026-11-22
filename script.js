@@ -949,8 +949,9 @@ function bumpStat(id, key) {
     html += '<span class="ok">' + esc(target.slice(n)) + "</span>";
     return html;
   }
+  function stripEx(s) { return String(s).replace(/\(\s*EX:[^)]*\)/gi, " "); }
   function acceptedAnswers(answer) {
-    return answer.split(";")
+    return stripEx(answer).split(";")
       .map((s) => (quizOpts.caseSensitive ? s.trim() : normalize(s)))
       .filter(Boolean);
   }
@@ -1135,10 +1136,25 @@ function bumpStat(id, key) {
     }
     $("typeInput").classList.remove("hidden");
     const item = ty.queue[ty.idx];
-    $("typeInput").value = quizOpts.help === "hint" && item.answer ? item.answer[0] : "";
+    $("typeInput").value = quizOpts.help === "hint" && item.answer ? (stripEx(item.answer).trim()[0] || "") : "";
     $("typePrompt").style.fontSize = "";
+    const exm = String(item.prompt).match(/\(\s*EX:([^)]*)\)/i);
+    let ptext = String(item.prompt);
+    if (exm) ptext = (ptext.slice(0, exm.index) + ptext.slice(exm.index + exm[0].length)).replace(/\s+/g, " ").trim();
     if (currentList.imgMode) $("typePrompt").innerHTML = '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
-    else $("typePrompt").textContent = item.prompt;
+    else {
+      $("typePrompt").textContent = ptext;
+      if (exm) {
+        const ex = document.createElement("div");
+        ex.className = "type-ex";
+        exm[1].split(";").map((s) => s.trim()).filter(Boolean).forEach((line) => {
+          const d = document.createElement("div");
+          d.textContent = line;
+          ex.appendChild(d);
+        });
+        $("typePrompt").appendChild(ex);
+      }
+    }
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
@@ -1176,7 +1192,7 @@ function bumpStat(id, key) {
       if (quizOpts.feedback === "never") {
         $("typeFeedback").textContent = "✘ Wrong";
       } else {
-        const target = String(item.answer).split(";")[0].trim();
+        const target = stripEx(item.answer).split(";")[0].trim();
         $("typeFeedback").innerHTML = "✘ Almost! It was: " + diffHighlight(givenN, target);
       }
       if (quizOpts.feedback === "click") {
