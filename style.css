@@ -1017,8 +1017,17 @@ input.exam-answer.wrong {
           }
           
           .list-header .btn.danger {
-            padding: 10px 18px;
+            padding: 10px 18px;a
             font-size: .95rem;
+          }
+
+          #addRowBottom {
+            display: block;
+            width: 100%;
+          }
+          
+          .list-header #addRow {
+            display: none;
           }
           
           .tip-desktop { 
