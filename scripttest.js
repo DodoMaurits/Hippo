@@ -290,7 +290,7 @@ function bumpStat(id, key) {
     return data.session && data.session.user ? data.session.user.id : null;
   }
   async function newFolder() {
-    const name = await showModal({ title: "📁 Create map", inputPlaceholder: "New map", okText: "Create" });
+    const name = await showModal({ title: "📁 Create folder", inputPlaceholder: "New folder", okText: "Create" });
     if (!name || !name.trim()) return;
     const f = { id: "f" + Date.now(), name: name.trim() };
     folders.unshift(f);
@@ -343,8 +343,8 @@ function bumpStat(id, key) {
   
   async function pickFolder(l) {
     const names = folders.map((f) => f.name);
-    const label = names.length ? names.map((n, i) => (i + 1) + ") " + n).join(", ") : "(geen mappen)";
-    const ans = await showModal({ title: "📁 Verplaats “" + l.name + "” naar map", text: "Kies: " + label + ". Leeg = uit map halen.", inputPlaceholder: "Naam of nummer", okText: "Verplaats" });
+    const label = names.length ? names.map((n, i) => (i + 1) + ") " + n).join(", ") : "(no folders)";
+    const ans = await showModal({ title: "📁 Change order “" + l.name + "” to folder", text: "Choose: " + label + ". Empty = take from folder.", inputPlaceholder: "Title or number", okText: "Change order" });
     if (ans === null || ans === true || !String(ans).trim()) return;
     const q = String(ans).trim().toLowerCase();
     const f = folders.find((fo, i) => fo.name.toLowerCase() === q || String(i + 1) === q);
@@ -440,7 +440,7 @@ function bumpStat(id, key) {
       fedit.textContent = "✏️";
       fedit.addEventListener("click", async (e) => {
         e.stopPropagation();
-        const name = await showModal({ title: "✏️ Rename map", inputPlaceholder: "New name", prefill: f.name, okText: "Save"});
+        const name = await showModal({ title: "✏️ Rename folder", inputPlaceholder: "New title", prefill: f.name, okText: "Save"});
         if (!name || !name.trim()) return;
         f.name = name.trim();
         if (GUEST) { saveListsGuest(); saveFoldersGuest(); }
@@ -452,7 +452,7 @@ function bumpStat(id, key) {
       fdel.textContent = "✕";
       fdel.addEventListener("click", async (e) => {
         e.stopPropagation();
-        const ok = await showModal({ title: "🗑️ Delete map", text: "Delete map “" + f.name + "”? The lists inside are kept.", okText: "Delete" });
+        const ok = await showModal({ title: "🗑️ Delete folder", text: "Delete folder “" + f.name + "”? The lists inside remain.", okText: "Delete" });
         if (!ok) return;
         for (const l of lists) {
           if (l.folder === f.id) {
