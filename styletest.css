@@ -1016,9 +1016,8 @@ input.exam-answer.wrong {
           }
 
           .tabs.in-list .tab[data-tab="overview"],
-          .tabs.in-list .tab[data-tab="newlist"] {
-            display: none;
-          }
+          .tabs.in-list .tab[data-tab="overview"] { display: none; }
+          .tabs.in-list .tab[data-tab="newlist"] { display: none; }
           
           .hippo-header.in-list .user-chip {
             display: none;
