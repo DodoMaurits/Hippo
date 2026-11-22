@@ -495,7 +495,10 @@ function bumpStat(id, key) {
         const [m] = folders.splice(from, 1);
         folders.splice(folders.indexOf(f), 0, m);
         if (GUEST) saveFoldersGuest();
-        else for (let k = 0; k < folders.length; k++) await supabase.from("folders").update({ ord: k }).eq("id", folders[k].id);
+        else for (let k = 0; k < folders.length; k++) {
+          const { error } = await supabase.from("folders").upsert({ id: folders[k].id, name: folders[k].name, ord: k, user_id: await myUid() }, { onConflict: "id" });
+          if (error) console.error("folder ord save failed", folders[k].id, error);
+        }
         renderOverview();
       });
       box.appendChild(row);
