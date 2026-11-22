@@ -793,6 +793,7 @@ function bumpStat(id, key) {
     const inputs = $("listBody").querySelectorAll("tr:last-child input");
     if (inputs[0]) inputs[0].focus();
   });
+  $("addRowBottom").addEventListener("click", () => $("addRow").click());
 
   $("saveListBtn").addEventListener("click", () => flushList());
 
