@@ -209,6 +209,8 @@ function bumpStat(id, key) {
     const panel = $("panel-" + name);
     if (panel) panel.classList.add("active");
     updateNewlistTab();
+    const tb = document.querySelector(".tabs");
+    if (tb) tb.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
     try { localStorage.setItem("hippo-tab", name); } catch (e) {}
   }
 
