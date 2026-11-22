@@ -998,18 +998,6 @@ input.exam-answer.wrong {
             font-size: 1rem; 
           }
           
-          td .btn.danger { 
-            display: none; 
-          }
-          
-          .hidden-mobile { 
-            display: none !important; 
-          }
-          
-          .hidden-desktop { 
-            display: inline-block !important; 
-          }
-          
           .list-header input[type="text"] {
             flex: 1 1 100%;
           }
