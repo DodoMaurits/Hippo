@@ -1174,7 +1174,6 @@ function bumpStat(id, key) {
     if (!given.trim()) return;
     const givenN = quizOpts.caseSensitive ? given.trim() : normalize(given);
     const ok = acceptedAnswers(item.answer).includes(givenN)
-    const target = stripEx(item.answer).split(";")[0].trim();
       || (quizOpts.fuzzy && acceptedAnswers(item.answer).some((a) => levenshtein(givenN, a) <= 1));
     if (ok) {
       if (!item.missed) ty.score++;
@@ -1193,7 +1192,7 @@ function bumpStat(id, key) {
       if (quizOpts.feedback === "never") {
         $("typeFeedback").textContent = "✘ Wrong";
       } else {
-        const target = String(item.answer).split(";")[0].trim();
+        const target = stripEx(item.answer).split(";")[0].trim();
         $("typeFeedback").innerHTML = "✘ Almost! It was: " + diffHighlight(givenN, target);
       }
       if (quizOpts.feedback === "click") {
