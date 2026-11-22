@@ -482,7 +482,7 @@ function bumpStat(id, key) {
       row.draggable = $("panel-overview").classList.contains("show-ov-order");
       row.addEventListener("dragstart", (e) => { dragOvType = "folder"; dragOvId = f.id; e.dataTransfer.effectAllowed = "move"; });
       row.addEventListener("dragover", (e) => e.preventDefault());
-      row.addEventListener("drop", (e) => {
+      row.addEventListener("drop", async (e) => {
         e.preventDefault();
         if (dragOvType !== "folder" || dragOvId === f.id) return;
         const from = folders.findIndex((x) => x.id === dragOvId);
