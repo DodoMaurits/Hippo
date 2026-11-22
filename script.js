@@ -1141,24 +1141,26 @@ function bumpStat(id, key) {
     const exm = String(item.prompt).match(/\(\s*EX:([^)]*)\)/i);
     let ptext = String(item.prompt);
     if (exm) ptext = (ptext.slice(0, exm.index) + ptext.slice(exm.index + exm[0].length)).replace(/\s+/g, " ").trim();
+    item.exLines = exm ? exm[1].split(";").map((s) => s.trim()).filter(Boolean) : [];
     if (currentList.imgMode) $("typePrompt").innerHTML = '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
-    else {
-      $("typePrompt").textContent = ptext;
-      if (exm) {
-        const ex = document.createElement("div");
-        ex.className = "type-ex";
-        exm[1].split(";").map((s) => s.trim()).filter(Boolean).forEach((line) => {
-          const d = document.createElement("div");
-          d.textContent = line;
-          ex.appendChild(d);
-        });
-        $("typePrompt").appendChild(ex);
-      }
-    }
+    else $("typePrompt").textContent = ptext;
     $("typeHint").textContent = quizOpts.help === "scrambled" && item.answer ? "" + shuffleLetters(item.answer) : "";
     updateScore($("typeProgress"), $("typeScore"), $("typeCount"), ty.queue.length, ty.idx, ty.score);
     $("typeInput").focus();
     saveQuiz("ty");
+  }
+  function showTypeEx(item) {
+    const old = $("typePrompt").querySelector(".type-ex");
+    if (old) old.remove();
+    if (!item || !item.exLines || !item.exLines.length) return;
+    const ex = document.createElement("div");
+    ex.className = "type-ex";
+    item.exLines.forEach((line) => {
+      const d = document.createElement("div");
+      d.textContent = line;
+      ex.appendChild(d);
+    });
+    $("typePrompt").appendChild(ex);
   }
   function typeCheck() {
     if (ty.awaitContinue) {
@@ -1175,6 +1177,7 @@ function bumpStat(id, key) {
     const givenN = quizOpts.caseSensitive ? given.trim() : normalize(given);
     const ok = acceptedAnswers(item.answer).includes(givenN)
       || (quizOpts.fuzzy && acceptedAnswers(item.answer).some((a) => levenshtein(givenN, a) <= 1));
+    showTypeEx(item);
     if (ok) {
       if (!item.missed) ty.score++;
       bumpStat(item.id, "right");
