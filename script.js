@@ -1337,7 +1337,7 @@ function bumpStat(id, key) {
   function updateDelBtn() {
     const on = $("panel-list").classList.contains("show-del");
     const desk = window.matchMedia("(min-width: 561px)").matches;
-    $("clearList").classList.toggle("hidden", desk && !on);
+    $("clearList").classList.toggle("hidden", !on);
     const b = $("toggleDelBtn");
     b.textContent = on ? "🗑️ Delete ✅" : "🗑️ Delete";
     b.style.color = on ? "#43d17c" : "";
