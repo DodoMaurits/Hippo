@@ -245,7 +245,7 @@ function bumpStat(id, key) {
         if (currentList) await flushList();
         const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
         $("mcMax").value = filled; $("typeMax").value = filled; $("flashMax").value = filled;
-        if (!currentQuizMode()) resetQuizUI(m);
+        if (!currentQuizMode()) { await maybeResumeQuiz(); if (!currentQuizMode()) resetQuizUI(m); }
       }
     });
   });
