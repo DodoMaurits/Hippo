@@ -218,17 +218,19 @@ h1 {
   box-shadow: 0 5px 0 rgba(0,0,0,.3); 
 }
 
-.tab.has-saved {
-  color: #ff6b6b; 
+.tab.has-saved, .tab.has-saved.active { 
+  background: #d43a3a;
+  border-color: #ff9a9a;
+  color: #fff;
   font-weight: 700;
 }
 
-.tab.has-saved::after { 
-  content: "●";
-  color: #ff4d4d; 
-  margin-left: 4px; 
-  font-size: .7em; 
-  vertical-align: middle; 
+.tab.has-saved::after {
+  content: "●"; 
+  color: #fff;
+  margin-left: 4px;
+  font-size: .7em;
+  vertical-align: middle;
 }
 
 .tab[data-tab="list"] { display: none; }
