@@ -214,6 +214,7 @@ function bumpStat(id, key) {
     const hd = document.querySelector(".hippo-header");
     if (hd) hd.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
     try { localStorage.setItem("hippo-tab", name); } catch (e) {}
+    updateQuizSavedIndicator();
   }
 
   document.querySelectorAll(".tab").forEach((tab) => {
@@ -838,7 +839,7 @@ function bumpStat(id, key) {
       okText: "End Quiz",
       extraButton: { label: "Leave but save", value: "save" }
     });
-    if (res === "save") { saveQuiz(mode); activeQuiz = null; resetQuizUI(mode); return true; }
+    if (res === "save") { activeQuiz = null; saveQuiz(mode); resetQuizUI(mode); return true; }
     if (res === true) { clearSavedQuiz(); activeQuiz = null; resetQuizUI(mode); return true; }
     return false;
   }
@@ -957,7 +958,7 @@ function bumpStat(id, key) {
   async function updateQuizSavedIndicator() {
     const t = document.querySelector('.tab[data-tab="quiz-type"]');
     if (!t) return;
-    if (currentQuizMode()) { t.classList.remove("has-saved"); return; }
+    if (activeQuiz) { t.classList.remove("has-saved"); return; }
     const saved = await loadSavedQuiz();
     const has = !!(saved && saved.state && (saved.state.queue || []).length > saved.state.idx);
     t.classList.toggle("has-saved", has);
