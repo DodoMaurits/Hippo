@@ -934,7 +934,6 @@ function bumpStat(id, key) {
       text: "This list has a saved quiz. Resume it or start fresh?",
       okText: "Resume",
       extraButton: { label: "Discard", value: "discard" },
-      hideCancel: true
     });
     if (res === true || res === "save") {
       activeQuiz = saved.mode;
