@@ -231,6 +231,11 @@ h1 {
   vertical-align: middle; 
 }
 
+.tab[data-tab="list"] { display: none; }
+.tabs.quiz-only .tab { display: none; }
+.tabs.quiz-only .tab.active { display: inline-block; }
+.tabs.quiz-only .tab[data-tab="list"] { display: inline-block; }
+
 .panel { 
   display: none; 
   background: var(--panel); 
