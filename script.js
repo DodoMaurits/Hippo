@@ -230,7 +230,8 @@ function bumpStat(id, key) {
       const cur = currentQuizMode();
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
-        if (currentList) { activateTab("list"); return; }
+        if (tab.dataset.tab === "list") { activateTab("list"); return; }
+        if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
       }
       if (tab.dataset.tab === "overview") { 
         currentList = null; try { 
@@ -880,10 +881,12 @@ function bumpStat(id, key) {
   }
   function updateNewlistTab() {
     const t = document.querySelector('.tab[data-tab="newlist"]');
-    if (!t) return;
     const tab = document.querySelector(".tab.active");
+    const cur = currentQuizMode();
     const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type"].includes(tab.dataset.tab);
-    t.classList.toggle("hidden", !!currentQuizMode() || inListView);
+    if (t) t.classList.toggle("hidden", !!cur || inListView);
+    const tb = document.querySelector(".tabs");
+    if (tb) tb.classList.toggle("quiz-only", !!cur);
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
   function quizSaveKey() { return QUIZ_SAVE_KEY + "-" + (currentList ? currentList.id : "none"); }
