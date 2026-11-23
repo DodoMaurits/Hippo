@@ -957,6 +957,7 @@ function bumpStat(id, key) {
   async function updateQuizSavedIndicator() {
     const t = document.querySelector('.tab[data-tab="quiz-type"]');
     if (!t) return;
+    if (currentQuizMode()) { t.classList.remove("has-saved"); return; }
     const saved = await loadSavedQuiz();
     const has = !!(saved && saved.state && (saved.state.queue || []).length > saved.state.idx);
     t.classList.toggle("has-saved", has);
