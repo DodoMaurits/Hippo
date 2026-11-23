@@ -887,16 +887,35 @@ function bumpStat(id, key) {
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
   function quizSaveKey() { return QUIZ_SAVE_KEY + "-" + (currentList ? currentList.id : "none"); }
-  function saveQuiz(mode) {
+  async function saveQuiz(mode) {
     if (!mode) return;
     const st = mode === "mc" ? mc : mode === "ty" ? ty : fl;
     localStorage.setItem(quizSaveKey(), JSON.stringify({ mode, state: st, opts: quizOpts, listId: currentList ? currentList.id : null }));
+    if (!GUEST && currentList) {
+      const uid = await myUid();
+      if (uid) {
+        const { error } = await supabase.from("quiz_saves")
+          .upsert({ user_id: uid, list_id: currentList.id, mode, state: st, opts: quizOpts }, { onConflict: "user_id,list_id" });
+        if (error) console.error("quiz save failed", error);
+      }
+    }
+    updateQuizSavedIndicator();
   }
-  function loadSavedQuiz() {
+  async function loadSavedQuiz() {
+    if (GUEST || !currentList) {
+      try { return JSON.parse(localStorage.getItem(quizSaveKey())); } catch (e) { return null; }
+    }
+    const uid = await myUid();
+    if (uid) {
+      const { data, error } = await supabase.from("quiz_saves")
+        .select("mode, state, opts, list_id").eq("user_id", uid).eq("list_id", currentList.id).maybeSingle();
+      if (error) console.error(error);
+      else if (data) return { mode: data.mode, state: data.state, opts: data.opts, listId: data.list_id };
+    }
     try { return JSON.parse(localStorage.getItem(quizSaveKey())); } catch (e) { return null; }
   }
   async function maybeResumeQuiz() {
-    const saved = loadSavedQuiz();
+    const saved = await loadSavedQuiz();
     if (!saved || !saved.state || !((saved.state.queue || []).length > saved.state.idx)) return;
     if (saved.listId && currentList && saved.listId !== currentList.id) return;
     if (currentQuizMode()) return;
@@ -919,8 +938,26 @@ function bumpStat(id, key) {
     } else {
       clearSavedQuiz();
     }
+    updateQuizSavedIndicator();
   }
-  function clearSavedQuiz() { localStorage.removeItem(quizSaveKey()); }
+  async function clearSavedQuiz() {
+    localStorage.removeItem(quizSaveKey());
+    if (!GUEST && currentList) {
+      const uid = await myUid();
+      if (uid) {
+        const { error } = await supabase.from("quiz_saves").delete().eq("user_id", uid).eq("list_id", currentList.id);
+        if (error) console.error(error);
+      }
+    }
+    updateQuizSavedIndicator();
+  }
+  async function updateQuizSavedIndicator() {
+    const t = document.querySelector('.tab[data-tab="quiz-type"]');
+    if (!t) return;
+    const saved = await loadSavedQuiz();
+    const has = !!(saved && saved.state && (saved.state.queue || []).length > saved.state.idx);
+    t.classList.toggle("has-saved", has);
+  }
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
