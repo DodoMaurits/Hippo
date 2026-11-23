@@ -45,7 +45,7 @@ function bumpStat(id, key) {
   }
   function saveWordRow(w) {
     if (GUEST) { save(); saveStatus("✅ Saved", true); return; }
-    supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id).then(() => { dirtyWords.delete(w.id); saveStatus("✅ Saved", true); });
+    supabase.from("words").update({ lang1: w.a, lang2: w.b, hidden: !!w.hidden }).eq("id", w.id).then(({ error }) => { if (error) console.error("word save failed", error); dirtyWords.delete(w.id); saveStatus("✅ Saved", true); });
   }
 
   // ---------- Auth ----------
@@ -104,7 +104,13 @@ function bumpStat(id, key) {
   
   // ---------- Data (Supabase) ----------
   function save() {
-    if (GUEST) { localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(words)); return; }
+    if (GUEST) {
+      let all = [];
+      try { all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]"); } catch (e) {}
+      all = all.filter((w) => !currentList || w.listId !== currentList.id);
+      localStorage.setItem(GUEST_WORDS_KEY, JSON.stringify(all.concat(words)));
+      return;
+    }
   }
   async function flushList() {
     if (!currentList) return;
