@@ -253,6 +253,7 @@ function bumpStat(id, key) {
         const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
         $("mcMax").value = filled; $("typeMax").value = filled; $("flashMax").value = filled;
         await maybeResumeQuiz(m);
+        if (!currentQuizMode()) resetQuizUI(m);
       }
     });
   });
@@ -1052,7 +1053,7 @@ function bumpStat(id, key) {
 
   // ---------- Multiple choice (ongewijzigd) ----------
   let mc = { queue: [], idx: 0, score: 0, locked: false };
-  function mcStart() {
+  async function mcStart() {
     if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
@@ -1141,7 +1142,7 @@ function bumpStat(id, key) {
 
   // ---------- Typing (ongewijzigd) ----------
   let ty = { queue: [], idx: 0, score: 0 };
-  function typeStart() {
+  async function typeStart() {
     if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     quizOpts.caseSensitive = $("typeCase").checked;
     quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
@@ -1282,7 +1283,7 @@ function bumpStat(id, key) {
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0, marks: {} };
-  function flashStart() {
+  async function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs($("flashDirection").value);
     if (!pool.length) { 
