@@ -219,18 +219,18 @@ h1 {
 }
 
 .tab.has-saved, .tab.has-saved.active { 
-  background: #d43a3a;
+  background: #d43a3a; 
   border-color: #ff9a9a;
-  color: #fff;
-  font-weight: 700;
+  color: #fff; 
+  font-weight: 700; 
 }
 
-.tab.has-saved::after {
-  content: "●"; 
-  color: #fff;
-  margin-left: 4px;
-  font-size: .7em;
-  vertical-align: middle;
+.tab.has-saved::after { 
+  content: "(saved)"; 
+  margin-left: 6px; 
+  font-size: .75em;
+  font-weight: 400; 
+  opacity: .85; 
 }
 
 .tab[data-tab="list"] { display: none; }
