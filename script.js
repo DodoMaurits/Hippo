@@ -252,7 +252,8 @@ function bumpStat(id, key) {
         if (currentList) await flushList();
         const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
         $("mcMax").value = filled; $("typeMax").value = filled; $("flashMax").value = filled;
-        if (!currentQuizMode()) { await maybeResumeQuiz(); if (!currentQuizMode()) resetQuizUI(m); }
+        await maybeResumeQuiz(m);
+        if (!currentQuizMode()) resetQuizUI(m);
       }
     });
   });
@@ -569,7 +570,6 @@ function bumpStat(id, key) {
     updateImgBtn();
     activateTab("list");
     setQuizTabs(true);
-    await maybeResumeQuiz();
   }
 
   function updateImgBtn() {
@@ -924,17 +924,17 @@ function bumpStat(id, key) {
     }
     try { return JSON.parse(localStorage.getItem(quizSaveKey())); } catch (e) { return null; }
   }
-  async function maybeResumeQuiz() {
+  async function maybeResumeQuiz(mode) {
     const saved = await loadSavedQuiz();
-    if (!saved || !saved.state || !((saved.state.queue || []).length > saved.state.idx)) return;
-    if (saved.listId && currentList && saved.listId !== currentList.id) return;
-    if (currentQuizMode()) return;
+    if (!saved || !saved.state || !((saved.state.queue || []).length > saved.state.idx)) return null;
+    if (saved.listId && currentList && saved.listId !== currentList.id) return null;
+    if (mode && saved.mode !== mode) return null;
+    if (currentQuizMode()) return null;
     const res = await showModal({
       title: "🦛 Unfinished quiz",
       text: "This list has a saved quiz. Resume it or start fresh?",
       okText: "Resume",
-      extraButton: { label: "Discard", value: "discard" },
-      hideCancel: true
+      extraButton: { label: "Discard", value: "discard" }
     });
     if (res === true || res === "save") {
       activeQuiz = saved.mode;
@@ -945,10 +945,12 @@ function bumpStat(id, key) {
       else { activateTab("flash"); flashShow(); }
       setQuizChrome(saved.mode === "mc" ? "panel-quiz-mc" : saved.mode === "ty" ? "panel-quiz-type" : "panel-flash", false);
       setQuizTabs(true);
-    } else {
-      clearSavedQuiz();
+      updateQuizSavedIndicator();
+      return "resumed";
     }
+    if (res === "discard") { clearSavedQuiz(); updateQuizSavedIndicator(); return "discarded"; }
     updateQuizSavedIndicator();
+    return "cancel";
   }
   async function clearSavedQuiz() {
     localStorage.removeItem(quizSaveKey());
@@ -1051,13 +1053,15 @@ function bumpStat(id, key) {
 
   // ---------- Multiple choice (ongewijzigd) ----------
   let mc = { queue: [], idx: 0, score: 0, locked: false };
-  function mcStart() {
+  async function mcStart() {
     if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("mcDirection").value;
     let pool = getPairs(dir);
     if (!pool.length) { 
       showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
     }
+    const r = await maybeResumeQuiz("mc");
+    if (r === "resumed" || r === "cancel") return;
     if ($("mcShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("mcMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -1138,7 +1142,7 @@ function bumpStat(id, key) {
 
   // ---------- Typing (ongewijzigd) ----------
   let ty = { queue: [], idx: 0, score: 0 };
-  function typeStart() {
+  async function typeStart() {
     if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     quizOpts.caseSensitive = $("typeCase").checked;
     quizOpts.help = document.querySelector('input[name="typeHelp"]:checked').value;
@@ -1150,6 +1154,8 @@ function bumpStat(id, key) {
     if (!pool.length) {
       showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
     }
+    const r = await maybeResumeQuiz("ty");
+    if (r === "resumed" || r === "cancel") return;
     if ($("typeShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("typeMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -1277,12 +1283,14 @@ function bumpStat(id, key) {
 
   // ---------- Flashcards ----------
   let fl = { queue: [], idx: 0, marks: {} };
-  function flashStart() {
+  async function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = getPairs($("flashDirection").value);
     if (!pool.length) { 
       showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
     }
+    const r = await maybeResumeQuiz("fl");
+    if (r === "resumed" || r === "cancel") return;
     if ($("flashShuffle").checked) pool = shuffle(pool);
     const max = parseInt($("flashMax").value, 10) || pool.length;
     pool = pool.slice(0, Math.min(max, pool.length));
@@ -1934,7 +1942,6 @@ function bumpStat(id, key) {
       else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
     } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
-    await maybeResumeQuiz();
     await showModal({
       title: "Guest mode",
       text: "Guest lists are stored in your browser cache — clearing browsing data deletes them.",
@@ -1963,7 +1970,6 @@ function bumpStat(id, key) {
           else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
         } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
-        await maybeResumeQuiz();
       } else {
         authReady = false;
         words = [];
