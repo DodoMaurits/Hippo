@@ -245,7 +245,7 @@ function bumpStat(id, key) {
         if (currentList) await flushList();
         const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
         $("mcMax").value = filled; $("typeMax").value = filled; $("flashMax").value = filled;
-        if (!currentQuizMode()) resetQuizUI(m);
+        if (!currentQuizMode()) { await maybeResumeQuiz(); if (!currentQuizMode()) resetQuizUI(m); }
       }
     });
   });
@@ -957,6 +957,7 @@ function bumpStat(id, key) {
   async function updateQuizSavedIndicator() {
     const t = document.querySelector('.tab[data-tab="quiz-type"]');
     if (!t) return;
+    if (currentQuizMode()) { t.classList.remove("has-saved"); return; }
     const saved = await loadSavedQuiz();
     const has = !!(saved && saved.state && (saved.state.queue || []).length > saved.state.idx);
     t.classList.toggle("has-saved", has);
