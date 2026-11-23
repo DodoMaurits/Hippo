@@ -211,11 +211,26 @@ h1 {
 .tab:hover { 
   transform: translateY(-2px); 
 }
+
 .tab.active { 
   background: #0d3d51; 
   color: #fff; border-color: var(--sand); 
   box-shadow: 0 5px 0 rgba(0,0,0,.3); 
 }
+
+.tab.has-saved {
+  color: #ff6b6b; 
+  font-weight: 700;
+}
+
+.tab.has-saved::after { 
+  content: "●";
+  color: #ff4d4d; 
+  margin-left: 4px; 
+  font-size: .7em; 
+  vertical-align: middle; 
+}
+
 .panel { 
   display: none; 
   background: var(--panel); 
