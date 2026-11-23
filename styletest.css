@@ -218,11 +218,12 @@ h1 {
   box-shadow: 0 5px 0 rgba(0,0,0,.3); 
 }
 
-.tab.has-saved, .tab.has-saved.active { 
-  background: #d43a3a; 
-  border-color: #ff9a9a;
-  color: #fff; 
-  font-weight: 700; 
+.tab.has-saved, .tab.has-saved.active {
+  background: linear-gradient(180deg, #e03131 0%, #c92a2a 100%);
+  border-color: #fa5252;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 0 rgba(0,0,0,.3);
 }
 
 .tab.has-saved::after { 
@@ -230,7 +231,7 @@ h1 {
   margin-left: 6px; 
   font-size: .75em;
   font-weight: 400; 
-  opacity: .85; 
+  opacity: .9; 
 }
 
 .tab[data-tab="list"] { display: none; }
