@@ -1766,9 +1766,7 @@ function bumpStat(id, key) {
   function examSortKey(item, idx) {
     const parts = examParts();
     const pi = item.part === "words" ? parts.length : parts.findIndex((p) => p.id === item.part);
-    const p = parts.find((x) => x.id === item.part);
-    const si = item.part === "words" || !p || !p.subs ? 0 : p.subs.indexOf(item.sub);
-    return (pi === -1 ? parts.length - 1 : pi) * 10000 + (si < 0 ? 0 : si) * 100 + idx;
+    return (pi === -1 ? parts.length - 1 : pi) * 10000 + idx;
   }
   function renderExamQuestions() {
     const box = $("examQuestions");
