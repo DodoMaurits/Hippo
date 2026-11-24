@@ -744,6 +744,7 @@ function bumpStat(id, key) {
       body.appendChild(tr);
     });
     $("emptyMsg").style.display = words.length ? "none" : "block";
+    updateStatsFilterRows();
   }
 
   function updateHideBtn() {
@@ -870,6 +871,7 @@ function bumpStat(id, key) {
     $("typeScore").textContent = "Score: 0/0"; $("typeCount").textContent = ""; $("typeProgress").style.width = "0%";
     $("flashCount").textContent = "Card 0/0";
     updateNewlistTab();
+    updateStatsFilterRows();
   }
   function setQuizChrome(panelId, show) {
     const p = $(panelId);
@@ -1045,6 +1047,32 @@ function bumpStat(id, key) {
           : { id: w.id, prompt: w.a, answer: w.b, answerImg: false, exLines };
       });
   }
+  function statColor(id) {
+    const s = wordStats[id] || { wrong: 0, right: 0 };
+    const d = s.wrong - s.right;
+    if (d < 0) return "green";
+    if (d === 0 && s.wrong > 0) return "yellow";
+    if (d > 0) return "red";
+    return null;
+  }
+  function listHasStats() {
+    return words.some((w) => { const s = wordStats[w.id]; return !!(s && (s.wrong + s.right) > 0); });
+  }
+  function filterPoolByStats(pool, prefix) {
+    const g = $(prefix + "NoGreen"), y = $(prefix + "NoYellow");
+    const noGreen = g && g.checked, noYellow = y && y.checked;
+    if (!noGreen && !noYellow) return pool;
+    return pool.filter((p) => {
+      const c = statColor(p.id);
+      if (noGreen && c === "green") return false;
+      if (noYellow && c === "yellow") return false;
+      return true;
+    });
+  }
+  function updateStatsFilterRows() {
+    const has = !!currentList && listHasStats();
+    document.querySelectorAll(".stats-filter-row").forEach((r) => r.classList.toggle("hidden", !has));
+  }
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
     scoreEl.textContent = "Score: " + score + "/" + done;
     countEl.textContent = done + "/" + total;
@@ -1056,7 +1084,7 @@ function bumpStat(id, key) {
   async function mcStart() {
     if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("mcDirection").value;
-    let pool = getPairs(dir);
+    let pool = filterPoolByStats(getPairs(dir), "mc");
     if (!pool.length) { 
       showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
     }
@@ -1150,7 +1178,7 @@ function bumpStat(id, key) {
     quizOpts.punct = $("typePunct").checked;
     quizOpts.feedback = document.querySelector('input[name="typeFeedback"]:checked').value;
     const dir = currentList.imgMode ? "1to2" : $("typeDirection").value;
-    let pool = getPairs(dir);
+    let pool = filterPoolByStats(getPairs(dir), "ty");
     if (!pool.length) {
       showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
     }
@@ -1285,7 +1313,7 @@ function bumpStat(id, key) {
   let fl = { queue: [], idx: 0, marks: {} };
   async function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
-    let pool = getPairs($("flashDirection").value);
+    let pool = filterPoolByStats(getPairs($("flashDirection").value), "fl");
     if (!pool.length) { 
       showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" }); activateTab("list"); return; 
     }
