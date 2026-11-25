@@ -31,7 +31,7 @@ function bumpStat(id, key) {
   let dragOvType = null, dragOvId = null;
   let quizOpts = { caseSensitive: false, fuzzy: false, help: "normal", feedback: "brief", punct: true };
   let activeQuiz = null;
-
+  let editMode = null;
   let saveTimer = null;
   const saveTimers = {};
   const dirtyWords = new Set();
@@ -809,9 +809,7 @@ function bumpStat(id, key) {
     if (inputs[0]) inputs[0].focus();
   });
   $("addRowBottom").addEventListener("click", () => $("addRow").click());
-
   $("saveListBtn").addEventListener("click", () => flushList());
-
   $("clearList").addEventListener("click", async () => {
     const ok = await showModal({ title: "🧹 Clear list", text: "Remove all words from this list?", okText: "Clear" }); 
     if (words.length && ok) {
@@ -827,7 +825,6 @@ function bumpStat(id, key) {
       renderList();
     }
   });
-
   $("col1name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
   $("col2name").addEventListener("input", () => { saveColNames(); updateHeaders(); });
 
@@ -870,6 +867,7 @@ function bumpStat(id, key) {
     $("mcScore").textContent = "Score: 0/0"; $("mcCount").textContent = ""; $("mcProgress").style.width = "0%";
     $("typeScore").textContent = "Score: 0/0"; $("typeCount").textContent = ""; $("typeProgress").style.width = "0%";
     $("flashCount").textContent = "Card 0/0";
+    editMode = null;
     updateNewlistTab();
     updateStatsFilterRows();
   }
@@ -896,6 +894,11 @@ function bumpStat(id, key) {
     if (t) t.classList.toggle("hidden", !!cur || inListView);
     const tb = document.querySelector(".tabs");
     if (tb) tb.classList.toggle("quiz-only", !!cur);
+    const eb = $("quizEditBtn");
+    if (eb) {
+      if (!cur && editMode) { editMode = null; eb.classList.remove("editing"); eb.textContent = "✏️ Correct error"; }
+      eb.classList.toggle("hidden", !cur);
+    }
   }
   const QUIZ_SAVE_KEY = "hippo-quiz-save";
   function quizSaveKey() { return QUIZ_SAVE_KEY + "-" + (currentList ? currentList.id : "none"); }
@@ -1039,14 +1042,84 @@ function bumpStat(id, key) {
         const exLines = [...new Set(exOf(w.a).concat(exOf(w.b)))];
         if (direction === "both") {
           return Math.random() < 0.5
-            ? { id: w.id, prompt: w.a, answer: w.b, answerImg: false, exLines }
-            : { id: w.id, prompt: w.b, answer: w.a, answerImg: img, exLines };
+            ? { id: w.id, ps: "a", as: "b", prompt: w.a, answer: w.b, answerImg: false, exLines }
+            : { id: w.id, ps: "b", as: "a", prompt: w.b, answer: w.a, answerImg: img, exLines };
         }
         return direction === "2to1"
-          ? { id: w.id, prompt: w.b, answer: w.a, answerImg: img, exLines }
-          : { id: w.id, prompt: w.a, answer: w.b, answerImg: false, exLines };
+          ? { id: w.id, ps: "b", as: "a", prompt: w.b, answer: w.a, answerImg: img, exLines }
+          : { id: w.id, ps: "a", as: "b", prompt: w.a, answer: w.b, answerImg: false, exLines };
       });
   }
+  function exOfStr(s) {
+    const m = String(s || "").match(/\(\s*EX:([^)]*)\)/i);
+    return m ? m[1].split(";").map((x) => x.trim()).filter(Boolean) : [];
+  }
+  function saveEditedWord(item, np, na) {
+    item.prompt = np; item.answer = na;
+    const w = words.find((x) => x.id === item.id);
+    if (!w) return;
+    if (item.ps === "a") w.a = np; else w.b = np;
+    if (item.as === "a") w.a = na; else w.b = na;
+    item.exLines = [...new Set(exOfStr(w.a).concat(exOfStr(w.b)))];
+    if (GUEST) save(); else saveWordRow(w);
+  }
+  function makeEditInput(id, value) {
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.id = id; inp.className = "answer-input edit-input"; inp.value = value;
+    return inp;
+  }
+  function renderQuizEditUI(mode) {
+    if (mode === "ty") {
+      const item = ty.shown || ty.queue[ty.idx];
+      if (!item) return;
+      const p = $("typePrompt"); p.innerHTML = ""; p.style.fontSize = "";
+      p.appendChild(makeEditInput("editPrompt", String(item.prompt)));
+      const fb = $("typeFeedback");
+      if (fb.classList.contains("bad")) { fb.innerHTML = ""; fb.appendChild(makeEditInput("editAnswer", String(item.answer))); }
+    } else if (mode === "mc") {
+      const item = mc.shown || mc.queue[mc.idx];
+      if (!item) return;
+      const p = $("mcPrompt"); p.innerHTML = ""; p.style.fontSize = "";
+      p.appendChild(makeEditInput("editPrompt", String(item.prompt)));
+      const fb = $("mcFeedback");
+      if (fb.classList.contains("bad")) { fb.innerHTML = ""; fb.appendChild(makeEditInput("editAnswer", String(item.answer))); }
+    } else if (mode === "fl") {
+      const item = fl.shown || fl.queue[fl.idx];
+      if (!item) return;
+      const front = $("flashFront"); front.innerHTML = "";
+      front.appendChild(makeEditInput("editPrompt", String(item.prompt)));
+      if ($("flashCard").classList.contains("flipped")) {
+        const back = $("flashBack"); back.innerHTML = "";
+        back.appendChild(makeEditInput("editAnswer", String(item.answer)));
+      }
+    }
+  }
+  function quizEditToggle() {
+    const cur = currentQuizMode();
+    const btn = $("quizEditBtn");
+    if (!cur || !btn) return;
+    if (editMode === cur) {
+      const item = cur === "mc" ? mc.shown : cur === "ty" ? ty.shown : fl.shown;
+      if (item) {
+        const pe = $("editPrompt"), ae = $("editAnswer");
+        saveEditedWord(item, pe ? pe.value : item.prompt, ae ? ae.value : item.answer);
+      }
+      editMode = null;
+      btn.classList.remove("editing");
+      btn.textContent = "✏️ Correct error";
+      if (cur === "mc") { mc.locked = false; mcNext(); }
+      else if (cur === "ty") { ty.locked = false; typeNext(); }
+      else flashShow();
+      return;
+    }
+    editMode = cur;
+    if (cur === "mc") mc.locked = true;
+    if (cur === "ty") ty.locked = true;
+    btn.classList.add("editing");
+    btn.textContent = "✏️✅ Save & continue";
+    renderQuizEditUI(cur);
+  }
+  $("quizEditBtn").addEventListener("click", quizEditToggle);
   function statColor(id) {
     const s = wordStats[id] || { wrong: 0, right: 0 };
     const d = s.wrong - s.right;
@@ -1080,7 +1153,7 @@ function bumpStat(id, key) {
   }
 
   // ---------- Multiple choice (ongewijzigd) ----------
-  let mc = { queue: [], idx: 0, score: 0, locked: false };
+  let mc = { queue: [], idx: 0, score: 0, locked: false, shown: null };
   async function mcStart() {
     if (!currentList) { $("mcPrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     const dir = $("mcDirection").value;
@@ -1101,6 +1174,7 @@ function bumpStat(id, key) {
     mcNext();
   }
   function mcNext() {
+    if (editMode) return;
     $("mcFeedback").textContent = "";
     $("mcFeedback").className = "feedback";
     if (mc.idx >= mc.queue.length) {
@@ -1119,6 +1193,7 @@ function bumpStat(id, key) {
     }
     mc.locked = false;
     const item = mc.queue[mc.idx];
+    mc.shown = item;
     if (typeof item.prompt === "string" && (item.prompt.startsWith("data:image") || item.prompt.startsWith("http")))
       $("mcPrompt").innerHTML = 
         '<img src="' + item.prompt + '" style="max-width:220px;max-height:170px;border-radius:12px;">';
@@ -1168,8 +1243,8 @@ function bumpStat(id, key) {
   }
   $("mcStart").addEventListener("click", mcStart);
 
-  // ---------- Typing (ongewijzigd) ----------
-  let ty = { queue: [], idx: 0, score: 0 };
+  // ---------- Typing ----------
+  let ty = { queue: [], idx: 0, score: 0, shown: null };
   async function typeStart() {
     if (!currentList) { $("typePrompt").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     quizOpts.caseSensitive = $("typeCase").checked;
@@ -1203,6 +1278,7 @@ function bumpStat(id, key) {
     else setTimeout(typeNext, 1200);
   }
   function typeNext() {
+    if (editMode) return;
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
     $("typeContinue").classList.add("hidden"); ty.awaitContinue = false;
@@ -1223,6 +1299,7 @@ function bumpStat(id, key) {
     }
     $("typeInput").classList.remove("hidden");
     const item = ty.queue[ty.idx];
+    ty.shown = item;
     $("typeInput").value = quizOpts.help === "hint" && item.answer ? (stripEx(item.answer).trim()[0] || "") : "";
     $("typePrompt").style.fontSize = "";
     const exm = String(item.prompt).match(/\(\s*EX:([^)]*)\)/i);
@@ -1250,6 +1327,7 @@ function bumpStat(id, key) {
     $("typePrompt").appendChild(ex);
   }
   function typeCheck() {
+    if (editMode) return;
     if (ty.awaitContinue) {
       ty.awaitContinue = false;
       $("typeContinue").classList.add("hidden");
@@ -1310,7 +1388,7 @@ function bumpStat(id, key) {
   $("ovDelBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-del"); updateOvBtns(); });
 
   // ---------- Flashcards ----------
-  let fl = { queue: [], idx: 0, marks: {} };
+  let fl = { queue: [], idx: 0, marks: {}, shown: null };
   async function flashStart() {
     if (!currentList) { $("flashFront").textContent = "🦛 Open a list first (🗂️ My lists)"; return; }
     let pool = filterPoolByStats(getPairs($("flashDirection").value), "fl");
@@ -1333,7 +1411,9 @@ function bumpStat(id, key) {
   function flashShow() {
     $("flashCard").classList.remove("flipped");
     setTimeout(() => {
+    if (editMode === "fl") return;
     const item = fl.queue[fl.idx];
+    fl.shown = item;
     const p = item ? item.prompt : "🦛";
     const a = item ? item.answer : "…";
     if (typeof p === "string" && (p.startsWith("data:image") || p.startsWith("http"))) $("flashFront").innerHTML = 
@@ -1351,8 +1431,14 @@ function bumpStat(id, key) {
   saveQuiz("fl");
   }, 250);
   }
-  $("flashGood").addEventListener("click", () => { fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "right");});
-  $("flashBad").addEventListener("click", () => { fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "wrong");});
+  $("flashGood").addEventListener("click", () => { 
+    if (editMode) return; 
+    fl.marks[fl.idx] = "good"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "right");
+  });
+  $("flashBad").addEventListener("click", () => { 
+    if (editMode) return; 
+    fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "wrong");
+  });
   $("flashDone").addEventListener("click", async () => {
     const vals = Object.values(fl.marks);
     const good = vals.filter((v) => v === "good").length;
@@ -1364,15 +1450,17 @@ function bumpStat(id, key) {
   });
   $("flashCard").addEventListener("click", () => $("flashCard").classList.toggle("flipped"));
   $("flashNext").addEventListener("click", () => {
+    if (editMode) return;
     if (fl.queue.length) { fl.idx = (fl.idx + 1) % fl.queue.length; flashShow(); }
   });
   $("flashPrev").addEventListener("click", () => {
+    if (editMode) return;
     if (fl.queue.length) { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
   });
   $("flashStart").addEventListener("click", flashStart);
   document.addEventListener("keydown", (e) => {
     const t = document.querySelector(".tab.active");
-    if (!t || t.dataset.tab !== "flash" || !fl.queue.length) return;
+    if (!t || t.dataset.tab !== "flash" || !fl.queue.length || editMode) return;
     if (e.key === "ArrowRight") { fl.idx = (fl.idx + 1) % fl.queue.length; flashShow(); }
     if (e.key === "ArrowLeft") { fl.idx = (fl.idx - 1 + fl.queue.length) % fl.queue.length; flashShow(); }
   });
