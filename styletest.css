@@ -252,6 +252,9 @@ h1 {
   max-width: 520px; 
 }
 
+.tabs.editing .tab { display: none !important; }
+.tabs.editing .tab#quizEditBtn { display: inline-block !important; }
+
 .panel { 
   display: none; 
   background: var(--panel); 
