@@ -929,12 +929,49 @@ function bumpStat(id, key) {
     }
     try { return JSON.parse(localStorage.getItem(quizSaveKey())); } catch (e) { return null; }
   }
+  function resyncSavedQuiz(state) {
+    if (!state || !Array.isArray(state.queue)) return;
+    const idx0 = state.idx || 0;
+    const byId = new Map(words.map((w) => [w.id, w]));
+    const newQueue = [];
+    let removedBeforeIdx = 0;
+    const seenIds = new Set();
+    state.queue.forEach((item, i) => {
+      if (!item) return;
+      if (!item.id) { newQueue.push(item); return; }
+      const w = byId.get(item.id);
+      if (!w || w.hidden || !String(w.a).trim() || !String(w.b).trim()) {
+        if (i < idx0) removedBeforeIdx++;
+        return;
+      }
+      item.prompt = item.ps === "b" ? w.b : w.a;
+      item.answer = item.as === "a" ? w.a : w.b;
+      item.exLines = [...new Set(exOfStr(w.a).concat(exOfStr(w.b)))];
+      newQueue.push(item);
+      seenIds.add(item.id);
+    });
+    const first = newQueue.find((x) => x && x.id);
+    const dir2 = first ? first.ps === "b" : false;
+    const img = !!(currentList && currentList.imgMode);
+    words.forEach((w) => {
+      if (seenIds.has(w.id)) return;
+      if (w.hidden || !String(w.a).trim() || !String(w.b).trim()) return;
+      const exLines = [...new Set(exOfStr(w.a).concat(exOfStr(w.b)))];
+      if (dir2) newQueue.push({ id: w.id, ps: "b", as: "a", prompt: w.b, answer: w.a, answerImg: img, exLines });
+      else newQueue.push({ id: w.id, ps: "a", as: "b", prompt: w.a, answer: w.b, answerImg: false, exLines });
+    });
+    state.queue = newQueue;
+    state.idx = Math.max(0, Math.min(idx0 - removedBeforeIdx, newQueue.length));
+    if (typeof state.total === "number") state.total = newQueue.length;
+  }
   async function maybeResumeQuiz(mode) {
     const saved = await loadSavedQuiz();
-    if (!saved || !saved.state || !((saved.state.queue || []).length > saved.state.idx)) return null;
+    if (!saved || !saved.state) return null;
     if (saved.listId && currentList && saved.listId !== currentList.id) return null;
     if (mode && saved.mode !== mode) return null;
     if (currentQuizMode()) return null;
+    resyncSavedQuiz(saved.state);
+    if (!((saved.state.queue || []).length > saved.state.idx)) { clearSavedQuiz(); updateQuizSavedIndicator(); return null; }
     const res = await showModal({
       title: "🦛 Unfinished quiz",
       text: "This list has a saved quiz. Resume it or start fresh?",
