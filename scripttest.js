@@ -237,7 +237,7 @@ function bumpStat(id, key) {
       const cur = currentQuizMode();
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
-        if (tab.dataset.tab === "list") { activateTab("list"); return; }
+        if (tab.dataset.tab === "list") { activateTab("list"); renderList(); return; }
         if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
       }
       if (tab.dataset.tab === "overview") { 
@@ -1470,7 +1470,7 @@ function bumpStat(id, key) {
     if (currentList) await flushList();
     const cur = currentQuizMode();
     if (cur && !(await confirmLeaveQuiz(cur))) return;
-    if (currentList) activateTab("list");
+    if (currentList) { renderList(); activateTab("list"); }
   }
   $("mcBack").addEventListener("click", backToList);
   $("typeBack").addEventListener("click", backToList);
