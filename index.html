@@ -199,6 +199,10 @@
         <div class="quiz-options">
           <label class="opt-pill"><input type="checkbox" id="flashShuffle" checked> Shuffle</label>
           <label class="opt-pill">Max <input type="number" id="flashMax" min="1" class="opt-max"></label>
+          <div class="opt-row stats-filter-row hidden">
+            <label class="opt-pill"><input type="checkbox" id="flNoGreen"> Skip green rows (✔ > ✘)</label>
+            <label class="opt-pill"><input type="checkbox" id="flNoYellow"> Skip yellow rows (✔ = ✘)</label>
+          </div>
         </div>
       </div>
       <div class="flashcard" id="flashCard">
@@ -239,6 +243,10 @@
         <div class="quiz-options">
           <label class="opt-pill"><input type="checkbox" id="mcShuffle" checked> Shuffle</label>
           <label class="opt-pill">Max <input type="number" id="mcMax" min="1" class="opt-max"></label>
+          <div class="opt-row stats-filter-row hidden">
+            <label class="opt-pill"><input type="checkbox" id="mcNoGreen"> Skip green rows (✔ > ✘)</label>
+            <label class="opt-pill"><input type="checkbox" id="mcNoYellow"> Skip yellow rows (✔ = ✘)</label>
+          </div>
         </div>
         <div class="prompt" id="mcPrompt"></div>
         <div class="hint" id="mcHint"></div>
@@ -281,8 +289,8 @@
               Never show correct answer</label>
           </div>
           <div class="opt-row stats-filter-row hidden">
-            <label class="opt-pill"><input type="checkbox" id="flNoGreen"> Skip green rows (✔ > ✘)</label>
-            <label class="opt-pill"><input type="checkbox" id="flNoYellow"> Skip yellow rows (✔ = ✘)</label>
+            <label class="opt-pill"><input type="checkbox" id="tyNoGreen"> Skip green rows (✔ > ✘)</label>
+            <label class="opt-pill"><input type="checkbox" id="tyNoYellow"> Skip yellow rows (✔ = ✘)</label>
           </div>
         </div>
         <div class="prompt" id="typePrompt"></div>
