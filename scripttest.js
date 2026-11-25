@@ -1527,8 +1527,27 @@ function bumpStat(id, key) {
   $("typeBack").addEventListener("click", backToList);
   $("flashBackBtn").addEventListener("click", backToList);
   
-  // ---------- Importeren ----------
+  // ---------- Importeren/Exporteren ----------
   $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("exportBtn").addEventListener("click", async () => {
+    if (!currentList) {
+      await showModal({ title: "📤 Export", text: "Open a list first (🗂️ My lists)", okText: "OK" });
+      return;
+    }
+    await flushList();
+    const rows = words.map((w) => [w.a, w.b]);
+    try {
+      const mod = await import("https://esm.sh/xlsx@0.18.5");
+      const XLSX = mod.default || mod.XLSX || mod;
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Words");
+      XLSX.writeFile(wb, (currentList.name || "list").replace(/[\\/:*?"<>|]/g, "_") + ".xlsx");
+    } catch (err) {
+      console.error(err);
+      await showModal({ title: "📤 Export failed", text: "Could not create the file.", okText: "OK" });
+    }
+  });
 
   $("importFile").addEventListener("change", async (e) => {
     const file = e.target.files[0];
