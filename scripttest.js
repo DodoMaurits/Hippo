@@ -1614,11 +1614,14 @@ function bumpStat(id, key) {
     tipMode = mode;
     note.innerHTML = mode === "semi"
       ? 'Use <b>;</b> for multiple accepted answers, for example: hey; hi.'
-      : 'Anything in <b>(parentheses)</b> will be ignored.';
+      : mode === "ex"
+        ? 'Use <b>(EX: ...)</b> for example sentences, for example: come (EX: I will come to your house.). It will show in typing quiz after your answer. <b>;</b> = new line. Everything in the <b>(parentheses)<b> is not part of the answer.'
+        : 'Anything in <b>(parentheses)</b> will be ignored.';
     note.classList.remove("hidden");
   }
   $("tipSemi").addEventListener("click", () => showTip("semi"));
   $("tipParen").addEventListener("click", () => showTip("paren"));
+  $("tipEx").addEventListener("click", () => showTip("ex"));
   function updateDelBtn() {
     const on = $("panel-list").classList.contains("show-del");
     const desk = window.matchMedia("(min-width: 561px)").matches;
