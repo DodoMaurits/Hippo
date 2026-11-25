@@ -251,8 +251,7 @@ function bumpStat(id, key) {
       const m = modeMap[tab.dataset.tab];
       if (m) {
         if (currentList) await flushList();
-        const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
-        $("mcMax").value = filled; $("typeMax").value = filled; $("flashMax").value = filled;
+        updateQuizMaxes();
         await maybeResumeQuiz(m);
         if (!currentQuizMode()) resetQuizUI(m);
       }
@@ -564,10 +563,7 @@ function bumpStat(id, key) {
     $("panel-list").classList.remove("show-order"); updateOrderBtn();
     $("panel-list").classList.remove("show-hide"); updateHideBtn();
     $("panel-list").classList.remove("show-stats"); updateStatsBtn();
-    const filled = words.filter((w) => w.a.trim() || w.b.trim()).length;
-    $("mcMax").value = filled;
-    $("typeMax").value = filled;
-    $("flashMax").value = filled;
+    updateQuizMaxes();
     updateImgBtn();
     activateTab("list");
     setQuizTabs(true);
@@ -1196,6 +1192,19 @@ function bumpStat(id, key) {
     const has = !!currentList && listHasStats();
     document.querySelectorAll(".stats-filter-row").forEach((r) => r.classList.toggle("hidden", !has));
   }
+  function updateQuizMaxes() {
+    if (!currentList) return;
+    try {
+      $("mcMax").value = filterPoolByStats(getPairs($("mcDirection").value), "mc").length;
+      $("typeMax").value = filterPoolByStats(getPairs(currentList.imgMode ? "1to2" : $("typeDirection").value), "ty").length;
+      $("flashMax").value = filterPoolByStats(getPairs($("flashDirection").value), "fl").length;
+    } catch (e) {}
+  }
+  document.querySelectorAll(".stats-filter-row input").forEach((cb) => cb.addEventListener("change", updateQuizMaxes));
+  ["mcDirection", "typeDirection", "flashDirection"].forEach((id) => {
+    const el = $(id);
+    if (el) el.addEventListener("change", updateQuizMaxes);
+  });
   function updateScore(progressEl, scoreEl, countEl, total, done, score) {
     scoreEl.textContent = "Score: " + score + "/" + done;
     countEl.textContent = done + "/" + total;
