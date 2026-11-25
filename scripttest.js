@@ -170,7 +170,7 @@ function bumpStat(id, key) {
     const c2 = $("col2name").value || "Language 2";
     $("col1name").placeholder = c1;
     $("col2name").placeholder = c2;
-    document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option").forEach((o) => {
+    document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option, #puzzleDirection option").forEach((o) => {
       if (o.value === "1to2") o.textContent = c1 + " → " + c2;
       else if (o.value === "2to1") o.textContent = c2 + " → " + c1;
     });
@@ -216,9 +216,9 @@ function bumpStat(id, key) {
     if (panel) panel.classList.add("active");
     updateNewlistTab();
     const tb = document.querySelector(".tabs");
-    if (tb) tb.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
+    if (tb) tb.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(name));
     const hd = document.querySelector(".hippo-header");
-    if (hd) hd.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
+    if (hd) hd.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(name));
     try { localStorage.setItem("hippo-tab", name); } catch (e) {}
     updateQuizSavedIndicator();
   }
@@ -231,7 +231,7 @@ function bumpStat(id, key) {
       const fromList = document.querySelector(".tab.active") && 
         document.querySelector(".tab.active").dataset.tab === "list";
       if (fromList && currentList) await flushList();
-      if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab) && currentList && !getPairs("1to2").length) {
+      if (["quiz-mc", "quiz-type", "flash", "puzzle"].includes(tab.dataset.tab) && currentList && !getPairs("1to2").length) {
         showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" });
         return;
       }
@@ -239,7 +239,7 @@ function bumpStat(id, key) {
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
         if (tab.dataset.tab === "list") { activateTab("list"); renderList(); return; }
-        if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
+        if (["quiz-mc", "quiz-type", "flash", "puzzle"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
       }
       if (tab.dataset.tab === "overview") { 
         currentList = null; try { 
@@ -247,6 +247,7 @@ function bumpStat(id, key) {
         } catch (e) {} renderOverview(); activateTab("overview"); return; 
       }
       activateTab(tab.dataset.tab);
+      if (tab.dataset.tab === "puzzle") setQuizChrome("panel-puzzle", true);
       const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
       const m = modeMap[tab.dataset.tab];
       if (m) {
@@ -623,7 +624,7 @@ function bumpStat(id, key) {
   });
   
   function setQuizTabs(show) {
-    document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"]')
+    document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"], .tab[data-tab="puzzle"]')
       .forEach((t) => t.classList.toggle("hidden", !show));
   }
   
@@ -888,7 +889,7 @@ function bumpStat(id, key) {
     const t = document.querySelector('.tab[data-tab="newlist"]');
     const tab = document.querySelector(".tab.active");
     const cur = currentQuizMode();
-    const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type"].includes(tab.dataset.tab);
+    const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(tab.dataset.tab);
     if (t) t.classList.toggle("hidden", !!cur || inListView);
     const tb = document.querySelector(".tabs");
     if (tb) { tb.classList.toggle("quiz-only", !!cur); tb.classList.toggle("editing", !!editMode); }
@@ -1203,6 +1204,7 @@ function bumpStat(id, key) {
       $("mcMax").value = filterPoolByStats(getPairs($("mcDirection").value), "mc").length;
       $("typeMax").value = filterPoolByStats(getPairs(currentList.imgMode ? "1to2" : $("typeDirection").value), "ty").length;
       $("flashMax").value = filterPoolByStats(getPairs($("flashDirection").value), "fl").length;
+      const pm = $("puzzleMax"); if (pm) pm.value = filterPoolByStats(getPairs($("puzzleDirection").value), "pz").map((p) => pzEligible(p.answer)).filter(Boolean).length;
     } catch (e) {}
   }
   document.querySelectorAll(".stats-filter-row input").forEach((cb) => cb.addEventListener("change", updateQuizMaxes));
@@ -1679,6 +1681,204 @@ function bumpStat(id, key) {
     renderOverview();
   }
 
+  // ---------- Puzzle (crossword) ----------
+  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+  function pzEligible(answer) {
+    let s = stripEx(String(answer || ""));
+    if (s.indexOf("(") >= 0) return null;
+    s = s.replace(/[^\p{L}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    const parts = s.split(" ").filter(Boolean);
+    if (!parts.length || parts.length > 2) return null;
+    return parts.join(" ").toUpperCase();
+  }
+  function pzTryBuild(items) {
+    const grid = new Map();
+    const key = (x, y) => x + "," + y;
+    const placed = [];
+    function canPlace(word, x, y, dir) {
+      const letters = word.split("");
+      let crossings = 0;
+      for (let i = 0; i < letters.length; i++) {
+        const c = letters[i];
+        const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
+        const cur = grid.get(key(cx, cy));
+        if (c === " ") { if (cur !== undefined && cur !== " ") return false; continue; }
+        if (cur !== undefined && cur !== " ") { if (cur !== c) return false; crossings++; }
+      }
+      const bx = x - (dir === "H" ? 1 : 0), by = y - (dir === "V" ? 1 : 0);
+      const ex = x + (dir === "H" ? letters.length : 0), ey = y + (dir === "V" ? letters.length : 0);
+      if (grid.get(key(bx, by)) !== undefined || grid.get(key(ex, ey)) !== undefined) return false;
+      for (let i = 0; i < letters.length; i++) {
+        const c = letters[i]; if (c === " ") continue;
+        const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
+        if (grid.get(key(cx, cy)) === c) continue;
+        const n1 = grid.get(key(cx + (dir === "H" ? 0 : 1), cy + (dir === "H" ? 1 : 0)));
+        const n2 = grid.get(key(cx - (dir === "H" ? 0 : 1), cy - (dir === "H" ? 1 : 0)));
+        if ((n1 !== undefined && n1 !== " ") || (n2 !== undefined && n2 !== " ")) return false;
+      }
+      return crossings > 0 || placed.length === 0;
+    }
+    function place(item, x, y, dir) {
+      const letters = item.answer.split("");
+      const cells = [];
+      for (let i = 0; i < letters.length; i++) {
+        const c = letters[i];
+        const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
+        cells.push([cx, cy]);
+        grid.set(key(cx, cy), c);
+      }
+      placed.push({ id: item.id, clue: item.clue, answer: item.answer, x, y, dir, cells });
+    }
+    if (!items.length) return null;
+    place(items[0], 0, 0, "H");
+    const todo = items.slice(1);
+    for (let pass = 0; pass < 4 && todo.length; pass++) {
+      for (let i = todo.length - 1; i >= 0; i--) {
+        const w = todo[i].answer;
+        const options = [];
+        for (const p of placed) {
+          for (const [cx, cy] of p.cells) {
+            const letter = grid.get(key(cx, cy));
+            if (!letter || letter === " ") continue;
+            for (let li = 0; li < w.length; li++) {
+              if (w[li] !== letter) continue;
+              const dir = p.dir === "H" ? "V" : "H";
+              const sx = cx - (dir === "H" ? li : 0), sy = cy - (dir === "V" ? li : 0);
+              if (canPlace(w, sx, sy, dir)) options.push([sx, sy, dir]);
+            }
+          }
+        }
+        if (options.length) {
+          const [sx, sy, dir] = options[Math.floor(Math.random() * options.length)];
+          place(todo[i], sx, sy, dir);
+          todo.splice(i, 1);
+        }
+      }
+    }
+    return { grid, placed };
+  }
+  function pzBuild(items) {
+    let best = null;
+    for (let a = 0; a < 120; a++) {
+      const res = pzTryBuild(shuffle(items.slice()));
+      if (res && (!best || res.placed.length > best.placed.length)) best = res;
+      if (best && best.placed.length === items.length) break;
+    }
+    return best;
+  }
+  async function puzzleStart() {
+    if (!currentList) {
+      await showModal({ title: "🧩 Puzzle", text: "Open a list first (🗂️ My lists)", okText: "OK" });
+      return;
+    }
+    const dir = $("puzzleDirection").value;
+    let pool = filterPoolByStats(getPairs(dir), "pz")
+      .map((p) => ({ id: p.id, clue: p.prompt, answer: pzEligible(p.answer) }))
+      .filter((p) => p.answer);
+    if (!pool.length) {
+      showModal({ title: "🧩 Puzzle", text: "No suitable words in this direction (max 2 words, letters only, no parentheses).", okText: "OK" });
+      return;
+    }
+    if ($("puzzleShuffle").checked) pool = shuffle(pool);
+    const max = Math.min(30, parseInt($("puzzleMax").value, 10) || pool.length);
+    pool = pool.slice(0, Math.min(max, pool.length));
+    const built = pzBuild(pool);
+    if (!built || !built.placed.length) {
+      showModal({ title: "🧩 Puzzle", text: "Could not build a crossword from these words.", okText: "OK" });
+      return;
+    }
+    pz.words = built.placed;
+    pz.grid = built.grid;
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    built.grid.forEach((v, k) => {
+      const parts = k.split(",").map(Number);
+      minX = Math.min(minX, parts[0]); minY = Math.min(minY, parts[1]);
+      maxX = Math.max(maxX, parts[0]); maxY = Math.max(maxY, parts[1]);
+    });
+    pz.w = maxX - minX + 1; pz.h = maxY - minY + 1;
+    pz.ox = -minX; pz.oy = -minY;
+    pzRender();
+    setQuizChrome("panel-puzzle", false);
+    $("puzzleCount").textContent = built.placed.length + " words";
+    updateNewlistTab();
+  }
+  function pzRender() {
+    const starts = new Map();
+    const sorted = pz.words.slice().sort((a, b) => (a.y + pz.oy) - (b.y + pz.oy) || (a.x + pz.ox) - (b.x + pz.ox));
+    let num = 0;
+    const numbered = new Set();
+    sorted.forEach((wd) => {
+      const k = (wd.x + pz.ox) + "," + (wd.y + pz.oy);
+      if (!numbered.has(k)) { num++; starts.set(k, num); numbered.add(k); }
+      wd.num = starts.get(k);
+    });
+    const grid = $("puzzleGrid");
+    grid.innerHTML = "";
+    grid.style.gridTemplateColumns = "repeat(" + pz.w + ", 34px)";
+    pz.cellInput = new Map();
+    const inputs = [];
+    for (let y = 0; y < pz.h; y++) {
+      for (let x = 0; x < pz.w; x++) {
+        const v = pz.grid.get((x - pz.ox) + "," + (y - pz.oy));
+        const cell = document.createElement("div");
+        cell.className = "pz-cell-wrap";
+        if (v === " ") {
+          cell.classList.add("pz-space");
+        } else if (v) {
+          const inp = document.createElement("input");
+          inp.maxLength = 1; inp.className = "pz-cell"; inp.autocomplete = "off";
+          inp.addEventListener("input", () => {
+            inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
+            inp.classList.remove("correct", "wrong");
+            const idx = inputs.indexOf(inp);
+            const next = inputs.slice(idx + 1).find((i) => !i.value) || inputs.find((i) => !i.value);
+            if (next && next !== inp) next.focus();
+          });
+          const n = starts.get(x + "," + y);
+          if (n) { const sp = document.createElement("span"); sp.className = "pz-num"; sp.textContent = n; cell.appendChild(sp); }
+          cell.appendChild(inp);
+          pz.cellInput.set(x + "," + y, inp);
+          inputs.push(inp);
+        } else {
+          cell.classList.add("pz-block");
+        }
+        grid.appendChild(cell);
+      }
+    }
+    const ca = $("puzzleCluesA"), cd = $("puzzleCluesD");
+    ca.innerHTML = ""; cd.innerHTML = "";
+    [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
+      const li = document.createElement("li");
+      li.value = wd.num;
+      li.textContent = wd.clue;
+      li.addEventListener("click", () => {
+        const first = wd.cells.map(([cx, cy]) => pz.cellInput.get((cx + pz.ox) + "," + (cy + pz.oy))).find(Boolean);
+        if (first) first.focus();
+      });
+      (wd.dir === "H" ? ca : cd).appendChild(li);
+    });
+    $("puzzleFeedback").textContent = "";
+  }
+  $("puzzleCheck").addEventListener("click", () => {
+    let ok = 0, total = 0;
+    pz.grid.forEach((v, k) => {
+      if (v === " ") return;
+      const parts = k.split(",").map(Number);
+      const inp = pz.cellInput.get((parts[0] + pz.ox) + "," + (parts[1] + pz.oy));
+      if (!inp) return;
+      total++;
+      if (inp.value.toUpperCase() === v) { inp.classList.add("correct"); inp.classList.remove("wrong"); ok++; }
+      else if (inp.value) { inp.classList.add("wrong"); inp.classList.remove("correct"); }
+    });
+    $("puzzleFeedback").textContent = ok + "/" + total + " letters correct";
+  });
+  $("puzzleClear").addEventListener("click", () => {
+    pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
+    $("puzzleFeedback").textContent = "";
+  });
+  $("puzzleStart").addEventListener("click", puzzleStart);
+  $("puzzleBack").addEventListener("click", backToList);
+  
   // ---------- Exam ----------
   const EXAM_LANGS = ["French","Russian"];
   const CASE_SUBS = ["2","3","4","5","6"];
