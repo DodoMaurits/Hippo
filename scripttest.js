@@ -869,6 +869,7 @@ function bumpStat(id, key) {
     $("typeScore").textContent = "Score: 0/0"; $("typeCount").textContent = ""; $("typeProgress").style.width = "0%";
     $("flashCount").textContent = "Card 0/0";
     editMode = null;
+    freezeQuizPanel(mode, false);
     updateNewlistTab();
     updateStatsFilterRows();
   }
@@ -894,7 +895,7 @@ function bumpStat(id, key) {
     const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type"].includes(tab.dataset.tab);
     if (t) t.classList.toggle("hidden", !!cur || inListView);
     const tb = document.querySelector(".tabs");
-    if (tb) tb.classList.toggle("quiz-only", !!cur);
+    if (tb) { tb.classList.toggle("quiz-only", !!cur); tb.classList.toggle("editing", !!editMode); }
     const eb = $("quizEditBtn");
     if (eb) {
       if (!cur && editMode) { editMode = null; eb.classList.remove("editing"); eb.textContent = "✏️ Correct error"; }
@@ -1132,6 +1133,13 @@ function bumpStat(id, key) {
       }
     }
   }
+  function freezeQuizPanel(mode, on) {
+    const panelId = mode === "mc" ? "panel-quiz-mc" : mode === "ty" ? "panel-quiz-type" : mode === "fl" ? "panel-flash" : null;
+    const p = panelId ? $(panelId) : null;
+    if (!p) return;
+    p.querySelectorAll("button, input, select").forEach((el) => { el.disabled = on; });
+    if (on) p.querySelectorAll(".edit-input").forEach((el) => { el.disabled = false; });
+  }
   function quizEditToggle() {
     const cur = currentQuizMode();
     const btn = $("quizEditBtn");
@@ -1145,9 +1153,11 @@ function bumpStat(id, key) {
       editMode = null;
       btn.classList.remove("editing");
       btn.textContent = "✏️ Correct error";
+      freezeQuizPanel(cur, false);
       if (cur === "mc") { mc.locked = false; mcNext(); }
       else if (cur === "ty") { ty.locked = false; typeNext(); }
       else flashShow();
+      updateNewlistTab();
       return;
     }
     editMode = cur;
@@ -1156,6 +1166,8 @@ function bumpStat(id, key) {
     btn.classList.add("editing");
     btn.textContent = "✏️✅ Save & continue";
     renderQuizEditUI(cur);
+    freezeQuizPanel(cur, true);
+    updateNewlistTab();
   }
   $("quizEditBtn").addEventListener("click", quizEditToggle);
   function statColor(id) {
@@ -1478,6 +1490,7 @@ function bumpStat(id, key) {
     fl.marks[fl.idx] = "bad"; saveQuiz("fl"); flashShow(); bumpStat(fl.queue[fl.idx].id, "wrong");
   });
   $("flashDone").addEventListener("click", async () => {
+    if (editMode) return;
     const vals = Object.values(fl.marks);
     const good = vals.filter((v) => v === "good").length;
     const total = vals.length;
