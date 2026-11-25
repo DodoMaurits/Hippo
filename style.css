@@ -238,6 +238,22 @@ h1 {
 .tabs.quiz-only .tab { display: none; }
 .tabs.quiz-only .tab.active { display: inline-block; }
 .tabs.quiz-only .tab[data-tab="list"] { display: inline-block; }
+.tabs.quiz-only .tab#quizEditBtn { display: inline-block; }
+
+#quizEditBtn.editing { 
+  background: linear-gradient(180deg,#2f9e44,#2b8a3e); 
+  border-color:#69db7c; 
+  color:#fff; 
+  font-weight:700; 
+}
+
+.edit-input { 
+  width: 100%; 
+  max-width: 520px; 
+}
+
+.tabs.editing .tab { display: none !important; }
+.tabs.editing .tab#quizEditBtn { display: inline-block !important; }
 
 .panel { 
   display: none; 
