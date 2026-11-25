@@ -1615,7 +1615,7 @@ function bumpStat(id, key) {
     note.innerHTML = mode === "semi"
       ? 'Use <b>;</b> for multiple accepted answers, for example: hey; hi.'
       : mode === "ex"
-        ? 'Use <b>(EX: ...)</b> for example sentences, for example: come (EX: I will come to your house.). It will show in typing quiz after your answer. <b>;</b> = new line. Everything in the <b>(parentheses)<b> is not part of the answer.'
+        ? 'Use <b>(EX: ...)</b> for example sentences, for example: come (EX: I will come to your house.). It will show in typing quiz after your answer. Everything between the <b>(parentheses)<b> is not part of the answer.'
         : 'Anything in <b>(parentheses)</b> will be ignored.';
     note.classList.remove("hidden");
   }
