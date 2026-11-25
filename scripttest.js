@@ -903,6 +903,7 @@ function bumpStat(id, key) {
   async function saveQuiz(mode) {
     if (!mode) return;
     const st = mode === "mc" ? mc : mode === "ty" ? ty : fl;
+    if (!st || !st.queue || !st.queue.length) return;
     localStorage.setItem(quizSaveKey(), JSON.stringify({ mode, state: st, opts: quizOpts, listId: currentList ? currentList.id : null }));
     if (!GUEST && currentList) {
       const uid = await myUid();
@@ -1004,12 +1005,16 @@ function bumpStat(id, key) {
     updateQuizSavedIndicator();
   }
   async function updateQuizSavedIndicator() {
-    const t = document.querySelector('.tab[data-tab="quiz-type"]');
-    if (!t) return;
-    if (activeQuiz) { t.classList.remove("has-saved"); return; }
+    const tabs = {
+      mc: document.querySelector('.tab[data-tab="quiz-mc"]'),
+      ty: document.querySelector('.tab[data-tab="quiz-type"]'),
+      fl: document.querySelector('.tab[data-tab="flash"]')
+    };
+    if (activeQuiz) { Object.values(tabs).forEach((t) => { if (t) t.classList.remove("has-saved"); }); return; }
     const saved = await loadSavedQuiz();
     const has = !!(saved && saved.state && (saved.state.queue || []).length > saved.state.idx);
-    t.classList.toggle("has-saved", has);
+    const key = has && saved.mode ? saved.mode : null;
+    Object.entries(tabs).forEach(([m, t]) => { if (t) t.classList.toggle("has-saved", key === m); });
   }
   function shuffle(arr) {
     const a = arr.slice();
@@ -1233,7 +1238,7 @@ function bumpStat(id, key) {
     mcNext();
   }
   function mcNext() {
-    if (editMode) return;
+    if (editMode || !mc.queue.length) return;
     $("mcFeedback").textContent = "";
     $("mcFeedback").className = "feedback";
     if (mc.idx >= mc.queue.length) {
@@ -1337,7 +1342,7 @@ function bumpStat(id, key) {
     else setTimeout(typeNext, 1200);
   }
   function typeNext() {
-    if (editMode) return;
+    if (editMode || !ty.queue.length) return;
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
     $("typeContinue").classList.add("hidden"); ty.awaitContinue = false;
@@ -1470,7 +1475,7 @@ function bumpStat(id, key) {
   function flashShow() {
     $("flashCard").classList.remove("flipped");
     setTimeout(() => {
-    if (editMode === "fl") return;
+    if (editMode === "fl" || !fl.queue.length) return;
     const item = fl.queue[fl.idx];
     fl.shown = item;
     const p = item ? item.prompt : "🦛";
@@ -1624,7 +1629,7 @@ function bumpStat(id, key) {
     note.innerHTML = mode === "semi"
       ? 'Use <b>;</b> for multiple accepted answers, for example: hey; hi.'
       : mode === "ex"
-        ? 'Use <b>(EX: ...)</b> to add clarification afterwards, for example: come (EX: I will come to your house.). The example shows in typing quiz after your answer. Everything between the <b>(parentheses)<b> will not be part of the answer.'
+        ? 'Use <b>(EX: ...)</b> to add clarification afterwards, for example: come (EX: I will come to your house.). The example shows in typing quiz after your answer. Everything between the <b>(parentheses)</b> will not be part of the answer.'
         : 'Anything in <b>(parentheses)</b> will be ignored.';
     note.classList.remove("hidden");
   }
