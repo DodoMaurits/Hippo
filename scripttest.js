@@ -225,6 +225,7 @@ function bumpStat(id, key) {
 
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", async () => {
+      if (!tab.dataset.tab) return;
       if (tab.dataset.tab === "newlist") { newList(); return; }
       if (tab.dataset.tab === "exam") { openExam(); return; }
       const fromList = document.querySelector(".tab.active") && 
