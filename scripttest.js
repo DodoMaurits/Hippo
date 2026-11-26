@@ -2410,7 +2410,7 @@ function bumpStat(id, key) {
       const lt = localStorage.getItem("hippo-tab");
       const ll = localStorage.getItem("hippo-list");
       if (lt === "list" && ll) { openList(ll); }
-      else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview";
+      else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview");
     } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
     await showModal({
@@ -2438,7 +2438,7 @@ function bumpStat(id, key) {
           const lt = localStorage.getItem("hippo-tab");
           const ll = localStorage.getItem("hippo-list");
           if (lt === "list" && ll) { openList(ll); }
-          else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview";
+          else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview");
         } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
       } else {
