@@ -1020,6 +1020,8 @@ input.exam-answer.wrong {
   break-inside:avoid
 }
 
+.puzzle-clues li.done{color:#6e7b87}
+
 /* ================= Modal ================= */
 .modal-overlay { 
   position: fixed;
