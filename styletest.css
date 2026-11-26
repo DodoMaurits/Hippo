@@ -1008,12 +1008,15 @@ input.exam-answer.wrong {
 .puzzle-clues ol{
   margin:0 0 12px 0;
   padding:0;
-  list-style:none
+  list-style:none;
+  column-count:2;
+  column-gap:18px
 }
 
 .puzzle-clues li{
   cursor:pointer;
-  margin-bottom:4px
+  margin-bottom:4px;
+  break-inside:avoid
 }
 
 /* ================= Modal ================= */
