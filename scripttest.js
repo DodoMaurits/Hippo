@@ -1711,78 +1711,112 @@ function bumpStat(id, key) {
     if (!parts.length || parts.length > 2) return null;
     return parts.join(" ").toUpperCase();
   }
-  function pzTryBuild(items) {
+  function pzTryBuild(items, firstDir) {
     const grid = new Map();
     const key = (x, y) => x + "," + y;
     const placed = [];
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    const lettersOf = (word) => word.replace(/ /g, "").split("");
     function canPlace(word, x, y, dir) {
-      const letters = word.split("");
+      const letters = lettersOf(word);
       let crossings = 0;
       for (let i = 0; i < letters.length; i++) {
         const c = letters[i];
         const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
         const cur = grid.get(key(cx, cy));
-        if (c === " ") { if (cur !== undefined && cur !== " ") return false; continue; }
-        if (cur !== undefined && cur !== " ") { if (cur !== c) return false; crossings++; }
+        if (cur !== undefined) { if (cur !== c) return -1; crossings++; }
       }
       const bx = x - (dir === "H" ? 1 : 0), by = y - (dir === "V" ? 1 : 0);
       const ex = x + (dir === "H" ? letters.length : 0), ey = y + (dir === "V" ? letters.length : 0);
-      if (grid.get(key(bx, by)) !== undefined || grid.get(key(ex, ey)) !== undefined) return false;
+      if (grid.get(key(bx, by)) !== undefined || grid.get(key(ex, ey)) !== undefined) return -1;
       for (let i = 0; i < letters.length; i++) {
-        const c = letters[i]; if (c === " ") continue;
         const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
-        if (grid.get(key(cx, cy)) === c) continue;
+        if (grid.get(key(cx, cy)) !== undefined) continue;
         const n1 = grid.get(key(cx + (dir === "H" ? 0 : 1), cy + (dir === "H" ? 1 : 0)));
         const n2 = grid.get(key(cx - (dir === "H" ? 0 : 1), cy - (dir === "H" ? 1 : 0)));
-        if ((n1 !== undefined && n1 !== " ") || (n2 !== undefined && n2 !== " ")) return false;
+        if (n1 !== undefined || n2 !== undefined) return -1;
       }
-      return crossings > 0 || placed.length === 0;
+      return crossings;
     }
     function place(item, x, y, dir) {
-      const letters = item.answer.split("");
+      const letters = lettersOf(item.answer);
       const cells = [];
       for (let i = 0; i < letters.length; i++) {
-        const c = letters[i];
         const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
         cells.push([cx, cy]);
-        grid.set(key(cx, cy), c);
+        grid.set(key(cx, cy), letters[i]);
+        minX = Math.min(minX, cx); minY = Math.min(minY, cy);
+        maxX = Math.max(maxX, cx); maxY = Math.max(maxY, cy);
       }
-      placed.push({ id: item.id, clue: item.clue, answer: item.answer, x, y, dir, cells });
+      placed.push({ id: item.id, clue: item.clue, answer: item.answer, gapAt: item.answer.indexOf(" "), x, y, dir, cells });
     }
     if (!items.length) return null;
-    place(items[0], 0, 0, "H");
+    place(items[0], 0, 0, firstDir === "V" ? "V" : "H");
     const todo = items.slice(1);
     for (let pass = 0; pass < 4 && todo.length; pass++) {
       for (let i = todo.length - 1; i >= 0; i--) {
         const w = todo[i].answer;
+        const wl = lettersOf(w);
         const options = [];
         for (const p of placed) {
           for (const [cx, cy] of p.cells) {
             const letter = grid.get(key(cx, cy));
-            if (!letter || letter === " ") continue;
-            for (let li = 0; li < w.length; li++) {
-              if (w[li] !== letter) continue;
+            if (!letter) continue;
+            for (let li = 0; li < wl.length; li++) {
+              if (wl[li] !== letter) continue;
               const dir = p.dir === "H" ? "V" : "H";
               const sx = cx - (dir === "H" ? li : 0), sy = cy - (dir === "V" ? li : 0);
-              if (canPlace(w, sx, sy, dir)) options.push([sx, sy, dir]);
+              const cr = canPlace(w, sx, sy, dir);
+              if (cr <= 0) continue;
+              let nMinX = minX, nMinY = minY, nMaxX = maxX, nMaxY = maxY;
+              for (let k = 0; k < wl.length; k++) {
+                const px = sx + (dir === "H" ? k : 0), py = sy + (dir === "V" ? k : 0);
+                nMinX = Math.min(nMinX, px); nMinY = Math.min(nMinY, py);
+                nMaxX = Math.max(nMaxX, px); nMaxY = Math.max(nMaxY, py);
+              }
+              const nw = nMaxX - nMinX + 1, nh = nMaxY - nMinY + 1;
+              options.push({ sx, sy, dir, cr, area: nw * nh, maxDim: Math.max(nw, nh) });
             }
           }
         }
         if (options.length) {
-          const [sx, sy, dir] = options[Math.floor(Math.random() * options.length)];
-          place(todo[i], sx, sy, dir);
+          options.sort((a, b) => (b.cr - a.cr) || (a.area - b.area) || (a.maxDim - b.maxDim));
+          const o = options[0];
+          place(todo[i], o.sx, o.sy, o.dir);
           todo.splice(i, 1);
         }
       }
     }
     return { grid, placed };
   }
+  function pzBBox(grid) {
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    grid.forEach((v, k) => {
+      const p = k.split(",").map(Number);
+      minX = Math.min(minX, p[0]); minY = Math.min(minY, p[1]);
+      maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]);
+    });
+    return { w: maxX - minX + 1, h: maxY - minY + 1 };
+  }
+  function pzBetter(a, b) {
+    if (!b) return true;
+    if (a.placed.length !== b.placed.length) return a.placed.length > b.placed.length;
+    const ba = pzBBox(a.grid), bb = pzBBox(b.grid);
+    const aMax = Math.max(ba.w, ba.h), bMax = Math.max(bb.w, bb.h);
+    if (aMax !== bMax) return aMax < bMax;
+    const aLand = ba.w > ba.h ? 1 : 0, bLand = bb.w > bb.h ? 1 : 0;
+    if (aLand !== bLand) return aLand < bLand;
+    return ba.w * ba.h < bb.w * bb.h;
+  }
   function pzBuild(items) {
     let best = null;
     for (let a = 0; a < 120; a++) {
-      const res = pzTryBuild(shuffle(items.slice()));
-      if (res && (!best || res.placed.length > best.placed.length)) best = res;
-      if (best && best.placed.length === items.length) break;
+      const res = pzTryBuild(shuffle(items.slice()), a % 2 === 0 ? "H" : "V");
+      if (res && pzBetter(res, best)) best = res;
+      if (best && best.placed.length === items.length) {
+        const b = pzBBox(best.grid);
+        if (Math.max(b.w, b.h) <= 10) break;
+      }
     }
     return best;
   }
@@ -1840,19 +1874,26 @@ function bumpStat(id, key) {
     });
     const grid = $("puzzleGrid");
     grid.innerHTML = "";
-    grid.style.gridTemplateColumns = "repeat(" + pz.w + ", 34px)";
+    grid.style.gridTemplateColumns = "repeat(" + pz.w + ", var(--pz-cell, 34px))";
     pz.cellInput = new Map();
+    const gaps = new Map();
+    pz.words.forEach((wd) => {
+      if (wd.gapAt >= 0) {
+        gaps.set((wd.x + (wd.dir === "H" ? wd.gapAt - 1 : 0)) + "," + (wd.y + (wd.dir === "V" ? wd.gapAt - 1 : 0)), wd.dir);
+      }
+    });
     const inputs = [];
     for (let y = 0; y < pz.h; y++) {
       for (let x = 0; x < pz.w; x++) {
         const v = pz.grid.get((x - pz.ox) + "," + (y - pz.oy));
         const cell = document.createElement("div");
         cell.className = "pz-cell-wrap";
-        if (v === " ") {
-          cell.classList.add("pz-space");
-        } else if (v) {
+        if (v) {
           const inp = document.createElement("input");
           inp.maxLength = 1; inp.className = "pz-cell"; inp.autocomplete = "off";
+          const g = gaps.get((x - pz.ox) + "," + (y - pz.oy));
+          if (g === "H") inp.classList.add("pz-gap-h");
+          else if (g === "V") inp.classList.add("pz-gap-v");
           inp.addEventListener("input", () => {
             inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
             inp.classList.remove("correct", "wrong");
