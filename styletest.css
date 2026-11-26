@@ -933,14 +933,17 @@ input.exam-answer.wrong {
 }
 
 .puzzle-grid{
+  --pz-cell:34px;
   display:grid;
-  gap:2px
+  gap:2px;
+  max-width:100%;
+  overflow-x:auto
 }
 
 .pz-cell-wrap{
   position:relative;
-  width:34px;
-  height:34px
+  width:var(--pz-cell,34px);
+  height:var(--pz-cell,34px)
 }
 
 .pz-cell{
@@ -956,19 +959,10 @@ input.exam-answer.wrong {
 }
 
 .pz-block{
-  width:34px;
-  height:34px;
+  width:var(--pz-cell,34px);
+  height:var(--pz-cell,34px);
   background:#1b2a4a;
   border-radius:4px
-}
-
-.pz-space{
-  width:34px;
-  height:34px;
-  background:#000;
-  border:3px solid #000;
-  border-radius:4px;
-  box-sizing:border-box
 }
 
 .pz-num{
@@ -989,6 +983,14 @@ input.exam-answer.wrong {
 .pz-cell.wrong{
   background:#c92a2a;
   color:#fff
+}
+
+.pz-cell.pz-gap-h{
+  border-right:4px solid #000
+}
+
+.pz-cell.pz-gap-v{
+  border-bottom:4px solid #000
 }
 
 .puzzle-clues{
@@ -1178,6 +1180,10 @@ input.exam-answer.wrong {
           .choices { 
             grid-template-columns: 1fr; 
           }
+
+          .puzzle-grid{--pz-cell:24px}
+          .pz-cell{font-size:.85rem}
+          .pz-num{font-size:.45rem}
         }
 
 #saveStatus { white-space: nowrap; }
