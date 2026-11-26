@@ -997,7 +997,8 @@ input.exam-answer.wrong {
   display:flex;
   gap:24px;
   flex-wrap:wrap;
-  width:100%
+  width:100%;
+  text-align:left
 }
 
 .puzzle-clues>div{
