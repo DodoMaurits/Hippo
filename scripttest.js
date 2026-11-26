@@ -1703,6 +1703,7 @@ function bumpStat(id, key) {
   // ---------- Puzzle (crossword) ----------
   let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
   let pzSaveTimer = null;
+  let pzZoom = 1;
   function pzEligible(answer) {
     let s = stripEx(String(answer || ""));
     if (s.indexOf("(") >= 0) return null;
@@ -1863,6 +1864,7 @@ function bumpStat(id, key) {
     if (pzOpts) pzOpts.classList.add("hidden");
     if (pzBottom) pzBottom.classList.remove("hidden");
     $("puzzleCount").textContent = built.placed.length + " words";
+    pzZoom = pzFitZoom(); pzApplyZoom();
     updateNewlistTab();
   }
   function pzRender() {
@@ -1877,8 +1879,20 @@ function bumpStat(id, key) {
     });
     const grid = $("puzzleGrid");
     grid.innerHTML = "";
+    grid.style.removeProperty("--pz-cell");
+    pz.baseCell = parseFloat(getComputedStyle(grid).getPropertyValue("--pz-cell")) || 34;
+    pz.dir = "H";
+    pzZoom = 1;
     grid.style.gridTemplateColumns = "repeat(" + pz.w + ", var(--pz-cell, 34px))";
     pz.cellInput = new Map();
+    pz.cellWords = new Map();
+    pz.words.forEach((wd) => {
+      wd.cells.forEach(([cx, cy], i) => {
+        const ck = cx + "," + cy;
+        if (!pz.cellWords.has(ck)) pz.cellWords.set(ck, []);
+        pz.cellWords.get(ck).push({ wd, i });
+      });
+    });
     const gaps = new Map();
     pz.words.forEach((wd) => {
       if (wd.gapAt >= 0) {
@@ -1897,19 +1911,67 @@ function bumpStat(id, key) {
           const g = gaps.get((x - pz.ox) + "," + (y - pz.oy));
           if (g === "H") inp.classList.add("pz-gap-h");
           else if (g === "V") inp.classList.add("pz-gap-v");
+          inp.addEventListener("focus", () => {
+            const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
+            if (es.length) {
+              const dirs = es.map((en) => en.wd.dir);
+              pz.dir = dirs.includes(pz.dir) ? pz.dir : dirs[0];
+            }
+          });
+          inp.addEventListener("keydown", (e) => {
+            if (e.key !== "Backspace") return;
+            const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
+            const en = es.find((e2) => e2.wd.dir === pz.dir) || es[0];
+            if (!en) return;
+            e.preventDefault();
+            const had = !!inp.value;
+            if (had) pzSetEmpty(inp);
+            if (en.i > 0) {
+              const pc = en.wd.cells[en.i - 1];
+              const p = pz.cellInput.get(pc[0] + "," + pc[1]);
+              if (p) {
+                if (!had) pzSetEmpty(p);
+                p.focus();
+              }
+            }
+          });
           inp.addEventListener("input", () => {
             inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
             inp.classList.remove("correct", "wrong");
             clearTimeout(pzSaveTimer);
             pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
-            const idx = inputs.indexOf(inp);
-            const next = inputs.slice(idx + 1).find((i) => !i.value) || inputs.find((i) => !i.value);
-            if (next && next !== inp) next.focus();
+            pzUpdateClues();
+            const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
+            const en = es.find((e2) => e2.wd.dir === pz.dir) || es[0];
+            let target = null;
+            if (en) {
+              const wd = en.wd, i = en.i;
+              for (let j = i + 1; j < wd.cells.length && !target; j++) {
+                const inp2 = pz.cellInput.get(wd.cells[j][0] + "," + wd.cells[j][1]);
+                if (inp2 && !inp2.value) target = inp2;
+              }
+              for (let j = 0; j < i && !target; j++) {
+                const inp2 = pz.cellInput.get(wd.cells[j][0] + "," + wd.cells[j][1]);
+                if (inp2 && !inp2.value) target = inp2;
+              }
+              if (!target) {
+                const others = [...pz.words].sort((a, b) => a.num - b.num).filter((w2) => w2.num !== wd.num);
+                for (const w2 of others) {
+                  for (const cc of w2.cells) {
+                    const inp2 = pz.cellInput.get(cc[0] + "," + cc[1]);
+                    if (inp2 && !inp2.value) { target = inp2; break; }
+                  }
+                  if (target) break;
+                }
+              }
+            }
+            if (!target) target = inputs.find((i2) => !i2.value);
+            if (target && target !== inp) target.focus();
           });
           const n = starts.get(x + "," + y);
           if (n) { const sp = document.createElement("span"); sp.className = "pz-num"; sp.textContent = n; cell.appendChild(sp); }
           cell.appendChild(inp);
-          pz.cellInput.set(x + "," + y, inp);
+          pz.cellInput.set((x - pz.ox) + "," + (y - pz.oy), inp);
           inputs.push(inp);
         } else {
           cell.classList.add("pz-block");
@@ -1922,6 +1984,22 @@ function bumpStat(id, key) {
     [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
       const li = document.createElement("li");
       li.textContent = wd.num + ". " + wd.clue;
+      wd.li = li;
+      li.addEventListener("click", () => {
+        pz.dir = wd.dir;
+        const first = wd.cells.map(([cx, cy]) => pz.cellInput.get(cx + "," + cy)).find(Boolean);
+        if (first) first.focus();
+      });
+      (wd.dir === "H" ? ca : cd).appendChild(li);
+    });
+    $("puzzleFeedback").textContent = "";
+    pzUpdateClues();
+  }
+    const ca = $("puzzleCluesA"), cd = $("puzzleCluesD");
+    ca.innerHTML = ""; cd.innerHTML = "";
+    [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
+      const li = document.createElement("li");
+      li.textContent = wd.num + ". " + wd.clue;
       li.addEventListener("click", () => {
         const first = wd.cells.map(([cx, cy]) => pz.cellInput.get((cx + pz.ox) + "," + (cy + pz.oy))).find(Boolean);
         if (first) first.focus();
@@ -1929,6 +2007,38 @@ function bumpStat(id, key) {
       (wd.dir === "H" ? ca : cd).appendChild(li);
     });
     $("puzzleFeedback").textContent = "";
+  }
+   function pzSetEmpty(inp) {
+    inp.value = "";
+    inp.classList.remove("correct", "wrong");
+    pzUpdateClues();
+    clearTimeout(pzSaveTimer);
+    pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
+  }
+  function pzUpdateClues() {
+    pz.words.forEach((wd) => {
+      if (!wd.li) return;
+      const full = wd.cells.every(([cx, cy]) => {
+        const inp = pz.cellInput.get(cx + "," + cy);
+        return inp && inp.value;
+      });
+      wd.li.classList.toggle("done", full);
+    });
+  }
+  function pzFitZoom() {
+    const grid = $("puzzleGrid");
+    const avail = grid && grid.parentElement ? grid.parentElement.clientWidth - 4 : 0;
+    if (avail <= 0) return 1;
+    const w = pz.w * (pz.baseCell || 34) + Math.max(0, pz.w - 1) * 2;
+    return w > 0 ? Math.min(1, avail / w) : 1;
+  }
+  function pzApplyZoom() {
+    pzZoom = Math.min(1, Math.max(pzFitZoom(), pzZoom));
+    $("puzzleGrid").style.setProperty("--pz-cell", ((pz.baseCell || 34) * pzZoom) + "px");
+  }
+  function pzZoomBy(f) {
+    pzZoom = pzZoom * f;
+    pzApplyZoom();
   }
   function resetPuzzleUI() {
     const pp = $("panel-puzzle");
@@ -2020,6 +2130,7 @@ function bumpStat(id, key) {
         const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls"); if (pzBottom) pzBottom.classList.remove("hidden");
       }
       $("puzzleCount").textContent = pz.words.length + " words";
+      pzZoom = pzFitZoom(); pzApplyZoom();
       updateNewlistTab();
       updateQuizSavedIndicator();
       return "resumed";
@@ -2045,7 +2156,7 @@ function bumpStat(id, key) {
       pz.grid.forEach((v, k) => {
         if (v === " ") return;
         const parts = k.split(",").map(Number);
-        const inp = pz.cellInput.get((parts[0] + pz.ox) + "," + (parts[1] + pz.oy));
+        const inp = pz.cellInput.get(pz.cellInput.get(parts[0] + "," + parts[1]));
         if (!inp) return;
         total++;
         if (inp.value.toUpperCase() === v) { inp.classList.add("correct"); inp.classList.remove("wrong"); ok++; }
@@ -2060,6 +2171,24 @@ function bumpStat(id, key) {
     });
     $("puzzleStart").addEventListener("click", puzzleStart);
     $("puzzleBack").addEventListener("click", backToList);
+        const pzPanel = $("panel-puzzle");
+    pzPanel.addEventListener("wheel", (e) => {
+      if (!e.ctrlKey || !pz.words.length) return;
+      e.preventDefault();
+      pzZoomBy(e.deltaY > 0 ? 0.9 : 1 / 0.9);
+    }, { passive: false });
+    let pzPinchD = null;
+    const pzTouchDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    pzPanel.addEventListener("touchstart", (e) => { if (e.touches.length === 2) pzPinchD = pzTouchDist(e.touches); });
+    pzPanel.addEventListener("touchmove", (e) => {
+      if (pzPinchD && e.touches.length === 2 && pz.words.length) {
+        e.preventDefault();
+        const d = pzTouchDist(e.touches);
+        if (d > 0) pzZoomBy(d / pzPinchD);
+        pzPinchD = d;
+      }
+    }, { passive: false });
+    pzPanel.addEventListener("touchend", () => { pzPinchD = null; });
   }
   
   // ---------- Exam ----------
