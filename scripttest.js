@@ -241,7 +241,7 @@ function bumpStat(id, key) {
       if (cur) {
         if (!(await confirmLeaveQuiz(cur))) return;
         if (tab.dataset.tab === "list") { activateTab("list"); renderList(); return; }
-        if (["quiz-mc", "quiz-type", "flash", "puzzle"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
+        if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
       }
       if (tab.dataset.tab === "overview") { 
         currentList = null; try { 
@@ -1226,7 +1226,6 @@ function bumpStat(id, key) {
       $("mcMax").value = filterPoolByStats(getPairs($("mcDirection").value), "mc").length;
       $("typeMax").value = filterPoolByStats(getPairs(currentList.imgMode ? "1to2" : $("typeDirection").value), "ty").length;
       $("flashMax").value = filterPoolByStats(getPairs($("flashDirection").value), "fl").length;
-      const pm = $("puzzleMax"); if (pm) pm.value = filterPoolByStats(getPairs($("puzzleDirection").value), "pz").map((p) => pzEligible(p.answer)).filter(Boolean).length;
     } catch (e) {}
   }
   document.querySelectorAll(".stats-filter-row input").forEach((cb) => cb.addEventListener("change", updateQuizMaxes));
@@ -2409,7 +2408,7 @@ function bumpStat(id, key) {
       const lt = localStorage.getItem("hippo-tab");
       const ll = localStorage.getItem("hippo-list");
       if (lt === "list" && ll) { openList(ll); }
-      else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+      else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview";
     } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
     await showModal({
@@ -2437,7 +2436,7 @@ function bumpStat(id, key) {
           const lt = localStorage.getItem("hippo-tab");
           const ll = localStorage.getItem("hippo-list");
           if (lt === "list" && ll) { openList(ll); }
-          else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+          else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview";
         } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
       } else {
