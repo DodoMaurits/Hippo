@@ -257,6 +257,8 @@ function bumpStat(id, key) {
         $("puzzleFeedback").textContent = "";
         $("puzzleCount").textContent = "";
         const pp = $("panel-puzzle");
+        const pzWrap = pp && pp.querySelector(".puzzle-wrap");
+        if (pzWrap) pzWrap.classList.add("hidden");
         const pzTop = pp && pp.querySelector(".quiz-controls");
         const pzOpts = pp && pp.querySelector(".quiz-options");
         const pzBottom = pp && pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls");
@@ -1834,8 +1836,7 @@ function bumpStat(id, key) {
       return;
     }
     if ($("puzzleShuffle").checked) pool = shuffle(pool);
-    const max = Math.min(30, parseInt($("puzzleMax").value, 10) || pool.length);
-    pool = pool.slice(0, Math.min(max, pool.length));
+    pool = pool.slice(0, Math.min(30, pool.length));
     const built = pzBuild(pool);
     if (!built || !built.placed.length) {
       showModal({ title: "🧩 Puzzle", text: "Could not build a crossword from these words.", okText: "OK" });
@@ -1853,6 +1854,8 @@ function bumpStat(id, key) {
     pz.ox = -minX; pz.oy = -minY;
     pzRender();
     const pp = $("panel-puzzle");
+    const pzWrap = pp.querySelector(".puzzle-wrap");
+    if (pzWrap) pzWrap.classList.remove("hidden");
     const pzTop = pp.querySelector(".quiz-controls");
     const pzOpts = pp.querySelector(".quiz-options");
     const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls");
