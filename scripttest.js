@@ -249,7 +249,13 @@ function bumpStat(id, key) {
         } catch (e) {} renderOverview(); activateTab("overview"); return; 
       }
       activateTab(tab.dataset.tab);
-      if (tab.dataset.tab === "puzzle") setQuizChrome("panel-puzzle", true);
+      if (tab.dataset.tab === "puzzle") {
+        const pp = $("panel-puzzle");
+        const pzTop = pp && pp.querySelector(".quiz-controls");
+        const pzOpts = pp && pp.querySelector(".quiz-options");
+        if (pzTop) pzTop.classList.remove("hidden");
+        if (pzOpts) pzOpts.classList.remove("hidden");
+      }
       const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
       const m = modeMap[tab.dataset.tab];
       if (m) {
@@ -894,7 +900,10 @@ function bumpStat(id, key) {
     const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(tab.dataset.tab);
     if (t) t.classList.toggle("hidden", !!cur || inListView);
     const tb = document.querySelector(".tabs");
-    if (tb) { tb.classList.toggle("quiz-only", !!cur); tb.classList.toggle("editing", !!editMode); }
+    const pp = $("panel-puzzle");
+    const pzTop = pp && pp.querySelector(".quiz-controls");
+    const pzRunning = !!(tab && tab.dataset.tab === "puzzle" && pzTop && pzTop.classList.contains("hidden"));
+    if (tb) { tb.classList.toggle("quiz-only", !!cur || pzRunning); tb.classList.toggle("editing", !!editMode); }
     const eb = $("quizEditBtn");
     if (eb) {
       if (!cur && editMode) { editMode = null; eb.classList.remove("editing"); eb.textContent = "✏️ Correct error"; }
@@ -1800,7 +1809,11 @@ function bumpStat(id, key) {
     pz.w = maxX - minX + 1; pz.h = maxY - minY + 1;
     pz.ox = -minX; pz.oy = -minY;
     pzRender();
-    setQuizChrome("panel-puzzle", false);
+    const pp = $("panel-puzzle");
+    const pzTop = pp.querySelector(".quiz-controls");
+    const pzOpts = pp.querySelector(".quiz-options");
+    if (pzTop) pzTop.classList.add("hidden");
+    if (pzOpts) pzOpts.classList.add("hidden");
     $("puzzleCount").textContent = built.placed.length + " words";
     updateNewlistTab();
   }
