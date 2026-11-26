@@ -1927,25 +1927,27 @@ function bumpStat(id, key) {
     });
     $("puzzleFeedback").textContent = "";
   }
-  $("puzzleCheck").addEventListener("click", () => {
-    let ok = 0, total = 0;
-    pz.grid.forEach((v, k) => {
-      if (v === " ") return;
-      const parts = k.split(",").map(Number);
-      const inp = pz.cellInput.get((parts[0] + pz.ox) + "," + (parts[1] + pz.oy));
-      if (!inp) return;
-      total++;
-      if (inp.value.toUpperCase() === v) { inp.classList.add("correct"); inp.classList.remove("wrong"); ok++; }
-      else if (inp.value) { inp.classList.add("wrong"); inp.classList.remove("correct"); }
+  if ($("puzzleStart")) {
+    $("puzzleCheck").addEventListener("click", () => {
+      let ok = 0, total = 0;
+      pz.grid.forEach((v, k) => {
+        if (v === " ") return;
+        const parts = k.split(",").map(Number);
+        const inp = pz.cellInput.get((parts[0] + pz.ox) + "," + (parts[1] + pz.oy));
+        if (!inp) return;
+        total++;
+        if (inp.value.toUpperCase() === v) { inp.classList.add("correct"); inp.classList.remove("wrong"); ok++; }
+        else if (inp.value) { inp.classList.add("wrong"); inp.classList.remove("correct"); }
+      });
+      $("puzzleFeedback").textContent = ok + "/" + total + " letters correct";
     });
-    $("puzzleFeedback").textContent = ok + "/" + total + " letters correct";
-  });
-  $("puzzleClear").addEventListener("click", () => {
-    pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
-    $("puzzleFeedback").textContent = "";
-  });
-  $("puzzleStart").addEventListener("click", puzzleStart);
-  $("puzzleBack").addEventListener("click", backToList);
+    $("puzzleClear").addEventListener("click", () => {
+      pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
+      $("puzzleFeedback").textContent = "";
+    });
+    $("puzzleStart").addEventListener("click", puzzleStart);
+    $("puzzleBack").addEventListener("click", backToList);
+  }
   
   // ---------- Exam ----------
   const EXAM_LANGS = ["French","Russian"];
