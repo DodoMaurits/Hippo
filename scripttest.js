@@ -243,6 +243,11 @@ function bumpStat(id, key) {
         if (tab.dataset.tab === "list") { activateTab("list"); renderList(); return; }
         if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
       }
+      if (currentPuzzleActive()) {
+        if (!(await confirmLeavePuzzle())) return;
+        if (tab.dataset.tab === "list") { activateTab("list"); renderList(); return; }
+        if (["quiz-mc", "quiz-type", "flash", "puzzle"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
+      }
       if (tab.dataset.tab === "overview") { 
         currentList = null; try { 
           localStorage.removeItem("hippo-list"); 
@@ -250,22 +255,9 @@ function bumpStat(id, key) {
       }
       activateTab(tab.dataset.tab);
       if (tab.dataset.tab === "puzzle") {
-        pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
-        $("puzzleGrid").innerHTML = "";
-        $("puzzleCluesA").innerHTML = "";
-        $("puzzleCluesD").innerHTML = "";
-        $("puzzleFeedback").textContent = "";
-        $("puzzleCount").textContent = "";
-        const pp = $("panel-puzzle");
-        const pzWrap = pp && pp.querySelector(".puzzle-wrap");
-        if (pzWrap) pzWrap.classList.add("hidden");
-        const pzTop = pp && pp.querySelector(".quiz-controls");
-        const pzOpts = pp && pp.querySelector(".quiz-options");
-        const pzBottom = pp && pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls");
-        if (pzTop) pzTop.classList.remove("hidden");
-        if (pzOpts) pzOpts.classList.remove("hidden");
-        if (pzBottom) pzBottom.classList.add("hidden");
-        updateNewlistTab();
+        const r = await maybeResumePuzzle();
+        if (r === "resumed") return;
+        resetPuzzleUI();
       }
       const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
       const m = modeMap[tab.dataset.tab];
@@ -904,6 +896,10 @@ function bumpStat(id, key) {
     if (tab === "flash" && fl.queue.length > fl.idx) return "fl";
     return null;
   }
+  function currentPuzzleActive() {
+    const t = document.querySelector(".tab.active");
+    return !!(t && t.dataset.tab === "puzzle" && pz.words.length);
+  }
   function updateNewlistTab() {
     const t = document.querySelector('.tab[data-tab="newlist"]');
     const tab = document.querySelector(".tab.active");
@@ -1031,11 +1027,12 @@ function bumpStat(id, key) {
     const tabs = {
       mc: document.querySelector('.tab[data-tab="quiz-mc"]'),
       ty: document.querySelector('.tab[data-tab="quiz-type"]'),
-      fl: document.querySelector('.tab[data-tab="flash"]')
+      fl: document.querySelector('.tab[data-tab="flash"]'),
+      pz: document.querySelector('.tab[data-tab="puzzle"]')
     };
     if (activeQuiz) { Object.values(tabs).forEach((t) => { if (t) t.classList.remove("has-saved"); }); return; }
     const saved = await loadSavedQuiz();
-    const has = !!(saved && saved.state && (saved.state.queue || []).length > saved.state.idx);
+    const has = !!(saved && saved.state && (saved.mode === "pz" ? (saved.state.words || []).length > 0 : (saved.state.queue || []).length > saved.state.idx));
     const key = has && saved.mode ? saved.mode : null;
     Object.entries(tabs).forEach(([m, t]) => { if (t) t.classList.toggle("has-saved", key === m); });
   }
@@ -1558,6 +1555,7 @@ function bumpStat(id, key) {
     if (currentList) await flushList();
     const cur = currentQuizMode();
     if (cur && !(await confirmLeaveQuiz(cur))) return;
+    if (currentPuzzleActive() && !(await confirmLeavePuzzle())) return;
     if (currentList) { renderList(); activateTab("list"); }
   }
   $("mcBack").addEventListener("click", backToList);
@@ -1704,6 +1702,7 @@ function bumpStat(id, key) {
 
   // ---------- Puzzle (crossword) ----------
   let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+  let pzSaveTimer = null;
   function pzEligible(answer) {
     let s = stripEx(String(answer || ""));
     if (s.indexOf("(") >= 0) return null;
@@ -1749,7 +1748,7 @@ function bumpStat(id, key) {
         minX = Math.min(minX, cx); minY = Math.min(minY, cy);
         maxX = Math.max(maxX, cx); maxY = Math.max(maxY, cy);
       }
-      placed.push({ id: item.id, clue: item.clue, answer: item.answer, gapAt: item.answer.indexOf(" "), x, y, dir, cells });
+      placed.push({ id: item.id, ps: item.ps, clue: item.clue, answer: item.answer, gapAt: item.answer.indexOf(" "), x, y, dir, cells });
     }
     if (!items.length) return null;
     place(items[0], 0, 0, firstDir === "V" ? "V" : "H");
@@ -1826,9 +1825,11 @@ function bumpStat(id, key) {
       await showModal({ title: "🧩 Puzzle", text: "Open a list first (🗂️ My lists)", okText: "OK" });
       return;
     }
+    const r0 = await maybeResumePuzzle();
+    if (r0 === "resumed" || r0 === "cancel") return;
     const dir = $("puzzleDirection").value;
     let pool = filterPoolByStats(getPairs(dir), "pz")
-      .map((p) => ({ id: p.id, clue: p.prompt, answer: pzEligible(p.answer) }))
+      .map((p) => ({ id: p.id, ps: p.ps, clue: p.prompt, answer: pzEligible(p.answer) }))
       .filter((p) => p.answer);
     if (!pool.length) {
       showModal({ title: "🧩 Puzzle", text: "No suitable words in this direction (max 2 words, letters only, no parentheses).", okText: "OK" });
@@ -1899,6 +1900,8 @@ function bumpStat(id, key) {
           inp.addEventListener("input", () => {
             inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
             inp.classList.remove("correct", "wrong");
+            clearTimeout(pzSaveTimer);
+            pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
             const idx = inputs.indexOf(inp);
             const next = inputs.slice(idx + 1).find((i) => !i.value) || inputs.find((i) => !i.value);
             if (next && next !== inp) next.focus();
@@ -1927,6 +1930,115 @@ function bumpStat(id, key) {
     });
     $("puzzleFeedback").textContent = "";
   }
+  function resetPuzzleUI() {
+    const pp = $("panel-puzzle");
+    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+    if (!pp) return;
+    pp.querySelector("#puzzleGrid").innerHTML = "";
+    pp.querySelector("#puzzleCluesA").innerHTML = "";
+    pp.querySelector("#puzzleCluesD").innerHTML = "";
+    pp.querySelector("#puzzleFeedback").textContent = "";
+    pp.querySelector("#puzzleCount").textContent = "";
+    const pzWrap = pp.querySelector(".puzzle-wrap"); if (pzWrap) pzWrap.classList.add("hidden");
+    const pzTop = pp.querySelector(".quiz-controls"); if (pzTop) pzTop.classList.remove("hidden");
+    const pzOpts = pp.querySelector(".quiz-options"); if (pzOpts) pzOpts.classList.remove("hidden");
+    const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls"); if (pzBottom) pzBottom.classList.add("hidden");
+    updateNewlistTab();
+  }
+  async function savePuzzle() {
+    if (!currentList || !pz.words.length) return;
+    const st = {
+      words: pz.words, w: pz.w, h: pz.h, ox: pz.ox, oy: pz.oy,
+      grid: [...pz.grid.entries()],
+      letters: [...pz.cellInput.entries()].map(([k, inp]) => [k, inp.value]),
+      opts: { dir: $("puzzleDirection") ? $("puzzleDirection").value : "1to2" }
+    };
+    localStorage.setItem(quizSaveKey(), JSON.stringify({ mode: "pz", state: st, opts: st.opts, listId: currentList.id }));
+    if (!GUEST) {
+      const uid = await myUid();
+      if (uid) {
+        const { error } = await supabase.from("quiz_saves")
+          .upsert({ user_id: uid, list_id: currentList.id, mode: "pz", state: st, opts: st.opts }, { onConflict: "user_id,list_id" });
+        if (error) console.error("puzzle save failed", error);
+      }
+    }
+    updateQuizSavedIndicator();
+  }
+  function resyncPuzzle(state) {
+    if (!state || !Array.isArray(state.words) || !Array.isArray(state.grid)) return false;
+    const byId = new Map(words.map((w) => [w.id, w]));
+    const kept = [];
+    state.words.forEach((wd) => {
+      const w = wd.id ? byId.get(wd.id) : null;
+      if (!w || w.hidden || !String(w.a).trim() || !String(w.b).trim()) return;
+      const ans = pzEligible(wd.ps === "b" ? w.a : w.b);
+      if (!ans || ans.replace(/ /g, "") !== String(wd.answer || "").replace(/ /g, "")) return;
+      wd.clue = wd.ps === "b" ? w.b : w.a;
+      kept.push(wd);
+    });
+    if (!kept.length) return false;
+    const grid = new Map();
+    kept.forEach((wd) => {
+      const ls = String(wd.answer).replace(/ /g, "").split("");
+      (wd.cells || []).forEach(([cx, cy], i) => { if (ls[i]) grid.set(cx + "," + cy, ls[i]); });
+    });
+    state.words = kept;
+    state.grid = [...grid.entries()];
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    grid.forEach((v, k) => {
+      const p = k.split(",").map(Number);
+      minX = Math.min(minX, p[0]); minY = Math.min(minY, p[1]);
+      maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]);
+    });
+    state.w = maxX - minX + 1; state.h = maxY - minY + 1; state.ox = -minX; state.oy = -minY;
+    return true;
+  }
+  async function maybeResumePuzzle() {
+    const saved = await loadSavedQuiz();
+    if (!saved || !saved.state || saved.mode !== "pz") return null;
+    if (saved.listId && currentList && saved.listId !== currentList.id) return null;
+    if (currentPuzzleActive()) return null;
+    if (!resyncPuzzle(saved.state)) { await clearSavedQuiz(); updateQuizSavedIndicator(); return null; }
+    const res = await showModal({
+      title: "🧩 Unfinished puzzle",
+      text: "This list has a saved puzzle. Resume it or start fresh?",
+      okText: "Resume",
+      extraButton: { label: "Discard", value: "discard" }
+    });
+    if (res === true || res === "save") {
+      pz.words = saved.state.words;
+      pz.grid = new Map(saved.state.grid);
+      pz.w = saved.state.w; pz.h = saved.state.h; pz.ox = saved.state.ox; pz.oy = saved.state.oy;
+      if (saved.opts && saved.opts.dir && $("puzzleDirection")) $("puzzleDirection").value = saved.opts.dir;
+      pzRender();
+      (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) inp.value = v; });
+      const pp = $("panel-puzzle");
+      if (pp) {
+        const pzWrap = pp.querySelector(".puzzle-wrap"); if (pzWrap) pzWrap.classList.remove("hidden");
+        const pzTop = pp.querySelector(".quiz-controls"); if (pzTop) pzTop.classList.add("hidden");
+        const pzOpts = pp.querySelector(".quiz-options"); if (pzOpts) pzOpts.classList.add("hidden");
+        const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls"); if (pzBottom) pzBottom.classList.remove("hidden");
+      }
+      $("puzzleCount").textContent = pz.words.length + " words";
+      updateNewlistTab();
+      updateQuizSavedIndicator();
+      return "resumed";
+    }
+    if (res === "discard") { await clearSavedQuiz(); updateQuizSavedIndicator(); return "discarded"; }
+    updateQuizSavedIndicator();
+    return "cancel";
+  }
+  async function confirmLeavePuzzle() {
+    const res = await showModal({
+      title: "Leave puzzle?",
+      text: "Are you sure you want to leave?",
+      okText: "End Puzzle",
+      extraButton: { label: "Leave but save", value: "save" }
+    });
+    if (res === "save") { await savePuzzle(); resetPuzzleUI(); return true; }
+    if (res === true) { await clearSavedQuiz(); resetPuzzleUI(); return true; }
+    return false;
+  }
   if ($("puzzleStart")) {
     $("puzzleCheck").addEventListener("click", () => {
       let ok = 0, total = 0;
@@ -1940,6 +2052,7 @@ function bumpStat(id, key) {
         else if (inp.value) { inp.classList.add("wrong"); inp.classList.remove("correct"); }
       });
       $("puzzleFeedback").textContent = ok + "/" + total + " letters correct";
+      savePuzzle();
     });
     $("puzzleClear").addEventListener("click", () => {
       pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
