@@ -1995,19 +1995,6 @@ function bumpStat(id, key) {
     $("puzzleFeedback").textContent = "";
     pzUpdateClues();
   }
-    const ca = $("puzzleCluesA"), cd = $("puzzleCluesD");
-    ca.innerHTML = ""; cd.innerHTML = "";
-    [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
-      const li = document.createElement("li");
-      li.textContent = wd.num + ". " + wd.clue;
-      li.addEventListener("click", () => {
-        const first = wd.cells.map(([cx, cy]) => pz.cellInput.get((cx + pz.ox) + "," + (cy + pz.oy))).find(Boolean);
-        if (first) first.focus();
-      });
-      (wd.dir === "H" ? ca : cd).appendChild(li);
-    });
-    $("puzzleFeedback").textContent = "";
-  }
    function pzSetEmpty(inp) {
     inp.value = "";
     inp.classList.remove("correct", "wrong");
@@ -2156,7 +2143,7 @@ function bumpStat(id, key) {
       pz.grid.forEach((v, k) => {
         if (v === " ") return;
         const parts = k.split(",").map(Number);
-        const inp = pz.cellInput.get(pz.cellInput.get(parts[0] + "," + parts[1]));
+        const inp = pz.cellInput.get(parts[0] + "," + parts[1]);
         if (!inp) return;
         total++;
         if (inp.value.toUpperCase() === v) { inp.classList.add("correct"); inp.classList.remove("wrong"); ok++; }
