@@ -1875,8 +1875,7 @@ function bumpStat(id, key) {
     ca.innerHTML = ""; cd.innerHTML = "";
     [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
       const li = document.createElement("li");
-      li.value = wd.num;
-      li.textContent = wd.clue;
+      li.textContent = wd.num + ". " + wd.clue;
       li.addEventListener("click", () => {
         const first = wd.cells.map(([cx, cy]) => pz.cellInput.get((cx + pz.ox) + "," + (cy + pz.oy))).find(Boolean);
         if (first) first.focus();
