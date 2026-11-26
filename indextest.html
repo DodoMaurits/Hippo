@@ -109,40 +109,6 @@
       <button class="btn btn-full" id="addRowBottom">+ Add word</button>
     </div>
 
-    <!-- PUZZLE -->
-    <div class="panel" id="panel-puzzle">
-      <div class="quiz-controls">
-        <button class="btn secondary" id="puzzleBack">← List</button>
-        <select id="puzzleDirection">
-          <option value="1to2">Language 1 → Language 2</option>
-          <option value="2to1">Language 2 → Language 1</option>
-          <option value="both">Both directions</option>
-        </select>
-        <button class="btn" id="puzzleStart">▶ Start Puzzle</button>
-      </div>
-      <div class="score-bar"><span id="puzzleCount"></span></div>
-      <div class="quiz-box">
-        <div class="quiz-options">
-          <div class="opt-row stats-filter-row hidden">
-            <label class="opt-pill"><input type="checkbox" id="pzNoGreen"> Skip green rows (✔ > ✘)</label>
-            <label class="opt-pill"><input type="checkbox" id="pzNoYellow"> Skip yellow rows (✔ = ✘)</label>
-          </div>
-        </div>
-        <div class="puzzle-wrap">
-          <div class="puzzle-clues">
-            <div><h3>Across</h3><ol id="puzzleCluesA"></ol></div>
-            <div><h3>Down</h3><ol id="puzzleCluesD"></ol></div>
-          </div>
-          <div id="puzzleGrid" class="puzzle-grid"></div>
-        </div>
-        <div class="quiz-controls" style="margin-top:12px">
-          <button class="btn" id="puzzleCheck">✔ Check</button>
-          <button class="btn secondary" id="puzzleClear">🧹 Clear</button>
-        </div>
-        <div class="feedback" id="puzzleFeedback"></div>
-      </div>
-    </div>
-
     <!-- EXAM -->
     <div class="panel" id="panel-exam">
       <div id="examPick">
@@ -333,6 +299,40 @@
         <input type="text" class="answer-input hidden" id="typeInput" placeholder="Type the translation…" autocomplete="off">
         <button class="btn hidden" id="typeContinue">Continue →</button>
         <div class="feedback" id="typeFeedback"></div>
+      </div>
+    </div>
+
+    <!-- PUZZLE -->
+    <div class="panel" id="panel-puzzle">
+      <div class="quiz-controls">
+        <button class="btn secondary" id="puzzleBack">← List</button>
+        <select id="puzzleDirection">
+          <option value="1to2">Language 1 → Language 2</option>
+          <option value="2to1">Language 2 → Language 1</option>
+          <option value="both">Both directions</option>
+        </select>
+        <button class="btn" id="puzzleStart">▶ Start puzzle</button>
+      </div>
+      <div class="score-bar"><span id="puzzleCount"></span></div>
+      <div class="quiz-box">
+        <div class="quiz-options">
+          <div class="opt-row stats-filter-row hidden">
+            <label class="opt-pill"><input type="checkbox" id="pzNoGreen"> Skip green rows (✔ > ✘)</label>
+            <label class="opt-pill"><input type="checkbox" id="pzNoYellow"> Skip yellow rows (✔ = ✘)</label>
+          </div>
+        </div>
+        <div class="puzzle-wrap">
+          <div class="puzzle-clues">
+            <div><h3>Across</h3><ol id="puzzleCluesA"></ol></div>
+            <div><h3>Down</h3><ol id="puzzleCluesD"></ol></div>
+          </div>
+          <div id="puzzleGrid" class="puzzle-grid"></div>
+        </div>
+        <div class="quiz-controls" style="margin-top:12px">
+          <button class="btn" id="puzzleCheck">✔ Check</button>
+          <button class="btn secondary" id="puzzleClear">🧹 Clear</button>
+        </div>
+        <div class="feedback" id="puzzleFeedback"></div>
       </div>
     </div>
     
