@@ -170,7 +170,7 @@ function bumpStat(id, key) {
     const c2 = $("col2name").value || "Language 2";
     $("col1name").placeholder = c1;
     $("col2name").placeholder = c2;
-    document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option").forEach((o) => {
+    document.querySelectorAll("#mcDirection option, #typeDirection option, #flashDirection option, #puzzleDirection option").forEach((o) => {
       if (o.value === "1to2") o.textContent = c1 + " → " + c2;
       else if (o.value === "2to1") o.textContent = c2 + " → " + c1;
     });
@@ -216,9 +216,11 @@ function bumpStat(id, key) {
     if (panel) panel.classList.add("active");
     updateNewlistTab();
     const tb = document.querySelector(".tabs");
-    if (tb) tb.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
+    if (tb) tb.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(name));
     const hd = document.querySelector(".hippo-header");
-    if (hd) hd.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type"].includes(name));
+    if (hd) hd.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(name));
+    const ex = document.querySelector('.tab[data-tab="exam"]');
+    if (ex) ex.classList.toggle("hidden", !!currentList);
     try { localStorage.setItem("hippo-tab", name); } catch (e) {}
     updateQuizSavedIndicator();
   }
@@ -231,7 +233,7 @@ function bumpStat(id, key) {
       const fromList = document.querySelector(".tab.active") && 
         document.querySelector(".tab.active").dataset.tab === "list";
       if (fromList && currentList) await flushList();
-      if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab) && currentList && !getPairs("1to2").length) {
+      if (["quiz-mc", "quiz-type", "flash", "puzzle"].includes(tab.dataset.tab) && currentList && !getPairs("1to2").length) {
         showModal({ title: "🦛 The pool is empty!", text: "Add words first!", okText: "OK" });
         return;
       }
@@ -241,12 +243,22 @@ function bumpStat(id, key) {
         if (tab.dataset.tab === "list") { activateTab("list"); renderList(); return; }
         if (["quiz-mc", "quiz-type", "flash"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
       }
+      if (currentPuzzleActive()) {
+        if (!(await confirmLeavePuzzle())) return;
+        if (tab.dataset.tab === "list") { activateTab("list"); renderList(); return; }
+        if (["quiz-mc", "quiz-type", "flash", "puzzle"].includes(tab.dataset.tab)) { activateTab(tab.dataset.tab); return; }
+      }
       if (tab.dataset.tab === "overview") { 
         currentList = null; try { 
           localStorage.removeItem("hippo-list"); 
         } catch (e) {} renderOverview(); activateTab("overview"); return; 
       }
       activateTab(tab.dataset.tab);
+      if (tab.dataset.tab === "puzzle") {
+        const r = await maybeResumePuzzle();
+        if (r === "resumed") return;
+        resetPuzzleUI();
+      }
       const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
       const m = modeMap[tab.dataset.tab];
       if (m) {
@@ -623,7 +635,7 @@ function bumpStat(id, key) {
   });
   
   function setQuizTabs(show) {
-    document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"]')
+    document.querySelectorAll('.tab[data-tab="quiz-mc"], .tab[data-tab="quiz-type"], .tab[data-tab="flash"], .tab[data-tab="puzzle"]')
       .forEach((t) => t.classList.toggle("hidden", !show));
   }
   
@@ -852,7 +864,7 @@ function bumpStat(id, key) {
     }
     if (mode === "ty") {
       ty = { queue: [], total: 0, idx: 0, score: 0 };
-      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+      $("typeInput").classList.add("hidden"); $("typeContinue").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
       setQuizChrome("panel-quiz-type", true);
     }
     if (mode === "fl") {
@@ -884,14 +896,21 @@ function bumpStat(id, key) {
     if (tab === "flash" && fl.queue.length > fl.idx) return "fl";
     return null;
   }
+  function currentPuzzleActive() {
+    const t = document.querySelector(".tab.active");
+    return !!(t && t.dataset.tab === "puzzle" && pz.words.length);
+  }
   function updateNewlistTab() {
     const t = document.querySelector('.tab[data-tab="newlist"]');
     const tab = document.querySelector(".tab.active");
     const cur = currentQuizMode();
-    const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type"].includes(tab.dataset.tab);
+    const inListView = !!currentList && tab && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(tab.dataset.tab);
     if (t) t.classList.toggle("hidden", !!cur || inListView);
     const tb = document.querySelector(".tabs");
-    if (tb) { tb.classList.toggle("quiz-only", !!cur); tb.classList.toggle("editing", !!editMode); }
+    const pp = $("panel-puzzle");
+    const pzTop = pp && pp.querySelector(".quiz-controls");
+    const pzRunning = !!(tab && tab.dataset.tab === "puzzle" && pzTop && pzTop.classList.contains("hidden"));
+    if (tb) { tb.classList.toggle("quiz-only", !!cur || pzRunning); tb.classList.toggle("editing", !!editMode); }
     const eb = $("quizEditBtn");
     if (eb) {
       if (!cur && editMode) { editMode = null; eb.classList.remove("editing"); eb.textContent = "✏️ Correct error"; }
@@ -1008,11 +1027,12 @@ function bumpStat(id, key) {
     const tabs = {
       mc: document.querySelector('.tab[data-tab="quiz-mc"]'),
       ty: document.querySelector('.tab[data-tab="quiz-type"]'),
-      fl: document.querySelector('.tab[data-tab="flash"]')
+      fl: document.querySelector('.tab[data-tab="flash"]'),
+      pz: document.querySelector('.tab[data-tab="puzzle"]')
     };
     if (activeQuiz) { Object.values(tabs).forEach((t) => { if (t) t.classList.remove("has-saved"); }); return; }
     const saved = await loadSavedQuiz();
-    const has = !!(saved && saved.state && (saved.state.queue || []).length > saved.state.idx);
+    const has = !!(saved && saved.state && (saved.mode === "pz" ? (saved.state.words || []).length > 0 : (saved.state.queue || []).length > saved.state.idx));
     const key = has && saved.mode ? saved.mode : null;
     Object.entries(tabs).forEach(([m, t]) => { if (t) t.classList.toggle("has-saved", key === m); });
   }
@@ -1535,6 +1555,7 @@ function bumpStat(id, key) {
     if (currentList) await flushList();
     const cur = currentQuizMode();
     if (cur && !(await confirmLeaveQuiz(cur))) return;
+    if (currentPuzzleActive() && !(await confirmLeavePuzzle())) return;
     if (currentList) { renderList(); activateTab("list"); }
   }
   $("mcBack").addEventListener("click", backToList);
@@ -1679,6 +1700,368 @@ function bumpStat(id, key) {
     renderOverview();
   }
 
+  // ---------- Puzzle (crossword) ----------
+  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+  let pzSaveTimer = null;
+  function pzEligible(answer) {
+    let s = stripEx(String(answer || ""));
+    if (s.indexOf("(") >= 0) return null;
+    s = s.replace(/[^\p{L}\s]/gu, " ").replace(/\s+/g, " ").trim();
+    const parts = s.split(" ").filter(Boolean);
+    if (!parts.length || parts.length > 2) return null;
+    return parts.join(" ").toUpperCase();
+  }
+  function pzTryBuild(items, firstDir) {
+    const grid = new Map();
+    const key = (x, y) => x + "," + y;
+    const placed = [];
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    const lettersOf = (word) => word.replace(/ /g, "").split("");
+    function canPlace(word, x, y, dir) {
+      const letters = lettersOf(word);
+      let crossings = 0;
+      for (let i = 0; i < letters.length; i++) {
+        const c = letters[i];
+        const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
+        const cur = grid.get(key(cx, cy));
+        if (cur !== undefined) { if (cur !== c) return -1; crossings++; }
+      }
+      const bx = x - (dir === "H" ? 1 : 0), by = y - (dir === "V" ? 1 : 0);
+      const ex = x + (dir === "H" ? letters.length : 0), ey = y + (dir === "V" ? letters.length : 0);
+      if (grid.get(key(bx, by)) !== undefined || grid.get(key(ex, ey)) !== undefined) return -1;
+      for (let i = 0; i < letters.length; i++) {
+        const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
+        if (grid.get(key(cx, cy)) !== undefined) continue;
+        const n1 = grid.get(key(cx + (dir === "H" ? 0 : 1), cy + (dir === "H" ? 1 : 0)));
+        const n2 = grid.get(key(cx - (dir === "H" ? 0 : 1), cy - (dir === "H" ? 1 : 0)));
+        if (n1 !== undefined || n2 !== undefined) return -1;
+      }
+      return crossings;
+    }
+    function place(item, x, y, dir) {
+      const letters = lettersOf(item.answer);
+      const cells = [];
+      for (let i = 0; i < letters.length; i++) {
+        const cx = x + (dir === "H" ? i : 0), cy = y + (dir === "V" ? i : 0);
+        cells.push([cx, cy]);
+        grid.set(key(cx, cy), letters[i]);
+        minX = Math.min(minX, cx); minY = Math.min(minY, cy);
+        maxX = Math.max(maxX, cx); maxY = Math.max(maxY, cy);
+      }
+      placed.push({ id: item.id, ps: item.ps, clue: item.clue, answer: item.answer, gapAt: item.answer.indexOf(" "), x, y, dir, cells });
+    }
+    if (!items.length) return null;
+    place(items[0], 0, 0, firstDir === "V" ? "V" : "H");
+    const todo = items.slice(1);
+    for (let pass = 0; pass < 4 && todo.length; pass++) {
+      for (let i = todo.length - 1; i >= 0; i--) {
+        const w = todo[i].answer;
+        const wl = lettersOf(w);
+        const options = [];
+        for (const p of placed) {
+          for (const [cx, cy] of p.cells) {
+            const letter = grid.get(key(cx, cy));
+            if (!letter) continue;
+            for (let li = 0; li < wl.length; li++) {
+              if (wl[li] !== letter) continue;
+              const dir = p.dir === "H" ? "V" : "H";
+              const sx = cx - (dir === "H" ? li : 0), sy = cy - (dir === "V" ? li : 0);
+              const cr = canPlace(w, sx, sy, dir);
+              if (cr <= 0) continue;
+              let nMinX = minX, nMinY = minY, nMaxX = maxX, nMaxY = maxY;
+              for (let k = 0; k < wl.length; k++) {
+                const px = sx + (dir === "H" ? k : 0), py = sy + (dir === "V" ? k : 0);
+                nMinX = Math.min(nMinX, px); nMinY = Math.min(nMinY, py);
+                nMaxX = Math.max(nMaxX, px); nMaxY = Math.max(nMaxY, py);
+              }
+              const nw = nMaxX - nMinX + 1, nh = nMaxY - nMinY + 1;
+              options.push({ sx, sy, dir, cr, area: nw * nh, maxDim: Math.max(nw, nh) });
+            }
+          }
+        }
+        if (options.length) {
+          options.sort((a, b) => (b.cr - a.cr) || (a.area - b.area) || (a.maxDim - b.maxDim));
+          const o = options[0];
+          place(todo[i], o.sx, o.sy, o.dir);
+          todo.splice(i, 1);
+        }
+      }
+    }
+    return { grid, placed };
+  }
+  function pzBBox(grid) {
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    grid.forEach((v, k) => {
+      const p = k.split(",").map(Number);
+      minX = Math.min(minX, p[0]); minY = Math.min(minY, p[1]);
+      maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]);
+    });
+    return { w: maxX - minX + 1, h: maxY - minY + 1 };
+  }
+  function pzBetter(a, b) {
+    if (!b) return true;
+    if (a.placed.length !== b.placed.length) return a.placed.length > b.placed.length;
+    const ba = pzBBox(a.grid), bb = pzBBox(b.grid);
+    const aMax = Math.max(ba.w, ba.h), bMax = Math.max(bb.w, bb.h);
+    if (aMax !== bMax) return aMax < bMax;
+    const aLand = ba.w > ba.h ? 1 : 0, bLand = bb.w > bb.h ? 1 : 0;
+    if (aLand !== bLand) return aLand < bLand;
+    return ba.w * ba.h < bb.w * bb.h;
+  }
+  function pzBuild(items) {
+    let best = null;
+    for (let a = 0; a < 120; a++) {
+      const res = pzTryBuild(shuffle(items.slice()), a % 2 === 0 ? "H" : "V");
+      if (res && pzBetter(res, best)) best = res;
+      if (best && best.placed.length === items.length) {
+        const b = pzBBox(best.grid);
+        if (Math.max(b.w, b.h) <= 10) break;
+      }
+    }
+    return best;
+  }
+  async function puzzleStart() {
+    if (!currentList) {
+      await showModal({ title: "🧩 Puzzle", text: "Open a list first (🗂️ My lists)", okText: "OK" });
+      return;
+    }
+    const r0 = await maybeResumePuzzle();
+    if (r0 === "resumed" || r0 === "cancel") return;
+    const dir = $("puzzleDirection").value;
+    let pool = filterPoolByStats(getPairs(dir), "pz")
+      .map((p) => ({ id: p.id, ps: p.ps, clue: p.prompt, answer: pzEligible(p.answer) }))
+      .filter((p) => p.answer);
+    if (!pool.length) {
+      showModal({ title: "🧩 Puzzle", text: "No suitable words in this direction (max 2 words, letters only, no parentheses).", okText: "OK" });
+      return;
+    }
+    pool = shuffle(pool);
+    pool = pool.slice(0, Math.min(30, pool.length));
+    const built = pzBuild(pool);
+    if (!built || !built.placed.length) {
+      showModal({ title: "🧩 Puzzle", text: "Could not build a crossword from these words.", okText: "OK" });
+      return;
+    }
+    pz.words = built.placed;
+    pz.grid = built.grid;
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    built.grid.forEach((v, k) => {
+      const parts = k.split(",").map(Number);
+      minX = Math.min(minX, parts[0]); minY = Math.min(minY, parts[1]);
+      maxX = Math.max(maxX, parts[0]); maxY = Math.max(maxY, parts[1]);
+    });
+    pz.w = maxX - minX + 1; pz.h = maxY - minY + 1;
+    pz.ox = -minX; pz.oy = -minY;
+    pzRender();
+    const pp = $("panel-puzzle");
+    const pzWrap = pp.querySelector(".puzzle-wrap");
+    if (pzWrap) pzWrap.classList.remove("hidden");
+    const pzTop = pp.querySelector(".quiz-controls");
+    const pzOpts = pp.querySelector(".quiz-options");
+    const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls");
+    if (pzTop) pzTop.classList.add("hidden");
+    if (pzOpts) pzOpts.classList.add("hidden");
+    if (pzBottom) pzBottom.classList.remove("hidden");
+    $("puzzleCount").textContent = built.placed.length + " words";
+    updateNewlistTab();
+  }
+  function pzRender() {
+    const starts = new Map();
+    const sorted = pz.words.slice().sort((a, b) => (a.y + pz.oy) - (b.y + pz.oy) || (a.x + pz.ox) - (b.x + pz.ox));
+    let num = 0;
+    const numbered = new Set();
+    sorted.forEach((wd) => {
+      const k = (wd.x + pz.ox) + "," + (wd.y + pz.oy);
+      if (!numbered.has(k)) { num++; starts.set(k, num); numbered.add(k); }
+      wd.num = starts.get(k);
+    });
+    const grid = $("puzzleGrid");
+    grid.innerHTML = "";
+    grid.style.gridTemplateColumns = "repeat(" + pz.w + ", var(--pz-cell, 34px))";
+    pz.cellInput = new Map();
+    const gaps = new Map();
+    pz.words.forEach((wd) => {
+      if (wd.gapAt >= 0) {
+        gaps.set((wd.x + (wd.dir === "H" ? wd.gapAt - 1 : 0)) + "," + (wd.y + (wd.dir === "V" ? wd.gapAt - 1 : 0)), wd.dir);
+      }
+    });
+    const inputs = [];
+    for (let y = 0; y < pz.h; y++) {
+      for (let x = 0; x < pz.w; x++) {
+        const v = pz.grid.get((x - pz.ox) + "," + (y - pz.oy));
+        const cell = document.createElement("div");
+        cell.className = "pz-cell-wrap";
+        if (v) {
+          const inp = document.createElement("input");
+          inp.maxLength = 1; inp.className = "pz-cell"; inp.autocomplete = "off";
+          const g = gaps.get((x - pz.ox) + "," + (y - pz.oy));
+          if (g === "H") inp.classList.add("pz-gap-h");
+          else if (g === "V") inp.classList.add("pz-gap-v");
+          inp.addEventListener("input", () => {
+            inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
+            inp.classList.remove("correct", "wrong");
+            clearTimeout(pzSaveTimer);
+            pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
+            const idx = inputs.indexOf(inp);
+            const next = inputs.slice(idx + 1).find((i) => !i.value) || inputs.find((i) => !i.value);
+            if (next && next !== inp) next.focus();
+          });
+          const n = starts.get(x + "," + y);
+          if (n) { const sp = document.createElement("span"); sp.className = "pz-num"; sp.textContent = n; cell.appendChild(sp); }
+          cell.appendChild(inp);
+          pz.cellInput.set(x + "," + y, inp);
+          inputs.push(inp);
+        } else {
+          cell.classList.add("pz-block");
+        }
+        grid.appendChild(cell);
+      }
+    }
+    const ca = $("puzzleCluesA"), cd = $("puzzleCluesD");
+    ca.innerHTML = ""; cd.innerHTML = "";
+    [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
+      const li = document.createElement("li");
+      li.textContent = wd.num + ". " + wd.clue;
+      li.addEventListener("click", () => {
+        const first = wd.cells.map(([cx, cy]) => pz.cellInput.get((cx + pz.ox) + "," + (cy + pz.oy))).find(Boolean);
+        if (first) first.focus();
+      });
+      (wd.dir === "H" ? ca : cd).appendChild(li);
+    });
+    $("puzzleFeedback").textContent = "";
+  }
+  function resetPuzzleUI() {
+    const pp = $("panel-puzzle");
+    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+    if (!pp) return;
+    pp.querySelector("#puzzleGrid").innerHTML = "";
+    pp.querySelector("#puzzleCluesA").innerHTML = "";
+    pp.querySelector("#puzzleCluesD").innerHTML = "";
+    pp.querySelector("#puzzleFeedback").textContent = "";
+    pp.querySelector("#puzzleCount").textContent = "";
+    const pzWrap = pp.querySelector(".puzzle-wrap"); if (pzWrap) pzWrap.classList.add("hidden");
+    const pzTop = pp.querySelector(".quiz-controls"); if (pzTop) pzTop.classList.remove("hidden");
+    const pzOpts = pp.querySelector(".quiz-options"); if (pzOpts) pzOpts.classList.remove("hidden");
+    const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls"); if (pzBottom) pzBottom.classList.add("hidden");
+    updateNewlistTab();
+  }
+  async function savePuzzle() {
+    if (!currentList || !pz.words.length) return;
+    const st = {
+      words: pz.words, w: pz.w, h: pz.h, ox: pz.ox, oy: pz.oy,
+      grid: [...pz.grid.entries()],
+      letters: [...pz.cellInput.entries()].map(([k, inp]) => [k, inp.value]),
+      opts: { dir: $("puzzleDirection") ? $("puzzleDirection").value : "1to2" }
+    };
+    localStorage.setItem(quizSaveKey(), JSON.stringify({ mode: "pz", state: st, opts: st.opts, listId: currentList.id }));
+    if (!GUEST) {
+      const uid = await myUid();
+      if (uid) {
+        const { error } = await supabase.from("quiz_saves")
+          .upsert({ user_id: uid, list_id: currentList.id, mode: "pz", state: st, opts: st.opts }, { onConflict: "user_id,list_id" });
+        if (error) console.error("puzzle save failed", error);
+      }
+    }
+    updateQuizSavedIndicator();
+  }
+  function resyncPuzzle(state) {
+    if (!state || !Array.isArray(state.words) || !Array.isArray(state.grid)) return false;
+    const byId = new Map(words.map((w) => [w.id, w]));
+    const kept = [];
+    state.words.forEach((wd) => {
+      const w = wd.id ? byId.get(wd.id) : null;
+      if (!w || w.hidden || !String(w.a).trim() || !String(w.b).trim()) return;
+      const ans = pzEligible(wd.ps === "b" ? w.a : w.b);
+      if (!ans || ans.replace(/ /g, "") !== String(wd.answer || "").replace(/ /g, "")) return;
+      wd.clue = wd.ps === "b" ? w.b : w.a;
+      kept.push(wd);
+    });
+    if (!kept.length) return false;
+    const grid = new Map();
+    kept.forEach((wd) => {
+      const ls = String(wd.answer).replace(/ /g, "").split("");
+      (wd.cells || []).forEach(([cx, cy], i) => { if (ls[i]) grid.set(cx + "," + cy, ls[i]); });
+    });
+    state.words = kept;
+    state.grid = [...grid.entries()];
+    let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+    grid.forEach((v, k) => {
+      const p = k.split(",").map(Number);
+      minX = Math.min(minX, p[0]); minY = Math.min(minY, p[1]);
+      maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]);
+    });
+    state.w = maxX - minX + 1; state.h = maxY - minY + 1; state.ox = -minX; state.oy = -minY;
+    return true;
+  }
+  async function maybeResumePuzzle() {
+    const saved = await loadSavedQuiz();
+    if (!saved || !saved.state || saved.mode !== "pz") return null;
+    if (saved.listId && currentList && saved.listId !== currentList.id) return null;
+    if (currentPuzzleActive()) return null;
+    if (!resyncPuzzle(saved.state)) { await clearSavedQuiz(); updateQuizSavedIndicator(); return null; }
+    const res = await showModal({
+      title: "🧩 Unfinished puzzle",
+      text: "This list has a saved puzzle. Resume it or start fresh?",
+      okText: "Resume",
+      extraButton: { label: "Discard", value: "discard" }
+    });
+    if (res === true || res === "save") {
+      pz.words = saved.state.words;
+      pz.grid = new Map(saved.state.grid);
+      pz.w = saved.state.w; pz.h = saved.state.h; pz.ox = saved.state.ox; pz.oy = saved.state.oy;
+      if (saved.opts && saved.opts.dir && $("puzzleDirection")) $("puzzleDirection").value = saved.opts.dir;
+      pzRender();
+      (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) inp.value = v; });
+      const pp = $("panel-puzzle");
+      if (pp) {
+        const pzWrap = pp.querySelector(".puzzle-wrap"); if (pzWrap) pzWrap.classList.remove("hidden");
+        const pzTop = pp.querySelector(".quiz-controls"); if (pzTop) pzTop.classList.add("hidden");
+        const pzOpts = pp.querySelector(".quiz-options"); if (pzOpts) pzOpts.classList.add("hidden");
+        const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls"); if (pzBottom) pzBottom.classList.remove("hidden");
+      }
+      $("puzzleCount").textContent = pz.words.length + " words";
+      updateNewlistTab();
+      updateQuizSavedIndicator();
+      return "resumed";
+    }
+    if (res === "discard") { await clearSavedQuiz(); updateQuizSavedIndicator(); return "discarded"; }
+    updateQuizSavedIndicator();
+    return "cancel";
+  }
+  async function confirmLeavePuzzle() {
+    const res = await showModal({
+      title: "Leave puzzle?",
+      text: "Are you sure you want to leave?",
+      okText: "End Puzzle",
+      extraButton: { label: "Leave but save", value: "save" }
+    });
+    if (res === "save") { await savePuzzle(); resetPuzzleUI(); return true; }
+    if (res === true) { await clearSavedQuiz(); resetPuzzleUI(); return true; }
+    return false;
+  }
+  if ($("puzzleStart")) {
+    $("puzzleCheck").addEventListener("click", () => {
+      let ok = 0, total = 0;
+      pz.grid.forEach((v, k) => {
+        if (v === " ") return;
+        const parts = k.split(",").map(Number);
+        const inp = pz.cellInput.get((parts[0] + pz.ox) + "," + (parts[1] + pz.oy));
+        if (!inp) return;
+        total++;
+        if (inp.value.toUpperCase() === v) { inp.classList.add("correct"); inp.classList.remove("wrong"); ok++; }
+        else if (inp.value) { inp.classList.add("wrong"); inp.classList.remove("correct"); }
+      });
+      $("puzzleFeedback").textContent = ok + "/" + total + " letters correct";
+      savePuzzle();
+    });
+    $("puzzleClear").addEventListener("click", () => {
+      pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
+      $("puzzleFeedback").textContent = "";
+    });
+    $("puzzleStart").addEventListener("click", puzzleStart);
+    $("puzzleBack").addEventListener("click", backToList);
+  }
+  
   // ---------- Exam ----------
   const EXAM_LANGS = ["French","Russian"];
   const CASE_SUBS = ["2","3","4","5","6"];
@@ -2140,7 +2523,7 @@ function bumpStat(id, key) {
       const lt = localStorage.getItem("hippo-tab");
       const ll = localStorage.getItem("hippo-list");
       if (lt === "list" && ll) { openList(ll); }
-      else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+      else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview");
     } catch (e) { activateTab("overview"); }
     setQuizTabs(false);
     await showModal({
@@ -2168,7 +2551,7 @@ function bumpStat(id, key) {
           const lt = localStorage.getItem("hippo-tab");
           const ll = localStorage.getItem("hippo-list");
           if (lt === "list" && ll) { openList(ll); }
-          else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" ? lt : "overview");
+          else activateTab(lt && lt !== "exam" && $("panel-" + lt) && !lt.startsWith("quiz") && lt !== "flash" && lt !== "puzzle" ? lt : "overview");
         } catch (e) { activateTab("overview"); }
         setQuizTabs(false);
       } else {
