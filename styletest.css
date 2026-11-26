@@ -927,8 +927,8 @@ input.exam-answer.wrong {
 /* ================= Puzzle ================= */
 .puzzle-wrap{
   display:flex;
-  flex-wrap:wrap;
-  gap:20px;
+  flex-direction:column;
+  gap:16px;
   align-items:flex-start
 }
 
@@ -994,6 +994,13 @@ input.exam-answer.wrong {
 }
 
 .puzzle-clues{
+  display:flex;
+  gap:24px;
+  flex-wrap:wrap;
+  width:100%
+}
+
+.puzzle-clues>div{
   flex:1;
   min-width:220px
 }
