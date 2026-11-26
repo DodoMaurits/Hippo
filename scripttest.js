@@ -863,7 +863,7 @@ function bumpStat(id, key) {
     }
     if (mode === "ty") {
       ty = { queue: [], total: 0, idx: 0, score: 0 };
-      $("typeInput").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+      $("typeInput").classList.add("hidden"); $("typeContinue").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
       setQuizChrome("panel-quiz-type", true);
     }
     if (mode === "fl") {
