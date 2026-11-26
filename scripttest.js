@@ -250,6 +250,12 @@ function bumpStat(id, key) {
       }
       activateTab(tab.dataset.tab);
       if (tab.dataset.tab === "puzzle") {
+        pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+        $("puzzleGrid").innerHTML = "";
+        $("puzzleCluesA").innerHTML = "";
+        $("puzzleCluesD").innerHTML = "";
+        $("puzzleFeedback").textContent = "";
+        $("puzzleCount").textContent = "";
         const pp = $("panel-puzzle");
         const pzTop = pp && pp.querySelector(".quiz-controls");
         const pzOpts = pp && pp.querySelector(".quiz-options");
@@ -257,6 +263,7 @@ function bumpStat(id, key) {
         if (pzTop) pzTop.classList.remove("hidden");
         if (pzOpts) pzOpts.classList.remove("hidden");
         if (pzBottom) pzBottom.classList.add("hidden");
+        updateNewlistTab();
       }
       const modeMap = { "quiz-mc": "mc", "quiz-type": "ty", "flash": "fl" };
       const m = modeMap[tab.dataset.tab];
