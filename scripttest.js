@@ -219,6 +219,8 @@ function bumpStat(id, key) {
     if (tb) tb.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(name));
     const hd = document.querySelector(".hippo-header");
     if (hd) hd.classList.toggle("in-list", !!currentList && ["list", "flash", "quiz-mc", "quiz-type", "puzzle"].includes(name));
+    const ex = document.querySelector('.tab[data-tab="exam"]');
+    if (ex) ex.classList.toggle("hidden", !!currentList);
     try { localStorage.setItem("hippo-tab", name); } catch (e) {}
     updateQuizSavedIndicator();
   }
