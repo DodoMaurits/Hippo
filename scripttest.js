@@ -1834,7 +1834,7 @@ function bumpStat(id, key) {
       showModal({ title: "🧩 Puzzle", text: "No suitable words in this direction (max 2 words, letters only, no parentheses).", okText: "OK" });
       return;
     }
-    if ($("puzzleShuffle").checked) pool = shuffle(pool);
+    pool = shuffle(pool);
     pool = pool.slice(0, Math.min(30, pool.length));
     const built = pzBuild(pool);
     if (!built || !built.placed.length) {
