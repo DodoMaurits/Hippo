@@ -1919,21 +1919,28 @@ function bumpStat(id, key) {
             }
           });
           inp.addEventListener("keydown", (e) => {
-            if (e.key !== "Backspace") return;
-            const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
-            const en = es.find((e2) => e2.wd.dir === pz.dir) || es[0];
-            if (!en) return;
-            e.preventDefault();
-            const had = !!inp.value;
-            if (had) pzSetEmpty(inp);
-            if (en.i > 0) {
-              const pc = en.wd.cells[en.i - 1];
-              const p = pz.cellInput.get(pc[0] + "," + pc[1]);
-              if (p) {
-                if (!had) pzSetEmpty(p);
-                p.focus();
+            if (e.key === "Backspace") {
+              const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
+              const en = es.find((e2) => e2.wd.dir === pz.dir) || es[0];
+              if (!en) return;
+              e.preventDefault();
+              const had = !!inp.value;
+              if (had) pzSetEmpty(inp);
+              if (en.i > 0) {
+                const pc = en.wd.cells[en.i - 1];
+                const p = pz.cellInput.get(pc[0] + "," + pc[1]);
+                if (p) {
+                  if (!had) pzSetEmpty(p);
+                  p.focus();
+                }
               }
+              return;
             }
+            const mv = { ArrowLeft: [-1, 0, "H"], ArrowRight: [1, 0, "H"], ArrowUp: [0, -1, "V"], ArrowDown: [0, 1, "V"] }[e.key];
+            if (!mv) return;
+            e.preventDefault();
+            const t = pz.cellInput.get((x + mv[0] - pz.ox) + "," + (y + mv[1] - pz.oy));
+            if (t) { pz.dir = mv[2]; t.focus(); }
           });
           inp.addEventListener("input", () => {
             inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
@@ -2154,7 +2161,25 @@ function bumpStat(id, key) {
     });
     $("puzzleClear").addEventListener("click", () => {
       pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
+      pzUpdateClues();
       $("puzzleFeedback").textContent = "";
+      savePuzzle();
+    });
+    const pzShow = $("puzzleShow");
+    if (pzShow) pzShow.addEventListener("click", () => {
+      let shown = 0;
+      pz.grid.forEach((v, k) => {
+        if (v === " ") return;
+        const inp = pz.cellInput.get(k);
+        if (!inp) return;
+        inp.value = v;
+        inp.classList.add("correct");
+        inp.classList.remove("wrong");
+        shown++;
+      });
+      pzUpdateClues();
+      $("puzzleFeedback").textContent = "👁 " + shown + " answers shown";
+      savePuzzle();
     });
     $("puzzleStart").addEventListener("click", puzzleStart);
     $("puzzleBack").addEventListener("click", backToList);
