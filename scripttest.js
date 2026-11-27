@@ -1720,7 +1720,7 @@ function bumpStat(id, key) {
   }
 
   // ---------- Puzzle (crossword) ----------
-  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1 };
+  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1, showing: false};
   let pzSaveTimer = null;
   let pzZoom = 1;
   function pzEligible(answer) {
@@ -1921,6 +1921,7 @@ function bumpStat(id, key) {
     });
     pz.w = maxX - minX + 1; pz.h = maxY - minY + 1;
     pz.ox = -minX; pz.oy = -minY;
+    pz.showing = false; pzSetShowLabel();
     pzRender();
     const pp = $("panel-puzzle");
     const pzWrap = pp.querySelector(".puzzle-wrap");
@@ -2089,6 +2090,10 @@ function bumpStat(id, key) {
     $("puzzleFeedback").textContent = "";
     pzUpdateClues();
   }
+  function pzSetShowLabel() {
+    const b = $("puzzleShow");
+    if (b) b.textContent = pz.showing ? "🙈 Hide answers" : "👁 Show answers";
+  }
   function pzMarkFilled(inp) {
     const wEl = inp.closest(".pz-cell-wrap");
     if (wEl) wEl.classList.toggle("filled", !!inp.value);
@@ -2128,7 +2133,7 @@ function bumpStat(id, key) {
   }
   function resetPuzzleUI() {
     const pp = $("panel-puzzle");
-    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1 };
+    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1, showing: false };
     if (!pp) return;
     pp.querySelector("#puzzleGrid").innerHTML = "";
     pp.querySelector("#puzzleCluesA").innerHTML = "";
@@ -2139,6 +2144,7 @@ function bumpStat(id, key) {
     const pzTop = pp.querySelector(".quiz-controls"); if (pzTop) pzTop.classList.remove("hidden");
     const pzOpts = pp.querySelector(".quiz-options"); if (pzOpts) pzOpts.classList.remove("hidden");
     const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls"); if (pzBottom) pzBottom.classList.add("hidden");
+    pzSetShowLabel();
     updateNewlistTab();
   }
   async function savePuzzle() {
@@ -2216,6 +2222,7 @@ function bumpStat(id, key) {
       if (saved.opts && saved.opts.dir && $("puzzleDirection")) $("puzzleDirection").value = saved.opts.dir;
       pzRender();
       (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) { inp.value = v; pzMarkFilled(inp); } });
+      pz.showing = (saved.state.letters || []).some(([, v]) => v); pzSetShowLabel();
       const pp = $("panel-puzzle");
       if (pp) {
         const pzWrap = pp.querySelector(".puzzle-wrap"); if (pzWrap) pzWrap.classList.remove("hidden");
@@ -2261,12 +2268,23 @@ function bumpStat(id, key) {
     });
     $("puzzleClear").addEventListener("click", () => {
       pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); pzMarkFilled(inp); });
+      pz.showing = false; pzSetShowLabel();
       pzUpdateClues();
       $("puzzleFeedback").textContent = "";
       savePuzzle();
     });
     const pzShow = $("puzzleShow");
     if (pzShow) pzShow.addEventListener("click", () => {
+      if (pz.showing) {
+        pz.showing = false;
+        pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); pzMarkFilled(inp); });
+        pzUpdateClues();
+        $("puzzleFeedback").textContent = "";
+        pzSetShowLabel();
+        savePuzzle();
+        return;
+      }
+      pz.showing = true;
       let shown = 0;
       pz.grid.forEach((v, k) => {
         if (v === " ") return;
@@ -2280,6 +2298,7 @@ function bumpStat(id, key) {
       });
       pzUpdateClues();
       $("puzzleFeedback").textContent = "👁 " + shown + " answers shown";
+      pzSetShowLabel();
       savePuzzle();
     });
     $("puzzleStart").addEventListener("click", puzzleStart);
