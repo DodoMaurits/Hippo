@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hippo Knows</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦛</text></svg>">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styletest.css">
 </head>
 <body>
   <div class="bubbles" aria-hidden="true">
@@ -298,6 +298,7 @@
         <div class="hint" id="typeHint"></div>
         <input type="text" class="answer-input hidden" id="typeInput" placeholder="Type the translation…" autocomplete="off">
         <button class="btn hidden" id="typeContinue">Continue →</button>
+        <button class="btn ok hidden" id="typeOkAnyway">✔</button>
         <div class="feedback" id="typeFeedback"></div>
       </div>
     </div>
@@ -316,6 +317,10 @@
       <div class="score-bar"><span id="puzzleCount"></span></div>
       <div class="quiz-box">
         <div class="quiz-options">
+          <div class="opt-row">
+            <label class="opt-pill"><input type="checkbox" id="pzTypeCw" checked>Crossword</label>
+            <label class="opt-pill"><input type="checkbox" id="pzTypeFi">Filippine</label>
+          </div>
           <div class="opt-row stats-filter-row hidden">
             <label class="opt-pill"><input type="checkbox" id="pzNoGreen"> Skip green rows (✔ > ✘)</label>
             <label class="opt-pill"><input type="checkbox" id="pzNoYellow"> Skip yellow rows (✔ = ✘)</label>
@@ -330,6 +335,7 @@
         </div>
         <div class="quiz-controls" style="margin-top:12px">
           <button class="btn" id="puzzleCheck">✔ Check</button>
+          <button class="btn secondary" id="puzzleShow">👁 Show answers</button>
           <button class="btn secondary" id="puzzleClear">🧹 Clear</button>
         </div>
         <div class="feedback" id="puzzleFeedback"></div>
@@ -355,7 +361,7 @@
     </div>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <script type="module" src="scripttest.js"></script>
   <script src="z-exam-russian.js"></script>
   <script src="z-exam-french.js"></script>
 
