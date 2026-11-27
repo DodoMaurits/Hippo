@@ -1701,7 +1701,7 @@ function bumpStat(id, key) {
   }
 
   // ---------- Puzzle (crossword) ----------
-  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1 };
   let pzSaveTimer = null;
   let pzZoom = 1;
   function pzEligible(answer) {
@@ -1821,6 +1821,51 @@ function bumpStat(id, key) {
     }
     return best;
   }
+  function pzBuildFi(pool) {
+    const items = pool.map((p) => ({ id: p.id, ps: p.ps, clue: p.clue, answer: p.answer, letters: String(p.answer).replace(/ /g, "").split("") }));
+    if (!items.length) return null;
+    const maxLen = Math.max.apply(null, items.map((it) => it.letters.length));
+    let best = null;
+    for (const sol of items) {
+      const sl = sol.letters;
+      for (let c = 0; c < maxLen; c++) {
+        const cands = sl.map((ch) => items.filter((it) => it.id !== sol.id && it.letters.length > c && it.letters[c] === ch));
+        if (cands.some((cl) => !cl.length)) continue;
+        const order = cands.map((cl, i) => i).sort((a, b) => cands[a].length - cands[b].length);
+        const used = new Set([sol.id]);
+        const rows = new Array(sl.length);
+        let ok = true;
+        for (const i of order) {
+          const cand = cands[i].find((it) => !used.has(it.id));
+          if (!cand) { ok = false; break; }
+          used.add(cand.id); rows[i] = cand;
+        }
+        if (!ok || !rows.length) continue;
+        const w = Math.max.apply(null, rows.map((r) => r.letters.length));
+        if (!best || rows.length > best.rows.length || (rows.length === best.rows.length && w < best.w)) {
+          best = { rows, w, sol: c };
+        }
+      }
+    }
+    if (!best) {
+      const grid = new Map();
+      const placed = [];
+      items.forEach((it, i) => {
+        const cells = [];
+        it.letters.forEach((ch, x) => { cells.push([x, i]); grid.set(x + "," + i, ch); });
+        placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 0, y: i, dir: "H", cells });
+      });
+      return { grid, placed, sol: -1 };
+    }
+    const grid = new Map();
+    const placed = [];
+    best.rows.forEach((it, i) => {
+      const cells = [];
+      it.letters.forEach((ch, x) => { cells.push([x, i]); grid.set(x + "," + i, ch); });
+      placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 0, y: i, dir: "H", cells });
+    });
+    return { grid, placed, sol: best.sol };
+  }
   async function puzzleStart() {
     if (!currentList) {
       await showModal({ title: "🧩 Puzzle", text: "Open a list first (🗂️ My lists)", okText: "OK" });
@@ -1838,13 +1883,17 @@ function bumpStat(id, key) {
     }
     pool = shuffle(pool);
     pool = pool.slice(0, Math.min(30, pool.length));
-    const built = pzBuild(pool);
+    const pzType = $("pzTypeFi") && $("pzTypeFi").checked ? "fi" : "cw";
+    pz.type = pzType;
+    pz.sol = -1;
+    const built = pzType === "fi" ? pzBuildFi(pool) : pzBuild(pool);
     if (!built || !built.placed.length) {
-      showModal({ title: "🧩 Puzzle", text: "Could not build a crossword from these words.", okText: "OK" });
+      showModal({ title: "🧩 Puzzle", text: pzType === "fi" ? "Could not build a filippine from these words (need a column that spells a word from this list)." : "Could not build a crossword from these words.", okText: "OK" });
       return;
     }
     pz.words = built.placed;
     pz.grid = built.grid;
+    if (pzType === "fi") pz.sol = built.sol;
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
     built.grid.forEach((v, k) => {
       const parts = k.split(",").map(Number);
@@ -1893,6 +1942,23 @@ function bumpStat(id, key) {
         pz.cellWords.get(ck).push({ wd, i });
       });
     });
+    let fiNums = null;
+    if (pz.type === "fi") {
+      fiNums = new Map();
+      let fn = 0;
+      for (let y2 = 0; y2 < pz.h; y2++) {
+        for (let x2 = 0; x2 < pz.w; x2++) {
+          if (x2 - pz.ox === pz.sol) continue;
+          const v2 = pz.grid.get((x2 - pz.ox) + "," + (y2 - pz.oy));
+          if (!v2 || v2 === " ") continue;
+          if (!fiNums.has(v2)) { fn++; fiNums.set(v2, fn); }
+        }
+      }
+    }
+    const fiCellNum = (x, y) => {
+      if (!fiNums || (x - pz.ox) === pz.sol) return null;
+      return fiNums.get(pz.grid.get((x - pz.ox) + "," + (y - pz.oy))) || null;
+    };
     const gaps = new Map();
     pz.words.forEach((wd) => {
       if (wd.gapAt >= 0) {
@@ -1911,6 +1977,7 @@ function bumpStat(id, key) {
           const g = gaps.get((x - pz.ox) + "," + (y - pz.oy));
           if (g === "H") inp.classList.add("pz-gap-h");
           else if (g === "V") inp.classList.add("pz-gap-v");
+          if (pz.type === "fi" && (x - pz.ox) === pz.sol) inp.classList.add("pz-sol");
           inp.addEventListener("focus", () => {
             const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
             if (es.length) {
@@ -1975,7 +2042,7 @@ function bumpStat(id, key) {
             if (!target) target = inputs.find((i2) => !i2.value);
             if (target && target !== inp) target.focus();
           });
-          const n = starts.get(x + "," + y);
+          const n = pz.type === "fi" ? fiCellNum(x, y) : starts.get(x + "," + y);
           if (n) { const sp = document.createElement("span"); sp.className = "pz-num"; sp.textContent = n; cell.appendChild(sp); }
           cell.appendChild(inp);
           pz.cellInput.set((x - pz.ox) + "," + (y - pz.oy), inp);
@@ -2036,7 +2103,7 @@ function bumpStat(id, key) {
   }
   function resetPuzzleUI() {
     const pp = $("panel-puzzle");
-    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1 };
     if (!pp) return;
     pp.querySelector("#puzzleGrid").innerHTML = "";
     pp.querySelector("#puzzleCluesA").innerHTML = "";
@@ -2052,10 +2119,12 @@ function bumpStat(id, key) {
   async function savePuzzle() {
     if (!currentList || !pz.words.length) return;
     const st = {
+      type: pz.type || "cw",
+      sol: typeof pz.sol === "number" ? pz.sol : -1,
       words: pz.words, w: pz.w, h: pz.h, ox: pz.ox, oy: pz.oy,
       grid: [...pz.grid.entries()],
       letters: [...pz.cellInput.entries()].map(([k, inp]) => [k, inp.value]),
-      opts: { dir: $("puzzleDirection") ? $("puzzleDirection").value : "1to2" }
+      opts: { dir: $("puzzleDirection") ? $("puzzleDirection").value : "1to2", pzType: pz.type || "cw" }
     };
     localStorage.setItem(quizSaveKey(), JSON.stringify({ mode: "pz", state: st, opts: st.opts, listId: currentList.id }));
     if (!GUEST) {
@@ -2095,6 +2164,8 @@ function bumpStat(id, key) {
       maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]);
     });
     state.w = maxX - minX + 1; state.h = maxY - minY + 1; state.ox = -minX; state.oy = -minY;
+    if (typeof state.sol !== "number" || state.sol < 0 || state.sol >= state.w) state.sol = -1;
+    if (state.type !== "fi") state.type = "cw";
     return true;
   }
   async function maybeResumePuzzle() {
@@ -2113,6 +2184,10 @@ function bumpStat(id, key) {
       pz.words = saved.state.words;
       pz.grid = new Map(saved.state.grid);
       pz.w = saved.state.w; pz.h = saved.state.h; pz.ox = saved.state.ox; pz.oy = saved.state.oy;
+      pz.type = saved.state.type === "fi" ? "fi" : "cw";
+      pz.sol = typeof saved.state.sol === "number" ? saved.state.sol : -1;
+      if ($("pzTypeFi")) $("pzTypeFi").checked = pz.type === "fi";
+      if ($("pzTypeCw")) $("pzTypeCw").checked = pz.type !== "fi";
       if (saved.opts && saved.opts.dir && $("puzzleDirection")) $("puzzleDirection").value = saved.opts.dir;
       pzRender();
       (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) inp.value = v; });
@@ -2183,7 +2258,12 @@ function bumpStat(id, key) {
     });
     $("puzzleStart").addEventListener("click", puzzleStart);
     $("puzzleBack").addEventListener("click", backToList);
-        const pzPanel = $("panel-puzzle");
+    const pzCw = $("pzTypeCw"), pzFi = $("pzTypeFi");
+    if (pzCw && pzFi) {
+      pzCw.addEventListener("change", () => { if (pzCw.checked) pzFi.checked = false; else pzCw.checked = true; });
+      pzFi.addEventListener("change", () => { if (pzFi.checked) pzCw.checked = false; else pzFi.checked = true; });
+    }
+    const pzPanel = $("panel-puzzle");
     pzPanel.addEventListener("wheel", (e) => {
       if (!e.ctrlKey || !pz.words.length) return;
       e.preventDefault();
