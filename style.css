@@ -383,6 +383,11 @@ h1 {
   font-size: .85rem; 
 }
 
+.btn.ok{
+  background:#2f9e44;
+  color:#fff
+}
+
 input[type="text"], select { 
   background: rgba(255,255,255,.14); 
   border: 2px solid var(--border); 
@@ -932,6 +937,30 @@ input.exam-answer.wrong {
   align-items:flex-start
 }
 
+.puzzle-wrap.fi { 
+  flex-direction: row; 
+  justify-content: center;
+  align-items: flex-start; 
+  gap: 24px; 
+}
+
+.puzzle-wrap.fi .puzzle-clues { 
+  flex-direction: column; 
+  width: auto; 
+  min-width: 160px; 
+  gap: 8px; 
+}
+
+.puzzle-wrap.fi .puzzle-clues > div { 
+  flex: none; 
+  min-width: 0;
+  width: auto; 
+}
+
+.puzzle-wrap.fi .puzzle-clues ol { 
+  column-count: 1; 
+}
+
 .puzzle-grid{
   --pz-cell:34px;
   display:grid;
@@ -943,19 +972,34 @@ input.exam-answer.wrong {
 .pz-cell-wrap{
   position:relative;
   width:var(--pz-cell,34px);
-  height:var(--pz-cell,34px)
+  height:var(--pz-cell,34px);
+  background:#e9edf2;
+  border-radius:4px
 }
+.pz-cell-wrap.filled{background:#fff}
 
 .pz-cell{
+  position:relative;
+  z-index:1;
   width:100%;
   height:100%;
   text-align:center;
-  font-size:1.1rem;
+  font-size:calc(var(--pz-cell,34px)*.5);
+  font-weight:700;
   text-transform:uppercase;
   border:1px solid #888;
   border-radius:4px;
-  background:#fff;
+  background:transparent;
   color:#111
+}
+
+.pz-rownum{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:700;
+  font-size:calc(var(--pz-cell,34px)*.45)
 }
 
 .pz-block{
@@ -967,13 +1011,30 @@ input.exam-answer.wrong {
 
 .pz-num{
   position:absolute;
-  top:0;
-  left:2px;
-  font-size:.55rem;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:calc(var(--pz-cell,34px)*.45);
+  font-weight:700;
   pointer-events:none;
-  z-index:1;
-  color:#555
+  z-index:0;
+  color:#5a6572
 }
+
+.pz-cell-wrap.filled .pz-num{display:none}
+
+.puzzle-wrap.fi .pz-num{
+  align-items:flex-start;
+  justify-content:flex-end;
+  padding-top:calc(var(--pz-cell,34px)*.04);
+  padding-right:calc(var(--pz-cell,34px)*.06);
+  font-size:calc(var(--pz-cell,34px)*.26)
+}
+.puzzle-wrap.fi .pz-cell-wrap.filled .pz-num{display:flex}
+.puzzle-wrap.fi .pz-cell{font-size:calc(var(--pz-cell,34px)*.4)}
+
+.pz-cell.pz-sol{background:#ffd9e8}
 
 .pz-cell.correct{
   background:#2f9e44;
@@ -1195,8 +1256,6 @@ input.exam-answer.wrong {
           }
 
           .puzzle-grid{--pz-cell:24px}
-          .pz-cell{font-size:.85rem}
-          .pz-num{font-size:.45rem}
         }
 
 #saveStatus { white-space: nowrap; }
