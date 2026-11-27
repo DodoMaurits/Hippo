@@ -864,7 +864,7 @@ function bumpStat(id, key) {
     }
     if (mode === "ty") {
       ty = { queue: [], total: 0, idx: 0, score: 0 };
-      $("typeInput").classList.add("hidden"); $("typeContinue").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+      $("typeInput").classList.add("hidden"); $("typeContinue").classList.add("hidden"); const ta0 = $("typeOkAnyway"); if (ta0) ta0.classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
       setQuizChrome("panel-quiz-type", true);
     }
     if (mode === "fl") {
@@ -1365,7 +1365,7 @@ function bumpStat(id, key) {
     if (editMode || !ty.queue.length) return;
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
-    $("typeContinue").classList.add("hidden"); ty.awaitContinue = false;
+    $("typeContinue").classList.add("hidden"); const ta1 = $("typeOkAnyway"); if (ta1) ta1.classList.add("hidden"); ty.awaitContinue = false;
     ty.locked = false;
     if (ty.idx >= ty.queue.length) {
       const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
@@ -1450,6 +1450,7 @@ function bumpStat(id, key) {
       if (quizOpts.feedback === "click") {
         ty.awaitContinue = true;
         $("typeContinue").classList.remove("hidden");
+        const ta = $("typeOkAnyway"); if (ta) ta.classList.remove("hidden");
         return;
       }
       typeAdvance();
@@ -1458,6 +1459,24 @@ function bumpStat(id, key) {
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
   $("typeContinue").addEventListener("click", typeCheck);
+  const typeOkAnyway = $("typeOkAnyway");
+  if (typeOkAnyway) typeOkAnyway.addEventListener("click", () => {
+    if (!ty.awaitContinue) return;
+    ty.awaitContinue = false;
+    typeOkAnyway.classList.add("hidden");
+    $("typeContinue").classList.add("hidden");
+    const item = ty.queue[ty.idx];
+    if (item) {
+      const re = ty.queue.indexOf(item, ty.idx + 1);
+      if (re >= 0) ty.queue.splice(re, 1);
+      ty.score++;
+      bumpStat(item.id, "right");
+    }
+    $("typeFeedback").textContent = "✔ Correct!";
+    $("typeFeedback").classList.add("good");
+    $("typeFeedback").classList.remove("bad");
+    typeAdvance(true);
+  });
   
   function updateOvBtns() {
     const e = $("panel-overview").classList.contains("show-ov-edit");
