@@ -969,6 +969,15 @@ input.exam-answer.wrong {
   color:#111
 }
 
+.pz-rownum{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:700;
+  font-size:calc(var(--pz-cell,34px)*.45)
+}
+
 .pz-block{
   width:var(--pz-cell,34px);
   height:var(--pz-cell,34px);
