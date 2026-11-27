@@ -1046,12 +1046,12 @@ input.exam-answer.wrong {
   color:#fff
 }
 
-.pz-cell.pz-gap-h{
-  border-right:4px solid #000
+.pz-cell.pz-gap-h{ 
+  border-left:4px solid #000 
 }
 
-.pz-cell.pz-gap-v{
-  border-bottom:4px solid #000
+.pz-cell.pz-gap-v{ 
+  border-top:4px solid #000 
 }
 
 .puzzle-clues{
