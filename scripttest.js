@@ -2012,6 +2012,7 @@ function bumpStat(id, key) {
           inp.addEventListener("input", () => {
             inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
             inp.classList.remove("correct", "wrong");
+            pzMarkFilled(inp);
             clearTimeout(pzSaveTimer);
             pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
             pzUpdateClues();
@@ -2069,9 +2070,14 @@ function bumpStat(id, key) {
     $("puzzleFeedback").textContent = "";
     pzUpdateClues();
   }
+  function pzMarkFilled(inp) {
+    const wEl = inp.closest(".pz-cell-wrap");
+    if (wEl) wEl.classList.toggle("filled", !!inp.value);
+  }
    function pzSetEmpty(inp) {
     inp.value = "";
     inp.classList.remove("correct", "wrong");
+    pzMarkFilled(inp);
     pzUpdateClues();
     clearTimeout(pzSaveTimer);
     pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
@@ -2190,7 +2196,7 @@ function bumpStat(id, key) {
       if ($("pzTypeCw")) $("pzTypeCw").checked = pz.type !== "fi";
       if (saved.opts && saved.opts.dir && $("puzzleDirection")) $("puzzleDirection").value = saved.opts.dir;
       pzRender();
-      (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) inp.value = v; });
+      (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) { inp.value = v; pzMarkFilled(inp); } });
       const pp = $("panel-puzzle");
       if (pp) {
         const pzWrap = pp.querySelector(".puzzle-wrap"); if (pzWrap) pzWrap.classList.remove("hidden");
@@ -2235,7 +2241,7 @@ function bumpStat(id, key) {
       savePuzzle();
     });
     $("puzzleClear").addEventListener("click", () => {
-      pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
+      pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); pzMarkFilled(inp); });
       pzUpdateClues();
       $("puzzleFeedback").textContent = "";
       savePuzzle();
@@ -2250,6 +2256,7 @@ function bumpStat(id, key) {
         inp.value = v;
         inp.classList.add("correct");
         inp.classList.remove("wrong");
+        pzMarkFilled(inp);
         shown++;
       });
       pzUpdateClues();
