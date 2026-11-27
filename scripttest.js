@@ -1843,26 +1843,43 @@ function bumpStat(id, key) {
   function pzBuildFi(pool) {
     const items = pool.map((p) => ({ id: p.id, ps: p.ps, clue: p.clue, answer: p.answer, letters: String(p.answer).replace(/ /g, "").split("") }));
     if (!items.length) return null;
-    const maxLen = Math.max.apply(null, items.map((it) => it.letters.length));
     let best = null;
     for (const sol of items) {
       const sl = sol.letters;
-      for (let c = 0; c < maxLen; c++) {
-        const cands = sl.map((ch) => items.filter((it) => it.id !== sol.id && it.letters.length > c && it.letters[c] === ch));
+      {
+        const cands = sl.map((ch) => {
+          const list = [];
+          for (const it of items) {
+            if (it.id === sol.id) continue;
+            for (let pos = 0; pos < it.letters.length; pos++) {
+              if (it.letters[pos] === ch) list.push({ it, pos });
+            }
+          }
+          return list;
+        });
         if (cands.some((cl) => !cl.length)) continue;
         const order = cands.map((cl, i) => i).sort((a, b) => cands[a].length - cands[b].length);
         const used = new Set([sol.id]);
-        const rows = new Array(sl.length);
+        const picks = new Array(sl.length);
         let ok = true;
         for (const i of order) {
-          const cand = cands[i].find((it) => !used.has(it.id));
-          if (!cand) { ok = false; break; }
-          used.add(cand.id); rows[i] = cand;
+          const avail = cands[i].filter((c2) => !used.has(c2.it.id));
+          if (!avail.length) { ok = false; break; }
+          let bc = avail[0];
+          for (const c2 of avail) {
+            const d = Math.abs(c2.pos - (c2.it.letters.length - 1) / 2);
+            const bd = Math.abs(bc.pos - (bc.it.letters.length - 1) / 2);
+            if (d < bd) bc = c2;
+          }
+          used.add(bc.it.id); picks[i] = bc;
         }
-        if (!ok || !rows.length) continue;
-        const w = Math.max.apply(null, rows.map((r) => r.letters.length));
-        if (!best || rows.length > best.rows.length || (rows.length === best.rows.length && w < best.w)) {
-          best = { rows, w, sol: c };
+        if (!ok || !picks.length) continue;
+        const starts = picks.map((p) => -p.pos);
+        const minS = Math.min.apply(null, starts);
+        const maxE = Math.max.apply(null, picks.map((p, i) => starts[i] + p.it.letters.length - 1));
+        const w = maxE - minS + 1;
+        if (!best || picks.length > best.picks.length || (picks.length === best.picks.length && w < best.w)) {
+          best = { picks, starts, w };
         }
       }
     }
@@ -1879,13 +1896,14 @@ function bumpStat(id, key) {
     }
     const grid = new Map();
     const placed = [];
-    best.rows.forEach((it, i) => {
+    best.picks.forEach((p, i) => {
+      const sx = best.starts[i];
       const cells = [];
-      grid.set("0," + i, " ");
-      it.letters.forEach((ch, x) => { cells.push([x + 1, i]); grid.set((x + 1) + "," + i, ch); });
-      placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 1, y: i, dir: "H", cells });
+      grid.set((sx - 1) + "," + i, " ");
+      p.it.letters.forEach((ch, k) => { cells.push([sx + k, i]); grid.set((sx + k) + "," + i, ch); });
+      placed.push({ id: p.it.id, ps: p.it.ps, clue: p.it.clue, answer: p.it.answer, gapAt: p.it.answer.indexOf(" "), x: sx, y: i, dir: "H", cells });
     });
-    return { grid, placed, sol: best.sol + 1 };
+    return { grid, placed, sol: 0 };
   }
   async function puzzleStart() {
     if (!currentList) {
@@ -1955,7 +1973,8 @@ function bumpStat(id, key) {
     pz.dir = "H";
     pzZoom = 1;
     grid.style.gridTemplateColumns = "repeat(" + pz.w + ", var(--pz-cell, 34px))";
-    grid.style.margin = pz.type === "fi" ? "0 auto" : "";
+    const pzWrapEl = grid.closest(".puzzle-wrap");
+    if (pzWrapEl) pzWrapEl.classList.toggle("fi", pz.type === "fi");
     pz.cellInput = new Map();
     pz.cellWords = new Map();
     pz.words.forEach((wd) => {
@@ -1993,6 +2012,8 @@ function bumpStat(id, key) {
       if (!fiNums || (x - pz.ox) === pz.sol) return null;
       return fiNums.get(pz.grid.get((x - pz.ox) + "," + (y - pz.oy))) || null;
     };
+    const rowNumCells = new Map();
+    if (pz.type === "fi") pz.words.forEach((wd) => { rowNumCells.set((wd.x - 1) + "," + wd.y, wd.num); });
     const gaps = new Map();
     pz.words.forEach((wd) => {
       if (wd.gapAt >= 0) {
@@ -2084,10 +2105,8 @@ function bumpStat(id, key) {
           inputs.push(inp);
         } else {
           cell.classList.add("pz-block");
-          if (pz.type === "fi" && (x - pz.ox) === 0) {
-            const wd0 = pz.words.find((w2) => w2.dir === "H" && w2.y === y - pz.oy);
-            if (wd0) { cell.classList.add("pz-rownum"); cell.textContent = wd0.num; }
-          }
+          const rn = pz.type === "fi" ? rowNumCells.get((x - pz.ox) + "," + (y - pz.oy)) : null;
+          if (rn) { cell.classList.add("pz-rownum"); cell.textContent = rn; }
         }
         grid.appendChild(cell);
       }
@@ -2212,7 +2231,7 @@ function bumpStat(id, key) {
       const ls = String(wd.answer).replace(/ /g, "").split("");
       (wd.cells || []).forEach(([cx, cy], i) => { if (ls[i]) grid.set(cx + "," + cy, ls[i]); });
     });
-    if (state.type === "fi") kept.forEach((wd) => { grid.set("0," + wd.y, " "); });
+    if (state.type === "fi") kept.forEach((wd) => { if (typeof wd.x === "number") grid.set((wd.x - 1) + "," + wd.y, " "); });
     state.words = kept;
     state.grid = [...grid.entries()];
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
