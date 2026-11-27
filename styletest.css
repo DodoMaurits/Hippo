@@ -383,6 +383,11 @@ h1 {
   font-size: .85rem; 
 }
 
+.btn.ok{
+  background:#2f9e44;
+  color:#fff
+}
+
 input[type="text"], select { 
   background: rgba(255,255,255,.14); 
   border: 2px solid var(--border); 
