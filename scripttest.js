@@ -2017,7 +2017,7 @@ function bumpStat(id, key) {
     const gaps = new Map();
     pz.words.forEach((wd) => {
       if (wd.gapAt >= 0) {
-        gaps.set((wd.x + (wd.dir === "H" ? wd.gapAt - 1 : 0)) + "," + (wd.y + (wd.dir === "V" ? wd.gapAt - 1 : 0)), wd.dir);
+        gaps.set((wd.x + (wd.dir === "H" ? wd.gapAt : 0)) + "," + (wd.y + (wd.dir === "V" ? wd.gapAt : 0)), wd.dir);
       }
     });
     const inputs = [];
