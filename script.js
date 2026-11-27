@@ -864,7 +864,7 @@ function bumpStat(id, key) {
     }
     if (mode === "ty") {
       ty = { queue: [], total: 0, idx: 0, score: 0 };
-      $("typeInput").classList.add("hidden"); $("typeContinue").classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
+      $("typeInput").classList.add("hidden"); $("typeContinue").classList.add("hidden"); const ta0 = $("typeOkAnyway"); if (ta0) ta0.classList.add("hidden"); $("typeFeedback").textContent = ""; $("typePrompt").textContent = ""; $("typeHint").textContent = "";
       setQuizChrome("panel-quiz-type", true);
     }
     if (mode === "fl") {
@@ -1365,7 +1365,7 @@ function bumpStat(id, key) {
     if (editMode || !ty.queue.length) return;
     $("typeFeedback").textContent = "";
     $("typeFeedback").className = "feedback";
-    $("typeContinue").classList.add("hidden"); ty.awaitContinue = false;
+    $("typeContinue").classList.add("hidden"); const ta1 = $("typeOkAnyway"); if (ta1) ta1.classList.add("hidden"); ty.awaitContinue = false;
     ty.locked = false;
     if (ty.idx >= ty.queue.length) {
       const pct = ty.total ? Math.round(ty.score / ty.total * 100) : 0;
@@ -1450,6 +1450,7 @@ function bumpStat(id, key) {
       if (quizOpts.feedback === "click") {
         ty.awaitContinue = true;
         $("typeContinue").classList.remove("hidden");
+        const ta = $("typeOkAnyway"); if (ta) ta.classList.remove("hidden");
         return;
       }
       typeAdvance();
@@ -1458,6 +1459,24 @@ function bumpStat(id, key) {
   $("typeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") typeCheck(); });
   $("typeStart").addEventListener("click", typeStart);
   $("typeContinue").addEventListener("click", typeCheck);
+  const typeOkAnyway = $("typeOkAnyway");
+  if (typeOkAnyway) typeOkAnyway.addEventListener("click", () => {
+    if (!ty.awaitContinue) return;
+    ty.awaitContinue = false;
+    typeOkAnyway.classList.add("hidden");
+    $("typeContinue").classList.add("hidden");
+    const item = ty.queue[ty.idx];
+    if (item) {
+      const re = ty.queue.indexOf(item, ty.idx + 1);
+      if (re >= 0) ty.queue.splice(re, 1);
+      ty.score++;
+      bumpStat(item.id, "right");
+    }
+    $("typeFeedback").textContent = "✔ Correct!";
+    $("typeFeedback").classList.add("good");
+    $("typeFeedback").classList.remove("bad");
+    typeAdvance(true);
+  });
   
   function updateOvBtns() {
     const e = $("panel-overview").classList.contains("show-ov-edit");
@@ -1701,7 +1720,7 @@ function bumpStat(id, key) {
   }
 
   // ---------- Puzzle (crossword) ----------
-  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+  let pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1, showing: false, prevLetters: null };
   let pzSaveTimer = null;
   let pzZoom = 1;
   function pzEligible(answer) {
@@ -1821,6 +1840,71 @@ function bumpStat(id, key) {
     }
     return best;
   }
+  function pzBuildFi(pool) {
+    const items = pool.map((p) => ({ id: p.id, ps: p.ps, clue: p.clue, answer: p.answer, letters: String(p.answer).replace(/ /g, "").split("") }));
+    if (!items.length) return null;
+    let best = null;
+    for (const sol of items) {
+      const sl = sol.letters;
+      {
+        const cands = sl.map((ch) => {
+          const list = [];
+          for (const it of items) {
+            if (it.id === sol.id) continue;
+            for (let pos = 0; pos < it.letters.length; pos++) {
+              if (it.letters[pos] === ch) list.push({ it, pos });
+            }
+          }
+          return list;
+        });
+        if (cands.some((cl) => !cl.length)) continue;
+        const order = cands.map((cl, i) => i).sort((a, b) => cands[a].length - cands[b].length);
+        const used = new Set([sol.id]);
+        const picks = new Array(sl.length);
+        let ok = true;
+        for (const i of order) {
+          const avail = cands[i].filter((c2) => !used.has(c2.it.id));
+          if (!avail.length) { ok = false; break; }
+          let bc = avail[0];
+          for (const c2 of avail) {
+            const d = Math.abs(c2.pos - (c2.it.letters.length - 1) / 2);
+            const bd = Math.abs(bc.pos - (bc.it.letters.length - 1) / 2);
+            if (d < bd) bc = c2;
+          }
+          used.add(bc.it.id); picks[i] = bc;
+        }
+        if (!ok || !picks.length) continue;
+        const starts = picks.map((p) => -p.pos);
+        const minS = Math.min.apply(null, starts);
+        const maxE = Math.max.apply(null, picks.map((p, i) => starts[i] + p.it.letters.length - 1));
+        const w = maxE - minS + 1;
+        if (!best || picks.length > best.picks.length || (picks.length === best.picks.length && w < best.w)) {
+          best = { picks, starts, w };
+        }
+      }
+    }
+    if (!best) {
+      const grid = new Map();
+      const placed = [];
+      items.forEach((it, i) => {
+        const cells = [];
+        grid.set("0," + i, " ");
+        it.letters.forEach((ch, x) => { cells.push([x + 1, i]); grid.set((x + 1) + "," + i, ch); });
+        placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 1, y: i, dir: "H", cells });
+      });
+      return { grid, placed, sol: -1 };
+    }
+    const grid = new Map();
+    const placed = [];
+    best.picks.forEach((p, i) => {
+      const sx = best.starts[i];
+      const cells = [];
+      grid.set((sx - 1) + "," + i, " ");
+      p.it.letters.forEach((ch, k) => { cells.push([sx + k, i]); grid.set((sx + k) + "," + i, ch); });
+      placed.push({ id: p.it.id, ps: p.it.ps, clue: p.it.clue, answer: p.it.answer, gapAt: p.it.answer.indexOf(" "), x: sx, y: i, dir: "H", cells });
+    });
+    return { grid, placed, sol: 0 };
+  }
   async function puzzleStart() {
     if (!currentList) {
       await showModal({ title: "🧩 Puzzle", text: "Open a list first (🗂️ My lists)", okText: "OK" });
@@ -1838,13 +1922,17 @@ function bumpStat(id, key) {
     }
     pool = shuffle(pool);
     pool = pool.slice(0, Math.min(30, pool.length));
-    const built = pzBuild(pool);
+    const pzType = $("pzTypeFi") && $("pzTypeFi").checked ? "fi" : "cw";
+    pz.type = pzType;
+    pz.sol = -1;
+    const built = pzType === "fi" ? pzBuildFi(pool) : pzBuild(pool);
     if (!built || !built.placed.length) {
-      showModal({ title: "🧩 Puzzle", text: "Could not build a crossword from these words.", okText: "OK" });
+      showModal({ title: "🧩 Puzzle", text: pzType === "fi" ? "Could not build a filippine from these words (need a column that spells a word from this list)." : "Could not build a crossword from these words.", okText: "OK" });
       return;
     }
     pz.words = built.placed;
     pz.grid = built.grid;
+    if (pzType === "fi") pz.sol = built.sol;
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
     built.grid.forEach((v, k) => {
       const parts = k.split(",").map(Number);
@@ -1853,6 +1941,7 @@ function bumpStat(id, key) {
     });
     pz.w = maxX - minX + 1; pz.h = maxY - minY + 1;
     pz.ox = -minX; pz.oy = -minY;
+    pz.showing = false; pz.prevLetters = null; pzSetShowLabel();
     pzRender();
     const pp = $("panel-puzzle");
     const pzWrap = pp.querySelector(".puzzle-wrap");
@@ -1884,6 +1973,8 @@ function bumpStat(id, key) {
     pz.dir = "H";
     pzZoom = 1;
     grid.style.gridTemplateColumns = "repeat(" + pz.w + ", var(--pz-cell, 34px))";
+    const pzWrapEl = grid.closest(".puzzle-wrap");
+    if (pzWrapEl) pzWrapEl.classList.toggle("fi", pz.type === "fi");
     pz.cellInput = new Map();
     pz.cellWords = new Map();
     pz.words.forEach((wd) => {
@@ -1893,6 +1984,36 @@ function bumpStat(id, key) {
         pz.cellWords.get(ck).push({ wd, i });
       });
     });
+    let fiNums = null;
+    if (pz.type === "fi") {
+      fiNums = new Map();
+      const groups = new Map();
+      let total = 0;
+      for (let y2 = 0; y2 < pz.h; y2++) {
+        for (let x2 = 0; x2 < pz.w; x2++) {
+          if (x2 - pz.ox === pz.sol) continue;
+          const v2 = pz.grid.get((x2 - pz.ox) + "," + (y2 - pz.oy));
+          if (!v2 || v2 === " ") continue;
+          groups.set(v2, (groups.get(v2) || 0) + 1);
+          total++;
+        }
+      }
+      const target = Math.round(total * 0.75);
+      const eligible = shuffle([...groups.entries()].filter(([, c]) => c >= 2));
+      let assigned = 0, fn = 0;
+      for (const [letter] of eligible) {
+        if (assigned >= target) break;
+        fn++;
+        fiNums.set(letter, fn);
+        assigned += groups.get(letter);
+      }
+    }
+    const fiCellNum = (x, y) => {
+      if (!fiNums || (x - pz.ox) === pz.sol) return null;
+      return fiNums.get(pz.grid.get((x - pz.ox) + "," + (y - pz.oy))) || null;
+    };
+    const rowNumCells = new Map();
+    if (pz.type === "fi") pz.words.forEach((wd) => { rowNumCells.set((wd.x - 1) + "," + wd.y, wd.num); });
     const gaps = new Map();
     pz.words.forEach((wd) => {
       if (wd.gapAt >= 0) {
@@ -1905,12 +2026,13 @@ function bumpStat(id, key) {
         const v = pz.grid.get((x - pz.ox) + "," + (y - pz.oy));
         const cell = document.createElement("div");
         cell.className = "pz-cell-wrap";
-        if (v) {
+        if (v && v !== " ") {
           const inp = document.createElement("input");
           inp.maxLength = 1; inp.className = "pz-cell"; inp.autocomplete = "off";
           const g = gaps.get((x - pz.ox) + "," + (y - pz.oy));
           if (g === "H") inp.classList.add("pz-gap-h");
           else if (g === "V") inp.classList.add("pz-gap-v");
+          if (pz.type === "fi" && (x - pz.ox) === pz.sol) inp.classList.add("pz-sol");
           inp.addEventListener("focus", () => {
             const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
             if (es.length) {
@@ -1919,25 +2041,35 @@ function bumpStat(id, key) {
             }
           });
           inp.addEventListener("keydown", (e) => {
-            if (e.key !== "Backspace") return;
-            const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
-            const en = es.find((e2) => e2.wd.dir === pz.dir) || es[0];
-            if (!en) return;
-            e.preventDefault();
-            const had = !!inp.value;
-            if (had) pzSetEmpty(inp);
-            if (en.i > 0) {
-              const pc = en.wd.cells[en.i - 1];
-              const p = pz.cellInput.get(pc[0] + "," + pc[1]);
-              if (p) {
-                if (!had) pzSetEmpty(p);
-                p.focus();
+            if (e.key === "Backspace") {
+              const es = pz.cellWords.get((x - pz.ox) + "," + (y - pz.oy)) || [];
+              const en = es.find((e2) => e2.wd.dir === pz.dir) || es[0];
+              if (!en) return;
+              e.preventDefault();
+              const had = !!inp.value;
+              const ck = (x - pz.ox) + "," + (y - pz.oy);
+              if (had) pzSetEmpty(inp, ck);
+              if (en.i > 0) {
+                const pc = en.wd.cells[en.i - 1];
+                const p = pz.cellInput.get(pc[0] + "," + pc[1]);
+                if (p) {
+                  if (!had) pzSetEmpty(p, pc[0] + "," + pc[1]);
+                  p.focus();
+                }
               }
+              return;
             }
+            const mv = { ArrowLeft: [-1, 0, "H"], ArrowRight: [1, 0, "H"], ArrowUp: [0, -1, "V"], ArrowDown: [0, 1, "V"] }[e.key];
+            if (!mv) return;
+            e.preventDefault();
+            const t = pz.cellInput.get((x + mv[0] - pz.ox) + "," + (y + mv[1] - pz.oy));
+            if (t) { pz.dir = mv[2]; t.focus(); }
           });
           inp.addEventListener("input", () => {
             inp.value = inp.value.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 1);
             inp.classList.remove("correct", "wrong");
+            pzMarkFilled(inp);
+            if (pz.showing && pz.prevLetters) pz.prevLetters.set((x - pz.ox) + "," + (y - pz.oy), inp.value);
             clearTimeout(pzSaveTimer);
             pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
             pzUpdateClues();
@@ -1968,19 +2100,29 @@ function bumpStat(id, key) {
             if (!target) target = inputs.find((i2) => !i2.value);
             if (target && target !== inp) target.focus();
           });
-          const n = starts.get(x + "," + y);
+          const n = pz.type === "fi" ? fiCellNum(x, y) : starts.get(x + "," + y);
           if (n) { const sp = document.createElement("span"); sp.className = "pz-num"; sp.textContent = n; cell.appendChild(sp); }
           cell.appendChild(inp);
           pz.cellInput.set((x - pz.ox) + "," + (y - pz.oy), inp);
           inputs.push(inp);
         } else {
           cell.classList.add("pz-block");
+          const rn = pz.type === "fi" ? rowNumCells.get((x - pz.ox) + "," + (y - pz.oy)) : null;
+          if (rn) { cell.classList.add("pz-rownum"); cell.textContent = rn; }
         }
         grid.appendChild(cell);
       }
     }
     const ca = $("puzzleCluesA"), cd = $("puzzleCluesD");
     ca.innerHTML = ""; cd.innerHTML = "";
+    const caDiv = ca && ca.closest("div"), cdDiv = cd && cd.closest("div");
+    if (pz.type === "fi") {
+      if (caDiv) { const h = caDiv.querySelector("h3"); if (h) h.textContent = "Description"; }
+      if (cdDiv) cdDiv.style.display = "none";
+    } else {
+      if (caDiv) { const h = caDiv.querySelector("h3"); if (h) h.textContent = "Across"; }
+      if (cdDiv) cdDiv.style.display = "";
+    }
     [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
       const li = document.createElement("li");
       li.textContent = wd.num + ". " + wd.clue;
@@ -1995,9 +2137,19 @@ function bumpStat(id, key) {
     $("puzzleFeedback").textContent = "";
     pzUpdateClues();
   }
-   function pzSetEmpty(inp) {
+  function pzSetShowLabel() {
+    const b = $("puzzleShow");
+    if (b) b.textContent = pz.showing ? "🙈 Hide answers" : "👁 Show answers";
+  }
+  function pzMarkFilled(inp) {
+    const wEl = inp.closest(".pz-cell-wrap");
+    if (wEl) wEl.classList.toggle("filled", !!inp.value);
+  }
+  function pzSetEmpty(inp, key) {
     inp.value = "";
     inp.classList.remove("correct", "wrong");
+    if (pz.showing && pz.prevLetters && key) pz.prevLetters.set(key, "");
+    pzMarkFilled(inp);
     pzUpdateClues();
     clearTimeout(pzSaveTimer);
     pzSaveTimer = setTimeout(() => { savePuzzle(); }, 800);
@@ -2029,7 +2181,7 @@ function bumpStat(id, key) {
   }
   function resetPuzzleUI() {
     const pp = $("panel-puzzle");
-    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map() };
+    pz = { words: [], grid: null, w: 0, h: 0, ox: 0, oy: 0, cellInput: new Map(), type: "cw", sol: -1, showing: false, prevLetters: null };
     if (!pp) return;
     pp.querySelector("#puzzleGrid").innerHTML = "";
     pp.querySelector("#puzzleCluesA").innerHTML = "";
@@ -2040,15 +2192,20 @@ function bumpStat(id, key) {
     const pzTop = pp.querySelector(".quiz-controls"); if (pzTop) pzTop.classList.remove("hidden");
     const pzOpts = pp.querySelector(".quiz-options"); if (pzOpts) pzOpts.classList.remove("hidden");
     const pzBottom = pp.querySelector("#puzzleCheck") && pp.querySelector("#puzzleCheck").closest(".quiz-controls"); if (pzBottom) pzBottom.classList.add("hidden");
+    pzSetShowLabel();
     updateNewlistTab();
   }
   async function savePuzzle() {
     if (!currentList || !pz.words.length) return;
     const st = {
+      type: pz.type || "cw",
+      sol: typeof pz.sol === "number" ? pz.sol : -1,
       words: pz.words, w: pz.w, h: pz.h, ox: pz.ox, oy: pz.oy,
       grid: [...pz.grid.entries()],
       letters: [...pz.cellInput.entries()].map(([k, inp]) => [k, inp.value]),
-      opts: { dir: $("puzzleDirection") ? $("puzzleDirection").value : "1to2" }
+      prev: pz.prevLetters ? [...pz.prevLetters.entries()] : null,
+      showing: !!pz.showing,
+      opts: { dir: $("puzzleDirection") ? $("puzzleDirection").value : "1to2", pzType: pz.type || "cw" }
     };
     localStorage.setItem(quizSaveKey(), JSON.stringify({ mode: "pz", state: st, opts: st.opts, listId: currentList.id }));
     if (!GUEST) {
@@ -2079,6 +2236,7 @@ function bumpStat(id, key) {
       const ls = String(wd.answer).replace(/ /g, "").split("");
       (wd.cells || []).forEach(([cx, cy], i) => { if (ls[i]) grid.set(cx + "," + cy, ls[i]); });
     });
+    if (state.type === "fi") kept.forEach((wd) => { if (typeof wd.x === "number") grid.set((wd.x - 1) + "," + wd.y, " "); });
     state.words = kept;
     state.grid = [...grid.entries()];
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
@@ -2088,6 +2246,8 @@ function bumpStat(id, key) {
       maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]);
     });
     state.w = maxX - minX + 1; state.h = maxY - minY + 1; state.ox = -minX; state.oy = -minY;
+    if (typeof state.sol !== "number" || state.sol < 0 || state.sol >= state.w) state.sol = -1;
+    if (state.type !== "fi") state.type = "cw";
     return true;
   }
   async function maybeResumePuzzle() {
@@ -2106,9 +2266,14 @@ function bumpStat(id, key) {
       pz.words = saved.state.words;
       pz.grid = new Map(saved.state.grid);
       pz.w = saved.state.w; pz.h = saved.state.h; pz.ox = saved.state.ox; pz.oy = saved.state.oy;
+      pz.type = saved.state.type === "fi" ? "fi" : "cw";
+      pz.sol = typeof saved.state.sol === "number" ? saved.state.sol : -1;
+      if ($("pzTypeFi")) $("pzTypeFi").checked = pz.type === "fi";
+      if ($("pzTypeCw")) $("pzTypeCw").checked = pz.type !== "fi";
       if (saved.opts && saved.opts.dir && $("puzzleDirection")) $("puzzleDirection").value = saved.opts.dir;
       pzRender();
-      (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) inp.value = v; });
+      (saved.state.letters || []).forEach(([k, v]) => { const inp = pz.cellInput.get(k); if (inp && v) { inp.value = v; pzMarkFilled(inp); } });
+      pz.showing = typeof saved.state.showing === "boolean" ? saved.state.showing : (saved.state.letters || []).some(([, v]) => v); pz.prevLetters = saved.state.prev ? new Map(saved.state.prev) : null; pzSetShowLabel();
       const pp = $("panel-puzzle");
       if (pp) {
         const pzWrap = pp.querySelector(".puzzle-wrap"); if (pzWrap) pzWrap.classList.remove("hidden");
@@ -2153,12 +2318,51 @@ function bumpStat(id, key) {
       savePuzzle();
     });
     $("puzzleClear").addEventListener("click", () => {
-      pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); });
+      pz.cellInput.forEach((inp) => { inp.value = ""; inp.classList.remove("correct", "wrong"); pzMarkFilled(inp); });
+      pz.showing = false; pz.prevLetters = null; pzSetShowLabel();
+      pzUpdateClues();
       $("puzzleFeedback").textContent = "";
+      savePuzzle();
+    });
+    const pzShow = $("puzzleShow");
+    if (pzShow) pzShow.addEventListener("click", () => {
+      if (pz.showing) {
+        pz.showing = false;
+        const prev = pz.prevLetters || new Map();
+        pz.cellInput.forEach((inp, k) => { inp.value = prev.get(k) || ""; inp.classList.remove("correct", "wrong"); pzMarkFilled(inp); });
+        pz.prevLetters = null;
+        pzUpdateClues();
+        $("puzzleFeedback").textContent = "";
+        pzSetShowLabel();
+        savePuzzle();
+        return;
+      }
+      pz.showing = true;
+      pz.prevLetters = new Map([...pz.cellInput.entries()].map(([k, inp]) => [k, inp.value]));
+      let shown = 0;
+      pz.grid.forEach((v, k) => {
+        if (v === " ") return;
+        const inp = pz.cellInput.get(k);
+        if (!inp) return;
+        inp.value = v;
+        inp.classList.add("correct");
+        inp.classList.remove("wrong");
+        pzMarkFilled(inp);
+        shown++;
+      });
+      pzUpdateClues();
+      $("puzzleFeedback").textContent = "👁 " + shown + " answers shown";
+      pzSetShowLabel();
+      savePuzzle();
     });
     $("puzzleStart").addEventListener("click", puzzleStart);
     $("puzzleBack").addEventListener("click", backToList);
-        const pzPanel = $("panel-puzzle");
+    const pzCw = $("pzTypeCw"), pzFi = $("pzTypeFi");
+    if (pzCw && pzFi) {
+      pzCw.addEventListener("change", () => { if (pzCw.checked) pzFi.checked = false; else pzCw.checked = true; });
+      pzFi.addEventListener("change", () => { if (pzFi.checked) pzCw.checked = false; else pzFi.checked = true; });
+    }
+    const pzPanel = $("panel-puzzle");
     pzPanel.addEventListener("wheel", (e) => {
       if (!e.ctrlKey || !pz.words.length) return;
       e.preventDefault();
