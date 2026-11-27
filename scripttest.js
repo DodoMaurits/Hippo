@@ -2099,13 +2099,7 @@ function bumpStat(id, key) {
             if (target && target !== inp) target.focus();
           });
           const n = pz.type === "fi" ? fiCellNum(x, y) : starts.get(x + "," + y);
-          if (n) {
-            const sp = document.createElement("span");
-            sp.className = "pz-num" + (pz.type === "fi" ? " pz-finum" : "");
-            sp.textContent = n;
-            cell.appendChild(sp);
-            if (pz.type === "fi") inp.classList.add("pz-hasnum");
-          }
+          if (n) { const sp = document.createElement("span"); sp.className = "pz-num"; sp.textContent = n; cell.appendChild(sp); }
           cell.appendChild(inp);
           pz.cellInput.set((x - pz.ox) + "," + (y - pz.oy), inp);
           inputs.push(inp);
