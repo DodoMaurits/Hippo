@@ -1871,8 +1871,9 @@ function bumpStat(id, key) {
       const placed = [];
       items.forEach((it, i) => {
         const cells = [];
-        it.letters.forEach((ch, x) => { cells.push([x, i]); grid.set(x + "," + i, ch); });
-        placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 0, y: i, dir: "H", cells });
+        grid.set("0," + i, " ");
+        it.letters.forEach((ch, x) => { cells.push([x + 1, i]); grid.set((x + 1) + "," + i, ch); });
+        placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 1, y: i, dir: "H", cells });
       });
       return { grid, placed, sol: -1 };
     }
@@ -1880,10 +1881,11 @@ function bumpStat(id, key) {
     const placed = [];
     best.rows.forEach((it, i) => {
       const cells = [];
-      it.letters.forEach((ch, x) => { cells.push([x, i]); grid.set(x + "," + i, ch); });
-      placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 0, y: i, dir: "H", cells });
+      grid.set("0," + i, " ");
+      it.letters.forEach((ch, x) => { cells.push([x + 1, i]); grid.set((x + 1) + "," + i, ch); });
+      placed.push({ id: it.id, ps: it.ps, clue: it.clue, answer: it.answer, gapAt: it.answer.indexOf(" "), x: 1, y: i, dir: "H", cells });
     });
-    return { grid, placed, sol: best.sol };
+    return { grid, placed, sol: best.sol + 1 };
   }
   async function puzzleStart() {
     if (!currentList) {
@@ -1953,6 +1955,7 @@ function bumpStat(id, key) {
     pz.dir = "H";
     pzZoom = 1;
     grid.style.gridTemplateColumns = "repeat(" + pz.w + ", var(--pz-cell, 34px))";
+    grid.style.margin = pz.type === "fi" ? "0 auto" : "";
     pz.cellInput = new Map();
     pz.cellWords = new Map();
     pz.words.forEach((wd) => {
@@ -1965,14 +1968,25 @@ function bumpStat(id, key) {
     let fiNums = null;
     if (pz.type === "fi") {
       fiNums = new Map();
-      let fn = 0;
+      const groups = new Map();
+      let total = 0;
       for (let y2 = 0; y2 < pz.h; y2++) {
         for (let x2 = 0; x2 < pz.w; x2++) {
           if (x2 - pz.ox === pz.sol) continue;
           const v2 = pz.grid.get((x2 - pz.ox) + "," + (y2 - pz.oy));
           if (!v2 || v2 === " ") continue;
-          if (!fiNums.has(v2)) { fn++; fiNums.set(v2, fn); }
+          groups.set(v2, (groups.get(v2) || 0) + 1);
+          total++;
         }
+      }
+      const target = Math.round(total * 0.75);
+      const eligible = shuffle([...groups.entries()].filter(([, c]) => c >= 2));
+      let assigned = 0, fn = 0;
+      for (const [letter] of eligible) {
+        if (assigned >= target) break;
+        fn++;
+        fiNums.set(letter, fn);
+        assigned += groups.get(letter);
       }
     }
     const fiCellNum = (x, y) => {
@@ -1991,7 +2005,7 @@ function bumpStat(id, key) {
         const v = pz.grid.get((x - pz.ox) + "," + (y - pz.oy));
         const cell = document.createElement("div");
         cell.className = "pz-cell-wrap";
-        if (v) {
+        if (v && v !== " ") {
           const inp = document.createElement("input");
           inp.maxLength = 1; inp.className = "pz-cell"; inp.autocomplete = "off";
           const g = gaps.get((x - pz.ox) + "," + (y - pz.oy));
@@ -2070,12 +2084,24 @@ function bumpStat(id, key) {
           inputs.push(inp);
         } else {
           cell.classList.add("pz-block");
+          if (pz.type === "fi" && (x - pz.ox) === 0) {
+            const wd0 = pz.words.find((w2) => w2.dir === "H" && w2.y === y - pz.oy);
+            if (wd0) { cell.classList.add("pz-rownum"); cell.textContent = wd0.num; }
+          }
         }
         grid.appendChild(cell);
       }
     }
     const ca = $("puzzleCluesA"), cd = $("puzzleCluesD");
     ca.innerHTML = ""; cd.innerHTML = "";
+    const caDiv = ca && ca.closest("div"), cdDiv = cd && cd.closest("div");
+    if (pz.type === "fi") {
+      if (caDiv) { const h = caDiv.querySelector("h3"); if (h) h.textContent = "Description"; }
+      if (cdDiv) cdDiv.style.display = "none";
+    } else {
+      if (caDiv) { const h = caDiv.querySelector("h3"); if (h) h.textContent = "Across"; }
+      if (cdDiv) cdDiv.style.display = "";
+    }
     [...pz.words].sort((a, b) => a.num - b.num).forEach((wd) => {
       const li = document.createElement("li");
       li.textContent = wd.num + ". " + wd.clue;
@@ -2186,6 +2212,7 @@ function bumpStat(id, key) {
       const ls = String(wd.answer).replace(/ /g, "").split("");
       (wd.cells || []).forEach(([cx, cy], i) => { if (ls[i]) grid.set(cx + "," + cy, ls[i]); });
     });
+    if (state.type === "fi") kept.forEach((wd) => { grid.set("0," + wd.y, " "); });
     state.words = kept;
     state.grid = [...grid.entries()];
     let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
