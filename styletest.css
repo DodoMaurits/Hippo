@@ -1021,7 +1021,20 @@ input.exam-answer.wrong {
   z-index:0;
   color:#5a6572
 }
+
+.pz-num.pz-finum { 
+  align-items: flex-end; 
+  padding-bottom: calc(var(--pz-cell, 34px) * .05); 
+  font-size: calc(var(--pz-cell, 34px) * .26); 
+}
+
 .pz-cell-wrap.filled .pz-num{display:none}
+.pz-cell-wrap.filled .pz-num.pz-finum { display: flex; }
+
+.pz-cell.pz-hasnum { 
+  font-size: calc(var(--pz-cell, 34px) * .4); 
+  padding-bottom: calc(var(--pz-cell, 34px) * .24);
+}
 
 .pz-cell.pz-sol{background:#ffd9e8}
 
