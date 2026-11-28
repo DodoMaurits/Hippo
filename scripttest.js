@@ -2172,7 +2172,8 @@ function bumpStat(id, key) {
     return w > 0 ? Math.min(1, avail / w) : 1;
   }
   function pzApplyZoom() {
-    pzZoom = Math.min(1, Math.max(pzFitZoom(), pzZoom));
+    if (!pz.w) return;
+    pzZoom = Math.min(2, Math.max(0.4, pzZoom));
     $("puzzleGrid").style.setProperty("--pz-cell", ((pz.baseCell || 34) * pzZoom) + "px");
   }
   function pzZoomBy(f) {
@@ -2324,6 +2325,9 @@ function bumpStat(id, key) {
       $("puzzleFeedback").textContent = "";
       savePuzzle();
     });
+    const pzIn = $("pzZoomIn"), pzOut = $("pzZoomOut");
+    if (pzIn) pzIn.addEventListener("click", () => { if (pz.words.length) pzZoomBy(1.25); });
+    if (pzOut) pzOut.addEventListener("click", () => { if (pz.words.length) pzZoomBy(0.8); });
     const pzShow = $("puzzleShow");
     if (pzShow) pzShow.addEventListener("click", () => {
       if (pz.showing) {
