@@ -1083,6 +1083,8 @@ input.exam-answer.wrong {
 
 .puzzle-clues li.done{color:#6e7b87}
 
+#pzZoomIn, #pzZoomOut { min-width: 46px; font-size: 1.1rem; }
+
 /* ================= Modal ================= */
 .modal-overlay { 
   position: fixed;
