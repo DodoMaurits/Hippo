@@ -428,7 +428,13 @@ function bumpStat(id, key) {
         renderOverview();
       });
       row.appendChild(nameBtn); row.appendChild(edit); row.appendChild(del);
-            const ord = document.createElement("span");
+      const exp = document.createElement("button");
+      exp.className = "btn secondary ov-export";
+      exp.textContent = "📤";
+      exp.title = "Export this list";
+      exp.addEventListener("click", async (e) => { e.stopPropagation(); await exportList(l); });
+      row.appendChild(exp);
+      const ord = document.createElement("span");
       ord.className = "row-order";
       ord.textContent = "☰";
       row.insertBefore(ord, row.firstChild);
@@ -789,7 +795,6 @@ function bumpStat(id, key) {
   }
   $("sortWorst").addEventListener("click", () => sortByScore(false));
   $("sortBest").addEventListener("click", () => sortByScore(true));
-  
   function updateOvOrderBtn() {
     const on = $("panel-overview").classList.contains("show-ov-order");
     const b = $("ovOrderBtn");
@@ -797,7 +802,43 @@ function bumpStat(id, key) {
     b.style.color = on ? "#43d17c" : "";
   }
   $("ovOrderBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-order"); updateOvOrderBtn(); renderOverview(); });
-
+  function updateOvExportBtn() {
+    const on = $("panel-overview").classList.contains("show-ov-export");
+    const b = $("ovExportBtn");
+    b.textContent = on ? "📤 Export ✅" : "📤 Export";
+    b.style.color = on ? "#43d17c" : "";
+  }
+  $("ovExportBtn").addEventListener("click", () => { $("panel-overview").classList.toggle("show-ov-export"); updateOvExportBtn(); renderOverview(); });
+  async function exportList(l) {
+    if (!l) return;
+    let rows = [];
+    if (GUEST) {
+      let all = [];
+      try { all = JSON.parse(localStorage.getItem(GUEST_WORDS_KEY) || "[]"); } catch (e) {}
+      rows = all.filter((w) => w.listId === l.id).map((w) => [w.a, w.b]);
+    } else {
+      let all = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from("words").select("lang1, lang2").eq("list_id", l.id).order("created_at", { ascending: true }).range(from, from + 999);
+        if (error) { console.error(error); break; }
+        all = all.concat(data || []);
+        if (!data || data.length < 1000) break;
+      }
+      rows = all.map((r) => [r.lang1, r.lang2]);
+    }
+    if (!rows.length) { await showModal({ title: "📤 Export", text: "List “" + l.name + "” has no words yet.", okText: "OK" }); return; }
+    try {
+      const mod = await import("https://esm.sh/xlsx@0.18.5");
+      const XLSX = mod.default || mod.XLSX || mod;
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Words");
+      XLSX.writeFile(wb, (l.name || "list").replace(/[\\/:*?"<>|]/g, "_") + ".xlsx");
+    } catch (err) {
+      console.error(err);
+      await showModal({ title: "📤 Export failed", text: "Could not create the file.", okText: "OK" });
+    }
+  }
   $("addRow").addEventListener("click", async () => {
     if (GUEST) {
       words.push({ id: "g" + Date.now(), listId: currentList.id, a: "", b: "" });
